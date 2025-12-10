@@ -27,6 +27,11 @@
             flex-direction: column;
         }
 
+        /* FORCE UPPERCASE INPUTS */
+        input[type="text"], textarea, select {
+            text-transform: uppercase;
+        }
+
         /* GOVERNMENT HEADER STYLE */
         .gov-header {
             background: linear-gradient(90deg, #1e3a8a 0%, #2563eb 100%);
@@ -67,6 +72,40 @@
             font-weight: 400;
             opacity: 0.9;
             letter-spacing: 0.05em;
+        }
+
+        /* NAVIGATION PILLS */
+        .nav-container {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-top: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .nav-btn {
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            padding: 0.5rem 1.5rem;
+            border-radius: 9999px;
+            color: white;
+            font-weight: 500;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+
+        .nav-btn:hover {
+            background: rgba(255, 255, 255, 0.25);
+            transform: translateY(-1px);
+        }
+
+        .nav-btn.active {
+            background: #fbbf24;
+            color: #1e3a8a;
+            border-color: #fbbf24;
+            font-weight: 700;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
         }
 
         /* MAIN CONTENT AREA */
@@ -362,6 +401,11 @@
         <img src="https://i.postimg.cc/HsVZqzF5/JATAPenang.png" alt="Jata Pulau Pinang" class="gov-logo">
         <h1 class="header-title">PORTAL DATA MAKLUMAT MASJID DAN SURAU</h1>
         <p class="header-subtitle">JABATAN HAL EHWAL AGAMA ISLAM PULAU PINANG</p>
+        
+        <div class="nav-container">
+            <!-- Butang Portal Pentadbir dibuang dari sini -->
+            <button class="nav-btn active" id="publicBtn" onclick="switchMode('public')">Carian Awam</button> 
+        </div>
     </div>
 </header>
 
@@ -378,34 +422,34 @@
                         <div>
                             <label class="form-label">Kategori</label>
                             <select id="publicKategori" class="form-select" onchange="updatePublicJawatanList(); performSearch()">
-                                <option value="all">Semua Kategori</option>
-                                <option value="masjid">Masjid</option>
-                                <option value="surau">Surau</option>
-                                <option value="pegawai">Pegawai Masjid</option>
+                                <option value="all">SEMUA KATEGORI</option>
+                                <option value="MASJID">MASJID</option>
+                                <option value="SURAU">SURAU</option>
+                                <option value="PEGAWAI">PEGAWAI MASJID</option>
                             </select>
                         </div>
                         <div>
                             <label class="form-label">Parlimen</label>
                             <select id="publicParlimen" class="form-select" onchange="updatePublicDunList(); performSearch()">
-                                <option value="">Semua Parlimen</option>
+                                <option value="">SEMUA PARLIMEN</option>
                             </select>
                         </div>
                         <div>
                             <label class="form-label">DUN</label>
                             <select id="publicDun" class="form-select" onchange="performSearch()">
-                                <option value="">Semua DUN</option>
+                                <option value="">SEMUA DUN</option>
                             </select>
                         </div>
                         <div>
                             <label class="form-label">Jawatan</label>
                             <select id="publicJawatan" class="form-select" onchange="performSearch()">
-                                <option value="">Semua Jawatan</option>
+                                <option value="">SEMUA JAWATAN</option>
                             </select>
                         </div>
                         <div class="md:col-span-2">
                             <label class="form-label">Carian Teks (Nama / No. KP / Tempat)</label>
                             <div class="relative">
-                                <input type="text" id="publicSearchText" class="form-input pl-10" placeholder="Masukkan kata kunci carian..." oninput="performSearch()">
+                                <input type="text" id="publicSearchText" class="form-input pl-10" placeholder="MASUKKAN KATA KUNCI CARIAN..." oninput="this.value = this.value.toUpperCase(); performSearch()">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 absolute left-3 top-2.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                                 </svg>
@@ -431,14 +475,14 @@
                         </svg>
                     </div>
                     <div>
-                        <h2 class="font-bold text-blue-900 text-lg">Panel Pengurusan</h2>
+                        <h2 class="font-bold text-blue-900 text-lg">PANEL PENGURUSAN</h2>
                         <div id="currentUserBadge" class="text-xs text-blue-600 font-medium"></div>
                     </div>
                 </div>
                 <div class="flex gap-2">
-                    <button class="px-4 py-2 bg-white border border-blue-200 text-blue-600 rounded-md text-sm font-medium hover:bg-blue-50 active-tab" onclick="switchAdminTab('data', this)">Data</button>
-                    <button class="px-4 py-2 bg-white border border-blue-200 text-blue-600 rounded-md text-sm font-medium hover:bg-blue-50" id="usersTabBtn" onclick="switchAdminTab('users', this)">Pengguna</button>
-                    <button class="px-4 py-2 bg-white border border-blue-200 text-blue-600 rounded-md text-sm font-medium hover:bg-blue-50" onclick="switchAdminTab('import', this)">Import/Eksport</button>
+                    <button class="px-4 py-2 bg-white border border-blue-200 text-blue-600 rounded-md text-sm font-medium hover:bg-blue-50 active-tab" onclick="switchAdminTab('data', this)">DATA</button>
+                    <button class="px-4 py-2 bg-white border border-blue-200 text-blue-600 rounded-md text-sm font-medium hover:bg-blue-50" id="usersTabBtn" onclick="switchAdminTab('users', this)">PENGGUNA</button>
+                    <button class="px-4 py-2 bg-white border border-blue-200 text-blue-600 rounded-md text-sm font-medium hover:bg-blue-50" onclick="switchAdminTab('import', this)">IMPORT/EKSPORT</button>
                 </div>
             </div>
 
@@ -448,33 +492,33 @@
                     <div class="bg-white border border-gray-200 rounded-lg p-6 mb-6 shadow-sm">
                         <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
                             <span class="w-2 h-6 bg-green-500 rounded-full"></span>
-                            Borang Tambah Data
+                            BORANG TAMBAH DATA
                         </h3>
                         
                         <form id="addDataForm" onsubmit="addNewData(event)">
                             <div class="mb-4">
-                                <label class="form-label text-base">Kategori Data</label>
+                                <label class="form-label text-base">KATEGORI DATA</label>
                                 <select id="newJenis" class="form-select bg-gray-50 border-blue-300 text-blue-900 font-medium" onchange="updateFormFields()">
-                                    <option value="masjid">Masjid</option>
-                                    <option value="surau">Surau</option>
-                                    <option value="pegawai">Pegawai Masjid</option>
+                                    <option value="MASJID">MASJID</option>
+                                    <option value="SURAU">SURAU</option>
+                                    <option value="PEGAWAI">PEGAWAI MASJID</option>
                                 </select>
                             </div>
 
                             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                <div><label class="form-label">Nama Penuh</label><input id="newNama" class="form-input" required></div>
-                                <div id="group-nama-tempat"><label class="form-label" id="label-nama-tempat">Nama Masjid</label><input id="newNamaTempat" class="form-input" required></div>
-                                <div id="group-nama-kariah" style="display:none;"><label class="form-label">Nama Kariah</label><input id="newNamaKariah" class="form-input"></div>
-                                <div><label class="form-label">Jawatan</label><select id="newJawatan" class="form-select" required></select></div>
-                                <div><label class="form-label">Parlimen</label><select id="newParlimen" class="form-select" onchange="updateDunList()"><option value="">Pilih Parlimen</option></select></div>
-                                <div><label class="form-label">DUN</label><select id="newDun" class="form-select"><option value="">Pilih Parlimen Dahulu</option></select></div>
-                                <div><label class="form-label">No. KP (12 Digit)</label><input id="newNokp" class="form-input" placeholder="800101075555" maxlength="14" oninput="calculateICDetails(this)" required></div>
-                                <div><label class="form-label">Jantina (Auto)</label><input id="newJantina" class="form-input bg-gray-100" readonly></div>
-                                <div><label class="form-label">Umur (Auto)</label><input id="newUmur" class="form-input bg-gray-100" readonly></div>
-                                <div><label class="form-label">No. Telefon</label><input id="newNotel" class="form-input" placeholder="01X-XXXXXXX" oninput="formatPhone(this)" required></div>
-                                <div><label class="form-label">Pekerjaan</label><input id="newPekerjaan" class="form-input"></div>
-                                <div id="group-tahun-lantikan" style="display:none;"><label class="form-label">Tahun Lantikan</label><input id="newTahunLantikan" type="number" class="form-input" placeholder="YYYY"></div>
-                                <div class="md:col-span-3"><label class="form-label">Alamat Lengkap</label><input id="newAlamat" class="form-input" required></div>
+                                <div><label class="form-label">NAMA PENUH</label><input id="newNama" class="form-input" oninput="this.value = this.value.toUpperCase()" required></div>
+                                <div id="group-nama-tempat"><label class="form-label" id="label-nama-tempat">NAMA MASJID</label><input id="newNamaTempat" class="form-input" oninput="this.value = this.value.toUpperCase()" required></div>
+                                <div id="group-nama-kariah" style="display:none;"><label class="form-label">NAMA KARIAH</label><input id="newNamaKariah" class="form-input" oninput="this.value = this.value.toUpperCase()"></div>
+                                <div><label class="form-label">JAWATAN</label><select id="newJawatan" class="form-select" required></select></div>
+                                <div><label class="form-label">PARLIMEN</label><select id="newParlimen" class="form-select" onchange="updateDunList()"><option value="">PILIH PARLIMEN</option></select></div>
+                                <div><label class="form-label">DUN</label><select id="newDun" class="form-select"><option value="">PILIH PARLIMEN DAHULU</option></select></div>
+                                <div><label class="form-label">NO. KP (12 DIGIT)</label><input id="newNokp" class="form-input" placeholder="800101075555" maxlength="14" oninput="calculateICDetails(this)" required></div>
+                                <div><label class="form-label">JANTINA (AUTO)</label><input id="newJantina" class="form-input bg-gray-100" readonly></div>
+                                <div><label class="form-label">UMUR (AUTO)</label><input id="newUmur" class="form-input bg-gray-100" readonly></div>
+                                <div><label class="form-label">NO. TELEFON</label><input id="newNotel" class="form-input" placeholder="01X-XXXXXXX" oninput="formatPhone(this)" required></div>
+                                <div><label class="form-label">PEKERJAAN</label><input id="newPekerjaan" class="form-input" oninput="this.value = this.value.toUpperCase()"></div>
+                                <div id="group-tahun-lantikan" style="display:none;"><label class="form-label">TAHUN LANTIKAN</label><input id="newTahunLantikan" type="number" class="form-input" placeholder="YYYY"></div>
+                                <div class="md:col-span-3"><label class="form-label">ALAMAT LENGKAP</label><input id="newAlamat" class="form-input" oninput="this.value = this.value.toUpperCase()" required></div>
                             </div>
 
                             <div class="mt-6 flex justify-end">
@@ -482,7 +526,7 @@
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                                     </svg>
-                                    Simpan Rekod
+                                    SIMPAN REKOD
                                 </button>
                             </div>
                         </form>
@@ -490,18 +534,18 @@
 
                     <div class="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
                         <div class="bg-gray-50 px-6 py-4 border-b border-gray-200">
-                            <h3 class="font-bold text-gray-800">Pangkalan Data</h3>
+                            <h3 class="font-bold text-gray-800">PANGKALAN DATA</h3>
                         </div>
                         <div class="overflow-x-auto">
                             <table class="data-table">
                                 <thead>
                                     <tr>
-                                        <th>Kategori</th>
-                                        <th>Nama</th>
-                                        <th>Tempat / Kariah</th>
-                                        <th>Jawatan</th>
-                                        <th>No. KP</th>
-                                        <th class="text-center">Tindakan</th>
+                                        <th>KATEGORI</th>
+                                        <th>NAMA</th>
+                                        <th>TEMPAT / KARIAH</th>
+                                        <th>JAWATAN</th>
+                                        <th>NO. KP</th>
+                                        <th class="text-center">TINDAKAN</th>
                                     </tr>
                                 </thead>
                                 <tbody id="adminDataTable"></tbody>
@@ -513,33 +557,33 @@
                 <!-- TAB: USERS -->
                 <div id="adminUsersTab" class="admin-tab-pane hidden">
                     <div class="bg-orange-50 border border-orange-100 rounded-lg p-6 mb-6">
-                        <h3 class="text-lg font-bold text-orange-800 mb-4">Pengurusan Akses Pengguna</h3>
+                        <h3 class="text-lg font-bold text-orange-800 mb-4">PENGURUSAN AKSES PENGGUNA</h3>
                         <form onsubmit="createNewUser(event)" class="flex flex-wrap gap-4 items-end">
                             <div class="flex-1 min-w-[200px]">
-                                <label class="form-label">Nama Pengguna</label>
-                                <input id="createUsername" class="form-input" required>
+                                <label class="form-label">NAMA PENGGUNA</label>
+                                <input id="createUsername" class="form-input" oninput="this.value = this.value.toLowerCase()" required>
                             </div>
                             <div class="flex-1 min-w-[200px]">
-                                <label class="form-label">Kata Laluan</label>
+                                <label class="form-label">KATA LALUAN</label>
                                 <input id="createPassword" class="form-input" required>
                             </div>
                             <div class="flex-1 min-w-[200px]">
-                                <label class="form-label">Peranan</label>
+                                <label class="form-label">PERANAN</label>
                                 <select id="createRole" class="form-select">
-                                    <option value="user">User Biasa</option>
-                                    <option value="superadmin">Super Admin</option>
+                                    <option value="user">USER BIASA</option>
+                                    <option value="superadmin">SUPER ADMIN</option>
                                 </select>
                             </div>
-                            <button type="submit" class="btn btn-primary w-auto">Cipta Pengguna</button>
+                            <button type="submit" class="btn btn-primary w-auto">CIPTA PENGGUNA</button>
                         </form>
                     </div>
                     <div class="table-container bg-white">
                         <table class="data-table">
                             <thead>
                                 <tr>
-                                    <th>Nama Pengguna</th>
-                                    <th>Peranan</th>
-                                    <th class="text-center">Tindakan</th>
+                                    <th>NAMA PENGGUNA</th>
+                                    <th>PERANAN</th>
+                                    <th class="text-center">TINDAKAN</th>
                                 </tr>
                             </thead>
                             <tbody id="userListTable"></tbody>
@@ -551,15 +595,15 @@
                 <div id="adminImportTab" class="admin-tab-pane hidden">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div class="bg-blue-50 p-6 rounded-lg border border-blue-100">
-                            <h4 class="font-bold text-blue-900 text-lg mb-2">Simpan Data (Eksport)</h4>
+                            <h4 class="font-bold text-blue-900 text-lg mb-2">SIMPAN DATA (EKSPORT)</h4>
                             <p class="text-sm text-blue-700 mb-4">Muat turun pangkalan data semasa sebagai fail CSV untuk simpanan di Google Drive/Excel.</p>
-                            <button onclick="exportToCSV()" class="btn btn-primary">Muat Turun CSV</button>
+                            <button onclick="exportToCSV()" class="btn btn-primary">MUAT TURUN CSV</button>
                         </div>
                         <div class="bg-green-50 p-6 rounded-lg border border-green-100">
-                            <h4 class="font-bold text-green-900 text-lg mb-2">Muat Naik Data (Import)</h4>
+                            <h4 class="font-bold text-green-900 text-lg mb-2">MUAT NAIK DATA (IMPORT)</h4>
                             <p class="text-sm text-green-700 mb-4">Kemaskini sistem dengan memuat naik fail CSV yang telah disunting.</p>
                             <input type="file" id="csvFileInput" accept=".csv" class="form-input mb-2 bg-white">
-                            <button onclick="importFromCSV()" class="btn btn-success">Proses Fail</button>
+                            <button onclick="importFromCSV()" class="btn btn-success">PROSES FAIL</button>
                         </div>
                     </div>
                 </div>
@@ -625,20 +669,20 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                 </svg>
             </div>
-            <h2 class="text-xl font-bold text-gray-800">Akses Pentadbir</h2>
+            <h2 class="text-xl font-bold text-gray-800">AKSES PENTADBIR</h2>
             <p class="text-sm text-gray-500">Sila log masuk untuk meneruskan</p>
         </div>
         <form onsubmit="handleLogin(event)">
             <div class="mb-4 text-left">
-                <label class="form-label">Nama Pengguna</label>
-                <input type="text" id="loginUser" class="form-input" required>
+                <label class="form-label">NAMA PENGGUNA</label>
+                <input type="text" id="loginUser" class="form-input" required oninput="this.value = this.value.toLowerCase()">
             </div>
             <div class="mb-6 text-left">
-                <label class="form-label">Kata Laluan</label>
+                <label class="form-label">KATA LALUAN</label>
                 <input type="password" id="loginPass" class="form-input" required>
             </div>
-            <button type="submit" class="btn btn-primary mb-3">Log Masuk</button>
-            <button type="button" class="text-sm text-gray-500 hover:text-gray-700 underline" onclick="closeLogin()">Kembali ke Carian Awam</button>
+            <button type="submit" class="btn btn-primary mb-3">LOG MASUK</button>
+            <button type="button" class="text-sm text-gray-500 hover:text-gray-700 underline" onclick="closeLogin()">KEMBALI KE CARIAN AWAM</button>
         </form>
     </div>
 </div>
@@ -668,8 +712,8 @@
         "P53 BALIK PULAU": ["N38 BAYAN LEPAS", "N39 PULAU BETONG", "N40 TELOK BAHANG"]
     };
 
-    const jawatanAJK = ["Pengerusi", "Timbalan Pengerusi", "Setiausaha", "Bendahari", "Ahli Jawatankuasa", "AJK Wanita", "Pemeriksa Kira-Kira"];
-    const jawatanPegawai = ["Imam", "Bilal", "Siak"];
+    const jawatanAJK = ["PENGERUSI", "TIMBALAN PENGERUSI", "SETIAUSAHA", "BENDAHARI", "AHLI JAWATANKUASA", "AJK WANITA", "PEMERIKSA KIRA-KIRA"];
+    const jawatanPegawai = ["IMAM", "BILAL", "SIAK"];
 
     function init() {
         populateParlimen('newParlimen');
@@ -682,8 +726,8 @@
     function populateParlimen(id) {
         const sel = document.getElementById(id);
         if(!sel) return;
-        sel.innerHTML = '<option value="">Semua Parlimen</option>';
-        if(id === 'newParlimen') sel.innerHTML = '<option value="">Pilih Parlimen</option>';
+        sel.innerHTML = '<option value="">SEMUA PARLIMEN</option>';
+        if(id === 'newParlimen') sel.innerHTML = '<option value="">PILIH PARLIMEN</option>';
         
         for(let p in parlimenDun) {
             let opt = document.createElement('option');
@@ -697,7 +741,7 @@
         // For Admin Form
         const p = document.getElementById('newParlimen').value;
         const dSel = document.getElementById('newDun');
-        dSel.innerHTML = '<option value="">Pilih DUN</option>';
+        dSel.innerHTML = '<option value="">PILIH DUN</option>';
         if(p && parlimenDun[p]) {
             parlimenDun[p].forEach(dun => {
                 let opt = document.createElement('option');
@@ -712,7 +756,7 @@
         // For Public Search
         const p = document.getElementById('publicParlimen').value;
         const dSel = document.getElementById('publicDun');
-        dSel.innerHTML = '<option value="">Semua DUN</option>';
+        dSel.innerHTML = '<option value="">SEMUA DUN</option>';
         if(p && parlimenDun[p]) {
             parlimenDun[p].forEach(dun => {
                 let opt = document.createElement('option');
@@ -726,12 +770,12 @@
     function updatePublicJawatanList() {
         const cat = document.getElementById('publicKategori').value;
         const jSel = document.getElementById('publicJawatan');
-        jSel.innerHTML = '<option value="">Semua Jawatan</option>';
+        jSel.innerHTML = '<option value="">SEMUA JAWATAN</option>';
         
         let options = [];
         if (cat === 'all') {
             options = [...new Set([...jawatanAJK, ...jawatanPegawai])].sort();
-        } else if (cat === 'pegawai') {
+        } else if (cat === 'PEGAWAI') {
             options = jawatanPegawai;
         } else {
             options = jawatanAJK;
@@ -754,20 +798,20 @@
 
         selJawatan.innerHTML = '';
 
-        if(jenis === 'masjid') {
-            labelTempat.innerText = "Nama Masjid";
+        if(jenis === 'MASJID') {
+            labelTempat.innerText = "NAMA MASJID";
             groupKariah.style.display = 'none';
             groupLantikan.style.display = 'none';
             jawatanAJK.forEach(j => selJawatan.add(new Option(j, j)));
         } 
-        else if(jenis === 'surau') {
-            labelTempat.innerText = "Nama Surau";
+        else if(jenis === 'SURAU') {
+            labelTempat.innerText = "NAMA SURAU";
             groupKariah.style.display = 'block';
             groupLantikan.style.display = 'none';
             jawatanAJK.forEach(j => selJawatan.add(new Option(j, j)));
         } 
-        else if(jenis === 'pegawai') {
-            labelTempat.innerText = "Nama Kariah / Masjid"; 
+        else if(jenis === 'PEGAWAI') {
+            labelTempat.innerText = "NAMA KARIAH / MASJID"; 
             groupKariah.style.display = 'none';
             groupLantikan.style.display = 'block';
             jawatanPegawai.forEach(j => selJawatan.add(new Option(j, j)));
@@ -788,7 +832,7 @@
 
         if (val.length === 12) {
             const lastDigit = parseInt(val.slice(-1));
-            const gender = lastDigit % 2 !== 0 ? 'Lelaki' : 'Perempuan';
+            const gender = lastDigit % 2 !== 0 ? 'LELAKI' : 'PEREMPUAN';
             document.getElementById('newJantina').value = gender;
 
             const yearPrefix = parseInt(val.substring(0, 2));
@@ -796,7 +840,7 @@
             const currentCentury = Math.floor(currentYear / 100) * 100;
             const birthYear = (yearPrefix > (currentYear % 100)) ? (currentCentury - 100 + yearPrefix) : (currentCentury + yearPrefix);
             const age = currentYear - birthYear;
-            document.getElementById('newUmur').value = age;
+            document.getElementById('newUmur').value = age + ' TAHUN';
         }
     }
 
@@ -815,7 +859,7 @@
     
     function handleLogin(e) {
         e.preventDefault();
-        const u = document.getElementById('loginUser').value;
+        const u = document.getElementById('loginUser').value.toLowerCase();
         const p = document.getElementById('loginPass').value;
         const found = appUsers.find(user => user.username === u && user.password === p);
         if (found) {
@@ -833,8 +877,8 @@
     function logout() { currentUser = null; document.getElementById('logoutBtn').style.display='none'; switchMode('public'); }
 
     function setupAdminUI() {
-        let r = currentUser.role === 'superadmin' ? 'Super Admin' : 'Staf Biasa';
-        document.getElementById('currentUserBadge').innerText = `${currentUser.username} | ${r}`;
+        let r = currentUser.role === 'superadmin' ? 'SUPER ADMIN' : 'STAF BIASA';
+        document.getElementById('currentUserBadge').innerText = `${currentUser.username.toUpperCase()} | ${r}`;
         document.getElementById('logoutBtn').style.display = 'block';
         document.getElementById('usersTabBtn').style.display = currentUser.role === 'superadmin' ? 'block' : 'none';
         renderAdminDataTable();
@@ -877,9 +921,9 @@
         const jenis = document.getElementById('newJenis').value;
         const item = {
             jenis: jenis,
-            nama: document.getElementById('newNama').value,
-            tempat: document.getElementById('newNamaTempat').value,
-            kariah: document.getElementById('newNamaKariah').value,
+            nama: document.getElementById('newNama').value.toUpperCase(),
+            tempat: document.getElementById('newNamaTempat').value.toUpperCase(),
+            kariah: document.getElementById('newNamaKariah').value.toUpperCase(),
             jawatan: document.getElementById('newJawatan').value,
             parlimen: document.getElementById('newParlimen').value,
             dun: document.getElementById('newDun').value,
@@ -887,15 +931,15 @@
             jantina: document.getElementById('newJantina').value,
             umur: document.getElementById('newUmur').value,
             notel: document.getElementById('newNotel').value,
-            alamat: document.getElementById('newAlamat').value,
-            pekerjaan: document.getElementById('newPekerjaan').value,
+            alamat: document.getElementById('newAlamat').value.toUpperCase(),
+            pekerjaan: document.getElementById('newPekerjaan').value.toUpperCase(),
             lantikan: document.getElementById('newTahunLantikan').value
         };
         
         appData.push(item);
         saveData();
         renderAdminDataTable();
-        alert("Data berjaya disimpan!");
+        alert("DATA BERJAYA DISIMPAN!");
         document.getElementById('addDataForm').reset();
         updateFormFields();
     }
@@ -904,7 +948,7 @@
         const tbody = document.getElementById('adminDataTable');
         tbody.innerHTML = appData.map((item, idx) => {
             const delBtn = currentUser.role === 'superadmin' ? 
-                `<button class="text-red-500 hover:text-red-700 font-bold ml-3" onclick="deleteData(${idx})">Padam</button>` : '';
+                `<button class="text-red-500 hover:text-red-700 font-bold ml-3" onclick="deleteData(${idx})">PADAM</button>` : '';
             return `<tr class="border-b hover:bg-gray-50">
                 <td><span class="text-xs font-bold px-2 py-1 rounded bg-blue-100 text-blue-800 uppercase">${item.jenis}</span></td>
                 <td class="font-medium">${item.nama}</td>
@@ -912,7 +956,7 @@
                 <td>${item.jawatan}</td>
                 <td class="font-mono text-sm">${item.nokp}</td>
                 <td class="text-center">
-                    <button class="text-blue-600 hover:text-blue-800 font-bold" onclick="editData(${idx})">Edit</button>
+                    <button class="text-blue-600 hover:text-blue-800 font-bold" onclick="editData(${idx})">EDIT</button>
                     ${delBtn}
                 </td>
             </tr>`;
@@ -920,12 +964,12 @@
     }
 
     function deleteData(idx) {
-        if(confirm("Padam data ini?")) { appData.splice(idx, 1); saveData(); renderAdminDataTable(); }
+        if(confirm("PADAM DATA INI?")) { appData.splice(idx, 1); saveData(); renderAdminDataTable(); }
     }
 
     function editData(idx) {
         const item = appData[idx];
-        if(confirm("Kemaskini data ini di dalam borang?")) {
+        if(confirm("KEMASKINI DATA INI DI DALAM BORANG?")) {
             document.getElementById('newJenis').value = item.jenis;
             updateFormFields();
             
@@ -964,16 +1008,16 @@
     function renderUserTable() {
         document.getElementById('userListTable').innerHTML = appUsers.map((u, i) => `
             <tr>
-                <td class="font-bold">${u.username}</td>
-                <td><span class="px-2 py-1 rounded text-xs ${u.role==='superadmin'?'bg-purple-100 text-purple-800':'bg-gray-100 text-gray-800'}">${u.role}</span></td>
-                <td class="text-center">${u.username!=='admin' ? `<button class="text-red-500 hover:text-red-700" onclick="delUser(${i})">Padam</button>` : ''}</td>
+                <td class="font-bold">${u.username.toUpperCase()}</td>
+                <td><span class="px-2 py-1 rounded text-xs ${u.role==='superadmin'?'bg-purple-100 text-purple-800':'bg-gray-100 text-gray-800'}">${u.role.toUpperCase()}</span></td>
+                <td class="text-center">${u.username!=='admin' ? `<button class="text-red-500 hover:text-red-700" onclick="delUser(${i})">PADAM</button>` : ''}</td>
             </tr>
         `).join('');
     }
     function createNewUser(e) {
         e.preventDefault();
-        const u = document.getElementById('createUsername').value;
-        if(appUsers.find(x=>x.username===u)) return alert("Username wujud!");
+        const u = document.getElementById('createUsername').value.toLowerCase();
+        if(appUsers.find(x=>x.username===u)) return alert("USERNAME WUJUD!");
         appUsers.push({
             username: u,
             password: document.getElementById('createPassword').value,
@@ -981,15 +1025,15 @@
         });
         localStorage.setItem('masjid_app_users', JSON.stringify(appUsers));
         renderUserTable();
-        alert("User dicipta!");
+        alert("USER DICIPTA!");
     }
     function delUser(i) {
-        if(confirm("Padam user?")) { appUsers.splice(i,1); localStorage.setItem('masjid_app_users', JSON.stringify(appUsers)); renderUserTable(); }
+        if(confirm("PADAM USER?")) { appUsers.splice(i,1); localStorage.setItem('masjid_app_users', JSON.stringify(appUsers)); renderUserTable(); }
     }
 
     // IMPORT/EXPORT
     function exportToCSV() {
-        if(!appData.length) return alert("Tiada data!");
+        if(!appData.length) return alert("TIADA DATA!");
         const headers = ["jenis","nama","tempat","kariah","jawatan","parlimen","dun","nokp","jantina","umur","notel","alamat","pekerjaan","lantikan"];
         const rows = [headers.join(',')];
         appData.forEach(item => {
@@ -1002,7 +1046,7 @@
 
     function importFromCSV() {
         const f = document.getElementById('csvFileInput').files[0];
-        if(!f) return alert("Pilih fail!");
+        if(!f) return alert("PILIH FAIL!");
         const r = new FileReader();
         r.onload = e => {
             const rows = e.target.result.split('\n').filter(x=>x.trim());
@@ -1013,14 +1057,14 @@
                 if(!cols) continue;
                 let obj = {};
                 headers.forEach((h, idx) => {
-                    if(cols[idx]) obj[h] = cols[idx].replace(/^"|"$/g,'').replace(/""/g,'"');
+                    if(cols[idx]) obj[h] = cols[idx].replace(/^"|"$/g,'').replace(/""/g,'"').toUpperCase();
                 });
                 if(obj.nama) newD.push(obj);
             }
             appData = [...appData, ...newD];
             saveData();
             renderAdminDataTable();
-            alert(`Import ${newD.length} data berjaya!`);
+            alert(`IMPORT ${newD.length} DATA BERJAYA!`);
         };
         r.readAsText(f);
     }
@@ -1030,8 +1074,8 @@
         const cat = document.getElementById('publicKategori').value;
         const par = document.getElementById('publicParlimen').value;
         const dun = document.getElementById('publicDun').value;
-        const jaw = document.getElementById('publicJawatan').value; // Get raw value from dropdown
-        const txt = document.getElementById('publicSearchText').value.toLowerCase();
+        const jaw = document.getElementById('publicJawatan').value; 
+        const txt = document.getElementById('publicSearchText').value.toUpperCase();
 
         const res = appData.filter(d => {
             // Category Filter
@@ -1041,11 +1085,11 @@
             // DUN Filter
             if (dun && d.dun !== dun) return false;
             // Jawatan Filter
-            if (jaw && d.jawatan !== jaw) return false; // Exact match for dropdown
+            if (jaw && d.jawatan !== jaw) return false; 
             // Text Filter
             if (txt && !(
-                (d.nama && d.nama.toLowerCase().includes(txt)) ||
-                (d.tempat && d.tempat.toLowerCase().includes(txt)) ||
+                (d.nama && d.nama.includes(txt)) ||
+                (d.tempat && d.tempat.includes(txt)) ||
                 (d.nokp && d.nokp.includes(txt))
             )) return false;
 
@@ -1053,7 +1097,7 @@
         });
 
         const con = document.getElementById('publicResults');
-        if(!res.length) return con.innerHTML = '<div class="col-span-full text-center py-8 text-gray-500">Tiada rekod dijumpai.</div>';
+        if(!res.length) return con.innerHTML = '<div class="col-span-full text-center py-8 text-gray-500">TIADA REKOD DIJUMPAI.</div>';
         
         con.innerHTML = res.map(d => `
             <div class="result-card">
@@ -1063,17 +1107,17 @@
                 </div>
                 <div class="card-body">
                     <div class="info-row">
-                        <div class="info-label">Jawatan</div>
+                        <div class="info-label">JAWATAN</div>
                         <div class="info-value font-bold text-blue-800">${d.jawatan}</div>
                     </div>
                     <div class="info-row">
-                        <div class="info-label">Lokasi</div>
+                        <div class="info-label">LOKASI</div>
                         <div class="info-value">${d.tempat}</div>
                         ${d.kariah ? `<div class="text-xs text-gray-500">${d.kariah}</div>` : ''}
                     </div>
                     <div class="grid grid-cols-2 gap-2 mt-2">
                         <div>
-                            <div class="info-label">Parlimen</div>
+                            <div class="info-label">PARLIMEN</div>
                             <div class="info-value text-xs">${d.parlimen || '-'}</div>
                         </div>
                         <div>
@@ -1087,7 +1131,7 @@
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                         </svg>
-                        Muat Turun PDF
+                        MUAT TURUN PDF
                     </button>
                 </div>
             </div>
@@ -1124,25 +1168,25 @@
             y += (splitText.length * 7) + 5; 
         };
 
-        addRow("Nama Penuh", d.nama);
-        addRow("No. Kad Pengenalan", d.nokp);
-        addRow("Jantina / Umur", `${d.jantina} / ${d.umur} Tahun`);
-        addRow("Jawatan", d.jawatan);
-        addRow("Tempat Bertugas", d.tempat);
-        if(d.kariah) addRow("Kariah", d.kariah);
-        if(d.lantikan) addRow("Tahun Lantikan", d.lantikan);
+        addRow("NAMA PENUH", d.nama);
+        addRow("NO. KAD PENGENALAN", d.nokp);
+        addRow("JANTINA / UMUR", `${d.jantina} / ${d.umur}`);
+        addRow("JAWATAN", d.jawatan);
+        addRow("TEMPAT BERTUGAS", d.tempat);
+        if(d.kariah) addRow("KARIAH", d.kariah);
+        if(d.lantikan) addRow("TAHUN LANTIKAN", d.lantikan);
         
         y += 5; // Extra spacing
-        addRow("No. Telefon", d.notel);
-        addRow("Alamat", d.alamat);
-        addRow("Parlimen", d.parlimen);
+        addRow("NO. TELEFON", d.notel);
+        addRow("ALAMAT", d.alamat);
+        addRow("PARLIMEN", d.parlimen);
         addRow("DUN", d.dun);
-        addRow("Pekerjaan", d.pekerjaan);
+        addRow("PEKERJAAN", d.pekerjaan);
 
         // Footer
         doc.setFontSize(10);
         doc.setTextColor(150, 150, 150);
-        doc.text("Dicetak pada: " + new Date().toLocaleDateString(), 105, 280, {align:'center'});
+        doc.text("DICETAK PADA: " + new Date().toLocaleDateString(), 105, 280, {align:'center'});
 
         doc.save(`${d.nama.replace(/\s/g, '_')}.pdf`);
     }
