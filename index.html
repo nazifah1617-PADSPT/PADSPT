@@ -174,6 +174,16 @@
             display: none; transition: all 0.2s;
         }
         .logout-btn:hover { background: #fecaca; }
+        
+        /* Initial State Message */
+        .initial-state-msg {
+            text-align: center;
+            padding: 3rem;
+            color: #64748b;
+            background: #f8fafc;
+            border-radius: 0.5rem;
+            border: 1px dashed #cbd5e1;
+        }
     </style>
 </head>
 <body>
@@ -250,7 +260,15 @@
                     </div>
                 </div>
 
-                <div id="publicResults" class="results-grid"></div>
+                <div id="publicResults" class="results-grid">
+                    <!-- Initial State Message (Shown by default) -->
+                    <div class="initial-state-msg col-span-full">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto text-gray-400 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                        <p class="font-medium text-gray-600">Sila masukkan kata kunci atau pilih tapisan untuk memulakan carian.</p>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -744,12 +762,19 @@
         const jSel = document.getElementById('publicJawatan');
         jSel.innerHTML = '<option value="">SEMUA JAWATAN</option>';
         let options = [];
-        if (cat === 'all') options = [...new Set([...jawatanAJK, ...jawatanPegawai])].sort();
-        else if (cat === 'PEGAWAI') options = jawatanPegawai;
-        else options = jawatanAJK;
+        if (cat === 'all') {
+            options = [...new Set([...jawatanAJK, ...jawatanPegawai])].sort();
+        } else if (cat === 'PEGAWAI') {
+            options = jawatanPegawai;
+        } else {
+            options = jawatanAJK;
+        }
+
         options.forEach(j => {
             let opt = document.createElement('option');
-            opt.value = j; opt.innerText = j; jSel.appendChild(opt);
+            opt.value = j;
+            opt.innerText = j;
+            jSel.appendChild(opt);
         });
     }
 
@@ -903,6 +928,23 @@
         const jaw = document.getElementById('publicJawatan').value; 
         const txt = document.getElementById('publicSearchText').value.toUpperCase();
 
+        // 1. Initial State Check: If all fields are default/empty, show nothing
+        if (cat === 'all' && par === '' && dun === '' && jaw === '' && txt === '') {
+            const con = document.getElementById('publicResults');
+            // Show Initial State Message
+            con.innerHTML = `
+                <div class="initial-state-msg col-span-full text-center py-10">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto text-gray-300 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                    <p class="font-semibold text-lg text-gray-600">Mulakan Carian Anda</p>
+                    <p class="text-sm text-gray-400">Sila masukkan kata kunci atau pilih tapisan di atas untuk melihat data.</p>
+                </div>
+            `;
+            return;
+        }
+
+        // 2. Perform filtering if criteria exist
         const res = window.appData.filter(d => {
             if (cat !== 'all' && d.jenis !== cat) return false;
             if (par && d.parlimen !== par) return false;
@@ -935,8 +977,8 @@
                 </div>
                 <div class="card-footer">
                     <button class="btn btn-outline" onclick='generatePDF(${JSON.stringify(d).replace(/'/g, "&apos;")})'>
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-                        MUAT TURUN PDF
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                        PAPAR PDF
                     </button>
                 </div>
             </div>
@@ -967,7 +1009,11 @@
         addRow("PARLIMEN", d.parlimen); addRow("DUN", d.dun); addRow("PEKERJAAN", d.pekerjaan);
         doc.setFontSize(10); doc.setTextColor(150, 150, 150);
         doc.text("DICETAK PADA: " + new Date().toLocaleDateString(), 105, 280, {align:'center'});
-        doc.save(`${d.nama.replace(/\s/g, '_')}.pdf`);
+        
+        // Open PDF in new tab instead of downloading
+        const pdfBlob = doc.output('blob');
+        const pdfUrl = URL.createObjectURL(pdfBlob);
+        window.open(pdfUrl, '_blank');
     }
 </script>
 </body>
