@@ -286,18 +286,74 @@
                         <div id="currentUserBadge" class="text-xs text-blue-600 font-medium"></div>
                     </div>
                 </div>
-                <div class="flex gap-2">
-                    <button class="px-4 py-2 bg-white border border-blue-200 text-blue-600 rounded-md text-xs font-bold hover:bg-blue-50 active-tab" onclick="switchAdminTab('data', this)">DATA</button>
+                <div class="flex gap-2 flex-wrap">
+                    <button class="px-4 py-2 bg-white border border-blue-200 text-blue-600 rounded-md text-xs font-bold hover:bg-blue-50 active-tab" onclick="switchAdminTab('data', this)">PENGURUSAN DATA</button>
+                    <!-- USERS TAB BTN (Hidden for non-superadmin) -->
                     <button class="px-4 py-2 bg-white border border-blue-200 text-blue-600 rounded-md text-xs font-bold hover:bg-blue-50" id="usersTabBtn" onclick="switchAdminTab('users', this)">PENGGUNA</button>
-                    <button class="px-4 py-2 bg-white border border-blue-200 text-blue-600 rounded-md text-xs font-bold hover:bg-blue-50" onclick="switchAdminTab('import', this)">IMPORT/EKSPORT</button>
+                    <!-- IMPORT TAB BTN (Hidden for non-superadmin) -->
+                    <button class="px-4 py-2 bg-white border border-blue-200 text-blue-600 rounded-md text-xs font-bold hover:bg-blue-50" id="importTabBtn" onclick="switchAdminTab('import', this)">IMPORT/EKSPORT</button>
                 </div>
             </div>
 
             <div class="content-padding">
-                <!-- TAB: DATA -->
+                <!-- TAB: DATA (GABUNGAN MAKLUMAT MASJID + JAWATANKUASA) -->
                 <div id="adminDataTab" class="admin-tab-pane">
+                    
+                    <!-- BAHAGIAN 1: PENGURUSAN MAKLUMAT MASJID -->
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-8 shadow-sm relative overflow-hidden">
+                         <div class="absolute top-0 left-0 w-1.5 h-full bg-blue-600"></div>
+                         <h3 class="text-lg font-bold text-blue-900 mb-6 flex items-center gap-2">
+                             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                            </svg>
+                            PENGURUSAN MAKLUMAT MASJID (RASMI)
+                        </h3>
+                        
+                        <form id="addMasjidForm" onsubmit="addNewMasjidInfo(event)">
+                            <input type="hidden" id="editMasjidId" value="">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div class="md:col-span-2">
+                                    <label class="form-label">NAMA MASJID</label>
+                                    <select id="inputNamaMasjid" class="form-select bg-white" required>
+                                        <option value="">PILIH MASJID</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="form-label">NO. PENDAFTARAN MASJID</label>
+                                    <input id="inputNoPendaftaran" class="form-input bg-white" oninput="this.value = this.value.toUpperCase()" required>
+                                </div>
+                                <div>
+                                    <label class="form-label">NO. AKAUN MASJID</label>
+                                    <input id="inputNoAkaun" class="form-input bg-white" oninput="this.value = this.value.toUpperCase()" required>
+                                </div>
+                            </div>
+                            <div class="mt-6 flex justify-end">
+                                <button type="submit" id="saveMasjidBtn" class="btn btn-success w-auto px-8 shadow-md">SIMPAN MAKLUMAT MASJID</button>
+                            </div>
+                        </form>
+                        
+                        <!-- TABEL MAKLUMAT MASJID -->
+                        <div class="mt-8 bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+                            <div class="bg-blue-100 px-6 py-3 border-b border-gray-200"><h4 class="font-bold text-blue-800 text-sm">SENARAI MAKLUMAT MASJID</h4></div>
+                            <div class="overflow-x-auto max-h-60">
+                                <table class="data-table">
+                                    <thead><tr><th>NAMA MASJID</th><th>NO. PENDAFTARAN</th><th>NO. AKAUN</th><th class="text-center">TINDAKAN</th></tr></thead>
+                                    <tbody id="masjidInfoTable"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="border-t-2 border-gray-200 my-8">
+
+                    <!-- BAHAGIAN 2: DATA JAWATANKUASA -->
                     <div class="bg-white border border-gray-200 rounded-lg p-6 mb-6 shadow-sm">
-                        <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">BORANG TAMBAH DATA</h3>
+                        <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                            </svg>
+                            BORANG TAMBAH DATA JAWATANKUASA
+                        </h3>
                         <form id="addDataForm" onsubmit="addNewData(event)">
                             <input type="hidden" id="editId" value="">
                             <div class="mb-4">
@@ -324,13 +380,13 @@
                                 <div class="md:col-span-3"><label class="form-label">ALAMAT LENGKAP</label><input id="newAlamat" class="form-input" oninput="this.value = this.value.toUpperCase()" required></div>
                             </div>
                             <div class="mt-6 flex justify-end">
-                                <button type="submit" id="saveBtn" class="btn btn-success w-auto px-8 shadow-md">SIMPAN REKOD</button>
+                                <button type="submit" id="saveBtn" class="btn btn-success w-auto px-8 shadow-md">SIMPAN DATA JAWATANKUASA</button>
                             </div>
                         </form>
                     </div>
 
                     <div class="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
-                        <div class="bg-gray-50 px-6 py-4 border-b border-gray-200"><h3 class="font-bold text-gray-800">PANGKALAN DATA (SERVER)</h3></div>
+                        <div class="bg-gray-50 px-6 py-4 border-b border-gray-200"><h3 class="font-bold text-gray-800">SENARAI JAWATANKUASA & PEGAWAI</h3></div>
                         <div class="overflow-x-auto">
                             <table class="data-table">
                                 <thead><tr><th>KATEGORI</th><th>NAMA</th><th>TEMPAT / KARIAH</th><th>JAWATAN</th><th>NO. KP</th><th class="text-center">TINDAKAN</th></tr></thead>
@@ -461,11 +517,13 @@
     window.db = db;
     window.appData = [];
     window.appUsers = [];
+    window.masjidInfoData = []; // Store masjid specific info
     window.currentUser = null;
 
     // Use specific paths to avoid permission issues
     const masjidCollection = collection(db, 'masjid_data');
     const usersCollection = collection(db, 'app_users');
+    const masjidInfoCollection = collection(db, 'masjid_info'); // New collection
 
     async function init() {
         try {
@@ -475,7 +533,7 @@
             console.log("Connected to Database");
             document.getElementById('loadingOverlay').style.display = 'none';
 
-            // Listen for Data Changes
+            // Listen for Data Changes (Jawatankuasa)
             const qData = query(masjidCollection);
             onSnapshot(qData, (snapshot) => {
                 window.appData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -486,6 +544,13 @@
                 if (err.code === 'permission-denied') {
                     alert("Akses Ditolak (Permission Denied)!\n\nSila pergi ke Firebase Console > Firestore Database > Rules, dan ubah kepada:\n\nallow read, write: if true;");
                 }
+            });
+
+            // Listen for Masjid Info Changes
+            const qMasjidInfo = query(masjidInfoCollection);
+            onSnapshot(qMasjidInfo, (snapshot) => {
+                window.masjidInfoData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                window.renderMasjidInfoTable();
             });
 
             // Listen for User Changes
@@ -520,6 +585,94 @@
 
     // --- EXPOSE FUNCTIONS TO WINDOW FOR HTML ONCLICK ---
     
+    // MASJID INFO OPERATIONS
+    window.addNewMasjidInfo = async function(e) {
+        e.preventDefault();
+        const editId = document.getElementById('editMasjidId').value;
+        const item = {
+            namaMasjid: document.getElementById('inputNamaMasjid').value,
+            noPendaftaran: document.getElementById('inputNoPendaftaran').value,
+            noAkaun: document.getElementById('inputNoAkaun').value
+        };
+
+        const btn = document.getElementById('saveMasjidBtn');
+        btn.innerText = "MENYIMPAN...";
+        btn.disabled = true;
+
+        try {
+            if(editId) {
+                await updateDoc(doc(masjidInfoCollection, editId), item);
+                alert("MAKLUMAT MASJID BERJAYA DIKEMASKINI!");
+                document.getElementById('editMasjidId').value = "";
+                btn.classList.remove('btn-primary'); 
+                btn.classList.add('btn-success');
+                btn.innerText = "SIMPAN REKOD";
+            } else {
+                await addDoc(masjidInfoCollection, item);
+                alert("MAKLUMAT MASJID BERJAYA DISIMPAN!");
+            }
+            document.getElementById('addMasjidForm').reset();
+        } catch (err) {
+            console.error(err);
+            alert("Ralat menyimpan data: " + err.message);
+        } finally {
+            btn.innerText = editId ? "KEMASKINI REKOD" : "SIMPAN REKOD";
+            btn.disabled = false;
+             if(editId) {
+                 btn.innerText = "SIMPAN REKOD";
+                 btn.classList.remove('btn-primary');
+                 btn.classList.add('btn-success');
+            }
+        }
+    };
+
+    window.deleteMasjidInfo = async function(id) {
+        if(confirm("PADAM MAKLUMAT MASJID INI?")) {
+            try {
+                await deleteDoc(doc(masjidInfoCollection, id));
+            } catch(e) { alert("Ralat memadam data."); }
+        }
+    };
+
+    window.editMasjidInfo = function(id) {
+        const item = window.masjidInfoData.find(d => d.id === id);
+        if(!item) return;
+
+        if(confirm("KEMASKINI MAKLUMAT INI?")) {
+            document.getElementById('editMasjidId').value = id;
+            document.getElementById('inputNamaMasjid').value = item.namaMasjid;
+            document.getElementById('inputNoPendaftaran').value = item.noPendaftaran;
+            document.getElementById('inputNoAkaun').value = item.noAkaun;
+
+            const btn = document.getElementById('saveMasjidBtn');
+            btn.innerText = "KEMASKINI REKOD";
+            btn.classList.remove('btn-success');
+            btn.classList.add('btn-primary');
+            
+            // Scroll to form
+            document.getElementById('addMasjidForm').scrollIntoView({ behavior: 'smooth' });
+        }
+    }
+
+    window.renderMasjidInfoTable = function() {
+        const tbody = document.getElementById('masjidInfoTable');
+        const isSuperAdmin = window.currentUser && window.currentUser.role === 'superadmin';
+        
+        tbody.innerHTML = window.masjidInfoData.map((item) => {
+            const id = item.id;
+            const delBtn = isSuperAdmin ? 
+                `<button class="text-red-500 hover:text-red-700 font-bold ml-3" onclick="deleteMasjidInfo('${id}')">PADAM</button>` : '';
+            return `<tr class="border-b hover:bg-gray-50">
+                <td class="font-medium">${item.namaMasjid}</td>
+                <td>${item.noPendaftaran}</td>
+                <td>${item.noAkaun}</td>
+                <td class="text-center"><button class="text-blue-600 hover:text-blue-800 font-bold" onclick="editMasjidInfo('${id}')">EDIT</button>${delBtn}</td>
+            </tr>`;
+        }).join('');
+    }
+
+
+    // JAWATANKUASA DATA OPERATIONS
     window.addNewData = async function(e) {
         e.preventDefault();
         const editId = document.getElementById('editId').value;
@@ -712,6 +865,10 @@
         "P53 BALIK PULAU": ["N38 BAYAN LEPAS", "N39 PULAU BETONG", "N40 TELOK BAHANG"]
     };
 
+    const senaraiMasjid = [
+        "MASJID ALMA JAYA", "MASJID BAGAN NYIOR JURU", "MASJID BALIK BUKIT", "MASJID BATU KG PERTAMA", "MASJID BUKIT INDERA MUDA", "MASJID BUKIT TEH", "MASJID CHEROK TOK’KUN BAWAH", "MASJID GUAR PERAHU", "MASJID HAJI MD DESA", "MASJID HAJI SAAD TANAH LIAT", "MASJID JALAN BAHARU PERAI", "MASJID KG PELET", "MASJID KG SEKOLAH JURU", "MASJID KG SETOL", "MASJID KEBUN SIREH", "MASJID KG ALMA", "MASJID KG BARU ALMA", "MASJID KUALA JURU", "MASJID KUALA MENGKUANG", "MASJID KUALA TASEK", "MASJID KUBANG SEMANG", "MASJID KUBANG ULU", "MASJID MACHANG BUBUK", "MASJID MENGKUANG SEMARAK", "MASJID MENGKUANG TITI", "MASJID PADANG IBU", "MASJID PADANG LALANG", "MASJID PAPAN KG PERTAMA", "MASJID PENGKALAN TAMBANG", "MASJID PERAI", "MASJID PERMATANG BATU", "MASJID PERMATANG JANGGUS", "MASJID PERMATANG NIBONG", "MASJID PERMATANG PASIR", "MASJID PERMATANG PAUH", "MASJID PERMATANG TINGGI", "MASJID SAMA GAGAH", "MASJID SEBERANG JAYA", "MASJID SEMBILANG", "MASJID SUNGAI RAMBAI", "MASJID TAMAN GUAR PERAHU", "MASJID TAMAN PELANGI", "MASJID TASEK JUNJONG", "MASJID TENGAH BERAPIT", "MASJID TIMAH", "MASJID TOK LEBAI HASHIM", "MASJID TOKUN ATAS", "MASJID TUAN ABDULLAH", "MASJID DAERAH SEBERANG PERAI TENGAH"
+    ];
+
     const jawatanAJK = ["PENGERUSI", "TIMBALAN PENGERUSI", "SETIAUSAHA", "BENDAHARI", "AHLI JAWATANKUASA", "AJK WANITA", "PEMERIKSA KIRA-KIRA"];
     const jawatanPegawai = ["IMAM", "BILAL", "SIAK"];
 
@@ -720,7 +877,15 @@
         populateParlimen('publicParlimen');
         updateFormFields(); 
         updatePublicJawatanList();
+        populateMasjidDropdown();
     });
+
+    function populateMasjidDropdown() {
+        const sel = document.getElementById('inputNamaMasjid');
+        senaraiMasjid.forEach(masjid => {
+            sel.add(new Option(masjid, masjid));
+        });
+    }
 
     function populateParlimen(id) {
         const sel = document.getElementById(id);
@@ -853,6 +1018,15 @@
         document.getElementById('currentUserBadge').innerText = `${window.currentUser.username.toUpperCase()} | ${r}`;
         document.getElementById('logoutBtn').style.display = 'block';
         document.getElementById('usersTabBtn').style.display = window.currentUser.role === 'superadmin' ? 'block' : 'none';
+        
+        // Hide Import/Export Tab Button for Non-Superadmin
+        const importTabBtn = document.getElementById('importTabBtn');
+        if (window.currentUser.role === 'superadmin') {
+            importTabBtn.style.display = 'block';
+        } else {
+            importTabBtn.style.display = 'none';
+        }
+
         window.renderAdminDataTable();
         window.renderUserTable();
     }
@@ -881,7 +1055,6 @@
 
     window.renderAdminDataTable = function() {
         const tbody = document.getElementById('adminDataTable');
-        // Add safety check for currentUser
         const isSuperAdmin = window.currentUser && window.currentUser.role === 'superadmin';
         
         tbody.innerHTML = window.appData.map((item) => {
@@ -944,7 +1117,6 @@
             return;
         }
 
-        // 2. Perform filtering if criteria exist
         const res = window.appData.filter(d => {
             if (cat !== 'all' && d.jenis !== cat) return false;
             if (par && d.parlimen !== par) return false;
@@ -1009,11 +1181,7 @@
         addRow("PARLIMEN", d.parlimen); addRow("DUN", d.dun); addRow("PEKERJAAN", d.pekerjaan);
         doc.setFontSize(10); doc.setTextColor(150, 150, 150);
         doc.text("DICETAK PADA: " + new Date().toLocaleDateString(), 105, 280, {align:'center'});
-        
-        // Open PDF in new tab instead of downloading
-        const pdfBlob = doc.output('blob');
-        const pdfUrl = URL.createObjectURL(pdfBlob);
-        window.open(pdfUrl, '_blank');
+        doc.save(`${d.nama.replace(/\s/g, '_')}.pdf`);
     }
 </script>
 </body>
