@@ -366,7 +366,17 @@
                             </div>
                             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                 <div><label class="form-label">NAMA PENUH</label><input id="newNama" class="form-input" oninput="this.value = this.value.toUpperCase()" required></div>
-                                <div id="group-nama-tempat"><label class="form-label" id="label-nama-tempat">NAMA MASJID</label><input id="newNamaTempat" class="form-input" oninput="this.value = this.value.toUpperCase()" required></div>
+                                
+                                <!-- TEMPAT / LOKASI -->
+                                <div id="group-nama-tempat">
+                                    <label class="form-label" id="label-nama-tempat">NAMA MASJID</label>
+                                    <!-- Dynamic Inputs: Select will be shown for Masjid/Pegawai, Input for Surau -->
+                                    <input id="newNamaTempatInput" class="form-input" oninput="this.value = this.value.toUpperCase()" style="display:none;" placeholder="MASUKKAN NAMA SURAU">
+                                    <select id="newNamaTempatSelect" class="form-select" style="display:block;">
+                                        <option value="">PILIH MASJID</option>
+                                    </select>
+                                </div>
+
                                 <div id="group-nama-kariah" style="display:none;"><label class="form-label">NAMA KARIAH</label><input id="newNamaKariah" class="form-input" oninput="this.value = this.value.toUpperCase()"></div>
                                 <div><label class="form-label">JAWATAN</label><select id="newJawatan" class="form-select" required></select></div>
                                 <div><label class="form-label">PARLIMEN</label><select id="newParlimen" class="form-select" onchange="updateDunList()"><option value="">PILIH PARLIMEN</option></select></div>
@@ -376,7 +386,15 @@
                                 <div><label class="form-label">UMUR (AUTO)</label><input id="newUmur" class="form-input bg-gray-100" readonly></div>
                                 <div><label class="form-label">NO. TELEFON</label><input id="newNotel" class="form-input" placeholder="01X-XXXXXXX" oninput="formatPhone(this)" required></div>
                                 <div><label class="form-label">PEKERJAAN</label><input id="newPekerjaan" class="form-input" oninput="this.value = this.value.toUpperCase()"></div>
+                                
                                 <div id="group-tahun-lantikan" style="display:none;"><label class="form-label">TAHUN LANTIKAN</label><input id="newTahunLantikan" type="number" class="form-input" placeholder="YYYY"></div>
+                                
+                                <!-- Added Date Fields Here -->
+                                <div id="group-tarikh-pegawai" style="display:none;" class="md:col-span-2 grid grid-cols-2 gap-4">
+                                    <div><label class="form-label">TARIKH LANTIKAN</label><input id="newTarikhLantikan" type="date" class="form-input"></div>
+                                    <div><label class="form-label">TARIKH TAMAT</label><input id="newTarikhTamat" type="date" class="form-input"></div>
+                                </div>
+                                
                                 <div class="md:col-span-3"><label class="form-label">ALAMAT LENGKAP</label><input id="newAlamat" class="form-input" oninput="this.value = this.value.toUpperCase()" required></div>
                             </div>
                             <div class="mt-6 flex justify-end">
@@ -549,8 +567,13 @@
             // Listen for Masjid Info Changes
             const qMasjidInfo = query(masjidInfoCollection);
             onSnapshot(qMasjidInfo, (snapshot) => {
-                window.masjidInfoData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                // Sort masjid by name
+                window.masjidInfoData = snapshot.docs
+                    .map(doc => ({ id: doc.id, ...doc.data() }))
+                    .sort((a, b) => a.namaMasjid.localeCompare(b.namaMasjid));
+                
                 window.renderMasjidInfoTable();
+                window.updateMasjidDropdowns(); // Update all dropdowns
             });
 
             // Listen for User Changes
@@ -606,7 +629,7 @@
                 document.getElementById('editMasjidId').value = "";
                 btn.classList.remove('btn-primary'); 
                 btn.classList.add('btn-success');
-                btn.innerText = "SIMPAN REKOD";
+                btn.innerText = "SIMPAN MAKLUMAT MASJID";
             } else {
                 await addDoc(masjidInfoCollection, item);
                 alert("MAKLUMAT MASJID BERJAYA DISIMPAN!");
@@ -616,10 +639,10 @@
             console.error(err);
             alert("Ralat menyimpan data: " + err.message);
         } finally {
-            btn.innerText = editId ? "KEMASKINI REKOD" : "SIMPAN REKOD";
+            btn.innerText = editId ? "KEMASKINI REKOD" : "SIMPAN MAKLUMAT MASJID";
             btn.disabled = false;
              if(editId) {
-                 btn.innerText = "SIMPAN REKOD";
+                 btn.innerText = "SIMPAN MAKLUMAT MASJID";
                  btn.classList.remove('btn-primary');
                  btn.classList.add('btn-success');
             }
@@ -671,15 +694,65 @@
         }).join('');
     }
 
+    // UPDATE ALL DROPDOWNS WITH MASJID DATA
+    window.updateMasjidDropdowns = function() {
+        // Dropdown 1: Borang Maklumat Masjid
+        const sel1 = document.getElementById('inputNamaMasjid');
+        // Dropdown 2: Borang Jawatankuasa (for Masjid/Pegawai)
+        const sel2 = document.getElementById('newNamaTempatSelect');
+        
+        const currentVal1 = sel1.value;
+        const currentVal2 = sel2.value;
+
+        // Clear existing (keep first option)
+        sel1.innerHTML = '<option value="">PILIH MASJID</option>';
+        sel2.innerHTML = '<option value="">PILIH MASJID</option>';
+
+        // Use hardcoded list for adding NEW masjid info
+        senaraiMasjid.forEach(masjid => {
+            sel1.add(new Option(masjid, masjid));
+        });
+
+        // For Jawatankuasa Form, populate from the SAVED masjid_info collection
+        // IF exists. Otherwise default to hardcoded list
+        if (window.masjidInfoData.length > 0) {
+            window.masjidInfoData.forEach(info => {
+                 sel2.add(new Option(info.namaMasjid, info.namaMasjid));
+            });
+        } else {
+             senaraiMasjid.forEach(masjid => {
+                sel2.add(new Option(masjid, masjid));
+            });
+        }
+
+        if(currentVal1) sel1.value = currentVal1;
+        if(currentVal2) sel2.value = currentVal2;
+    }
+
 
     // JAWATANKUASA DATA OPERATIONS
     window.addNewData = async function(e) {
         e.preventDefault();
         const editId = document.getElementById('editId').value;
+        const jenis = document.getElementById('newJenis').value;
+        
+        // Logic to grab tempat value
+        let tempatVal = "";
+        if(jenis === 'SURAU') {
+             tempatVal = document.getElementById('newNamaTempatInput').value.toUpperCase();
+        } else {
+             tempatVal = document.getElementById('newNamaTempatSelect').value;
+        }
+
+        if(!tempatVal) {
+            alert("SILA PILIH/MASUKKAN NAMA TEMPAT!");
+            return;
+        }
+
         const item = {
-            jenis: document.getElementById('newJenis').value,
+            jenis: jenis,
             nama: document.getElementById('newNama').value.toUpperCase(),
-            tempat: document.getElementById('newNamaTempat').value.toUpperCase(),
+            tempat: tempatVal,
             kariah: document.getElementById('newNamaKariah').value.toUpperCase(),
             jawatan: document.getElementById('newJawatan').value,
             parlimen: document.getElementById('newParlimen').value,
@@ -690,7 +763,9 @@
             notel: document.getElementById('newNotel').value,
             alamat: document.getElementById('newAlamat').value.toUpperCase(),
             pekerjaan: document.getElementById('newPekerjaan').value.toUpperCase(),
-            lantikan: document.getElementById('newTahunLantikan').value
+            lantikan: document.getElementById('newTahunLantikan').value, // Used for AJK/Non-Pegawai if any
+            tarikhLantikan: document.getElementById('newTarikhLantikan').value,
+            tarikhTamat: document.getElementById('newTarikhTamat').value
         };
 
         const btn = document.querySelector("#addDataForm button[type=submit]");
@@ -718,11 +793,11 @@
             console.error(err);
             alert("Ralat menyimpan data: " + err.message);
         } finally {
-            btn.innerText = editId ? "KEMASKINI REKOD" : "SIMPAN REKOD";
+            btn.innerText = editId ? "KEMASKINI REKOD" : "SIMPAN DATA JAWATANKUASA";
             btn.disabled = false;
             // if we finished editing, reset button style
             if(editId) {
-                 btn.innerText = "SIMPAN REKOD";
+                 btn.innerText = "SIMPAN DATA JAWATANKUASA";
                  btn.classList.remove('btn-primary');
                  btn.classList.add('btn-success');
             }
@@ -749,7 +824,14 @@
             window.updateFormFields();
             
             document.getElementById('newNama').value = item.nama;
-            document.getElementById('newNamaTempat').value = item.tempat;
+            
+            // Set Tempat based on type
+            if (item.jenis === 'SURAU') {
+                 document.getElementById('newNamaTempatInput').value = item.tempat;
+            } else {
+                 document.getElementById('newNamaTempatSelect').value = item.tempat;
+            }
+
             document.getElementById('newNamaKariah').value = item.kariah || '';
             
             window.updateFormFields(); // refresh fields visibility
@@ -765,7 +847,16 @@
             document.getElementById('newNotel').value = item.notel;
             document.getElementById('newAlamat').value = item.alamat;
             document.getElementById('newPekerjaan').value = item.pekerjaan;
-            document.getElementById('newTahunLantikan').value = item.lantikan || '';
+            
+            // Handle new fields
+            if (document.getElementById('newTahunLantikan')) 
+                document.getElementById('newTahunLantikan').value = item.lantikan || '';
+                
+            if (document.getElementById('newTarikhLantikan'))
+                document.getElementById('newTarikhLantikan').value = item.tarikhLantikan || '';
+                
+            if (document.getElementById('newTarikhTamat'))
+                document.getElementById('newTarikhTamat').value = item.tarikhTamat || '';
 
             // Change button state
             const btn = document.querySelector("#addDataForm button[type=submit]");
@@ -948,21 +1039,49 @@
         const labelTempat = document.getElementById('label-nama-tempat');
         const groupKariah = document.getElementById('group-nama-kariah');
         const groupLantikan = document.getElementById('group-tahun-lantikan');
+        const groupTarikhPegawai = document.getElementById('group-tarikh-pegawai');
         const selJawatan = document.getElementById('newJawatan');
+        
+        // Toggle Inputs for Tempat (Select vs Input)
+        const inputTempat = document.getElementById('newNamaTempatInput');
+        const selectTempat = document.getElementById('newNamaTempatSelect');
+
         selJawatan.innerHTML = '';
+
         if(jenis === 'MASJID') {
             labelTempat.innerText = "NAMA MASJID";
-            groupKariah.style.display = 'none'; groupLantikan.style.display = 'none';
+            inputTempat.style.display = 'none';
+            selectTempat.style.display = 'block';
+            inputTempat.required = false;
+            selectTempat.required = true;
+            
+            groupKariah.style.display = 'none'; 
+            groupLantikan.style.display = 'none';
+            groupTarikhPegawai.style.display = 'none';
             jawatanAJK.forEach(j => selJawatan.add(new Option(j, j)));
         } 
         else if(jenis === 'SURAU') {
             labelTempat.innerText = "NAMA SURAU";
-            groupKariah.style.display = 'block'; groupLantikan.style.display = 'none';
+            inputTempat.style.display = 'block';
+            selectTempat.style.display = 'none';
+            inputTempat.required = true;
+            selectTempat.required = false;
+            
+            groupKariah.style.display = 'block'; 
+            groupLantikan.style.display = 'none';
+            groupTarikhPegawai.style.display = 'none';
             jawatanAJK.forEach(j => selJawatan.add(new Option(j, j)));
         } 
         else if(jenis === 'PEGAWAI') {
             labelTempat.innerText = "NAMA KARIAH / MASJID"; 
-            groupKariah.style.display = 'none'; groupLantikan.style.display = 'block';
+            inputTempat.style.display = 'none';
+            selectTempat.style.display = 'block';
+            inputTempat.required = false;
+            selectTempat.required = true;
+            
+            groupKariah.style.display = 'none'; 
+            groupLantikan.style.display = 'none'; // Old field hidden
+            groupTarikhPegawai.style.display = 'grid'; // New date fields shown
             jawatanPegawai.forEach(j => selJawatan.add(new Option(j, j)));
         }
     }
@@ -1084,7 +1203,7 @@
 
     window.exportToCSV = function() {
         if(!window.appData.length) return alert("TIADA DATA!");
-        const headers = ["jenis","nama","tempat","kariah","jawatan","parlimen","dun","nokp","jantina","umur","notel","alamat","pekerjaan","lantikan"];
+        const headers = ["jenis","nama","tempat","kariah","jawatan","parlimen","dun","nokp","jantina","umur","notel","alamat","pekerjaan","lantikan","tarikhLantikan","tarikhTamat"];
         const rows = [headers.join(',')];
         window.appData.forEach(item => {
             rows.push(headers.map(h => `"${(item[h]||'').toString().replace(/"/g,'""')}"`).join(','));
@@ -1176,12 +1295,20 @@
         addRow("NAMA PENUH", d.nama); addRow("NO. KAD PENGENALAN", d.nokp);
         addRow("JANTINA / UMUR", `${d.jantina} / ${d.umur}`); addRow("JAWATAN", d.jawatan);
         addRow("TEMPAT BERTUGAS", d.tempat);
-        if(d.kariah) addRow("KARIAH", d.kariah); if(d.lantikan) addRow("TAHUN LANTIKAN", d.lantikan);
+        if(d.kariah) addRow("KARIAH", d.kariah); 
+        // Display new date fields in PDF if available
+        if(d.tarikhLantikan) addRow("TARIKH LANTIKAN", d.tarikhLantikan);
+        if(d.tarikhTamat) addRow("TARIKH TAMAT", d.tarikhTamat);
+        
         y += 5; addRow("NO. TELEFON", d.notel); addRow("ALAMAT", d.alamat);
         addRow("PARLIMEN", d.parlimen); addRow("DUN", d.dun); addRow("PEKERJAAN", d.pekerjaan);
         doc.setFontSize(10); doc.setTextColor(150, 150, 150);
         doc.text("DICETAK PADA: " + new Date().toLocaleDateString(), 105, 280, {align:'center'});
-        doc.save(`${d.nama.replace(/\s/g, '_')}.pdf`);
+        
+        // Open PDF in new tab instead of downloading
+        const pdfBlob = doc.output('blob');
+        const pdfUrl = URL.createObjectURL(pdfBlob);
+        window.open(pdfUrl, '_blank');
     }
 </script>
 </body>
