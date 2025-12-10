@@ -856,9 +856,12 @@
 
     window.renderAdminDataTable = function() {
         const tbody = document.getElementById('adminDataTable');
+        // Add safety check for currentUser
+        const isSuperAdmin = window.currentUser && window.currentUser.role === 'superadmin';
+        
         tbody.innerHTML = window.appData.map((item) => {
             const id = item.id;
-            const delBtn = window.currentUser.role === 'superadmin' ? 
+            const delBtn = isSuperAdmin ? 
                 `<button class="text-red-500 hover:text-red-700 font-bold ml-3" onclick="deleteData('${id}')">PADAM</button>` : '';
             return `<tr class="border-b hover:bg-gray-50">
                 <td><span class="text-xs font-bold px-2 py-1 rounded bg-blue-100 text-blue-800 uppercase">${item.jenis}</span></td>
