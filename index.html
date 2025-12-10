@@ -21,7 +21,7 @@
             margin: 0;
             padding: 0;
             font-family: 'Inter', sans-serif;
-            background-color: #e2e8f0; /* Slightly darker background for contrast */
+            background-color: #e2e8f0;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
@@ -41,7 +41,7 @@
 
         /* CONTENT CARD */
         .main-container { 
-            max-width: 1000px; /* Slightly narrower for form look */
+            max-width: 1000px; 
             margin: 2rem auto; 
             padding: 0 1rem; 
             position: relative; 
@@ -56,7 +56,7 @@
             box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); 
             overflow: hidden; 
             min-height: 600px; 
-            border-top: 6px solid #fbbf24; /* Yellow top border like gov forms */
+            border-top: 6px solid #fbbf24; 
             position: relative;
         }
 
@@ -205,7 +205,7 @@
 
         <!-- BRANDING SECTION (INSIDE CARD) -->
         <div class="form-header">
-            <img src="https://i.postimg.cc/HsVZqzF5/JATAPenang.png" alt="Jata Pulau Pinang" class="gov-logo">
+            <img id="logoImg" src="https://i.postimg.cc/HsVZqzF5/JATAPenang.png" alt="Jata Pulau Pinang" class="gov-logo" crossorigin="anonymous">
             <h1 class="header-title">PORTAL DATA MAKLUMAT MASJID DAN SURAU</h1>
             <p class="header-subtitle">JABATAN HAL EHWAL AGAMA ISLAM PULAU PINANG</p>
         </div>
@@ -249,7 +249,7 @@
                             </select>
                         </div>
                         <div class="md:col-span-2">
-                            <label class="form-label">CARIAN TEKS (NAMA / NO. KP / TEMPAT)</label>
+                            <label class="form-label">CARIAN TEKS (NAMA / TEMPAT)</label>
                             <div class="relative">
                                 <input type="text" id="publicSearchText" class="form-input pl-10" placeholder="MASUKKAN KATA KUNCI CARIAN..." oninput="this.value = this.value.toUpperCase(); performSearch()">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 absolute left-3 top-2.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -749,6 +749,13 @@
             return;
         }
 
+        // Get No Pendaftaran based on selected place if category is Masjid
+        let noPendaftaran = "-";
+        if(jenis === 'MASJID' || jenis === 'PEGAWAI') {
+            const info = window.masjidInfoData.find(m => m.namaMasjid === tempatVal);
+            if(info) noPendaftaran = info.noPendaftaran;
+        }
+
         const item = {
             jenis: jenis,
             nama: document.getElementById('newNama').value.toUpperCase(),
@@ -763,9 +770,10 @@
             notel: document.getElementById('newNotel').value,
             alamat: document.getElementById('newAlamat').value.toUpperCase(),
             pekerjaan: document.getElementById('newPekerjaan').value.toUpperCase(),
-            lantikan: document.getElementById('newTahunLantikan').value, // Used for AJK/Non-Pegawai if any
+            lantikan: document.getElementById('newTahunLantikan').value,
             tarikhLantikan: document.getElementById('newTarikhLantikan').value,
-            tarikhTamat: document.getElementById('newTarikhTamat').value
+            tarikhTamat: document.getElementById('newTarikhTamat').value,
+            noPendaftaran: noPendaftaran // Store linked info
         };
 
         const btn = document.querySelector("#addDataForm button[type=submit]");
@@ -1252,16 +1260,41 @@
         const con = document.getElementById('publicResults');
         if(!res.length) return con.innerHTML = '<div class="col-span-full text-center py-8 text-gray-500">TIADA REKOD DIJUMPAI.</div>';
         
-        con.innerHTML = res.map(d => `
+        con.innerHTML = res.map(d => {
+            // Find Matching Masjid Info for Registration Number
+            let noPendaftaranDisplay = "";
+            if (d.jenis === 'MASJID' || d.jenis === 'PEGAWAI') {
+                 const masjidInfo = window.masjidInfoData.find(m => m.namaMasjid === d.tempat);
+                 if(masjidInfo) noPendaftaranDisplay = `<div class="text-xs text-gray-500 mt-1">NO. PENDAFTARAN: ${masjidInfo.noPendaftaran}</div>`;
+            }
+
+            return `
             <div class="result-card">
                 <div class="card-header">
                     <div class="card-name">${d.nama}</div>
                     <span class="card-badge badge-${d.jenis}">${d.jenis}</span>
                 </div>
                 <div class="card-body">
-                    <div class="info-row"><div class="info-label">JAWATAN</div><div class="info-value font-bold text-blue-800">${d.jawatan}</div></div>
-                    <div class="info-row"><div class="info-label">LOKASI</div><div class="info-value">${d.tempat}</div>${d.kariah ? `<div class="text-xs text-gray-500">${d.kariah}</div>` : ''}</div>
-                    <div class="grid grid-cols-2 gap-2 mt-2">
+                    <div class="info-row">
+                        <div class="info-label">JAWATAN</div>
+                        <div class="info-value font-bold text-blue-800">${d.jawatan}</div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">TEMPAT BERTUGAS</div>
+                        <div class="info-value">${d.tempat}</div>
+                        ${noPendaftaranDisplay}
+                        ${d.kariah ? `<div class="text-xs text-gray-500 mt-1">KARIAH: ${d.kariah}</div>` : ''}
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">MAKLUMAT PERIBADI</div>
+                        <div class="info-value text-sm">${d.umur} / ${d.jantina}</div>
+                        <div class="info-value text-sm mt-1">PEKERJAAN: ${d.pekerjaan || '-'}</div>
+                    </div>
+                     <div class="info-row">
+                        <div class="info-label">NO. TELEFON</div>
+                        <div class="info-value">${d.notel}</div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2 mt-2 pt-2 border-t border-gray-100">
                         <div><div class="info-label">PARLIMEN</div><div class="info-value text-xs">${d.parlimen || '-'}</div></div>
                         <div><div class="info-label">DUN</div><div class="info-value text-xs">${d.dun || '-'}</div></div>
                     </div>
@@ -1273,39 +1306,150 @@
                     </button>
                 </div>
             </div>
-        `).join('');
+        `}).join('');
     }
 
-    window.generatePDF = function(d) {
+    // FUNGSI PDF YANG DIPERBAIKI (ASYNCHRONOUS UNTUK GAMBAR)
+    window.generatePDF = async function(d) {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
-        doc.setFillColor(30, 58, 138); doc.rect(0, 0, 210, 45, 'F');
-        doc.setTextColor(255, 255, 255); doc.setFontSize(16); doc.setFont(undefined, 'bold');
-        doc.text("JABATAN HAL EHWAL AGAMA ISLAM PULAU PINANG", 105, 20, {align:'center'});
-        doc.setFontSize(12); doc.setFont(undefined, 'normal');
-        doc.text("REKOD MAKLUMAT " + d.jenis.toUpperCase(), 105, 30, {align:'center'});
-        doc.setTextColor(0, 0, 0);
-        let y = 60;
-        const addRow = (label, val) => {
-            doc.setFont(undefined, 'bold'); doc.text(label, 20, y);
-            doc.setFont(undefined, 'normal');
-            const splitText = doc.splitTextToSize(": " + (val || '-'), 130);
-            doc.text(splitText, 70, y); y += (splitText.length * 7) + 5; 
+        
+        // --- 1. SETUP LOGO & HEADER ---
+        const logoUrl = "https://i.postimg.cc/7frn73HY/image.png"; 
+
+        // Fungsi untuk convert URL imej ke Base64 (untuk PDF)
+        const getBase64ImageFromURL = (url) => {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.setAttribute("crossOrigin", "anonymous");
+                img.onload = () => {
+                    const canvas = document.createElement("canvas");
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    const ctx = canvas.getContext("2d");
+                    ctx.drawImage(img, 0, 0);
+                    const dataURL = canvas.toDataURL("image/png");
+                    resolve(dataURL);
+                };
+                img.onerror = error => reject(error);
+                img.src = url;
+            });
         };
-        addRow("NAMA PENUH", d.nama); addRow("NO. KAD PENGENALAN", d.nokp);
-        addRow("JANTINA / UMUR", `${d.jantina} / ${d.umur}`); addRow("JAWATAN", d.jawatan);
+
+        try {
+            // Cuba muat turun logo
+            const logoData = await getBase64ImageFromURL(logoUrl);
+            doc.addImage(logoData, 'PNG', 95, 10, 20, 20); // Tengah atas
+        } catch (e) {
+            console.warn("Gagal memuatkan logo untuk PDF", e);
+        }
+
+        // Header Teks
+        doc.setTextColor(0, 0, 0);
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(14);
+        doc.text("JABATAN HAL EHWAL AGAMA ISLAM PULAU PINANG", 105, 38, {align:'center'});
+        
+        doc.setFontSize(10);
+        doc.setFont("helvetica", "normal");
+        doc.text("Lebuh Pantai, 10300 Pulau Pinang", 105, 44, {align:'center'});
+        doc.text("Tel: 04-684 7000 | Faks: 04-684 7777 | E-mel: jheaipp@penang.gov.my", 105, 49, {align:'center'});
+
+        // Garisan Pemisah Header
+        doc.setLineWidth(0.5);
+        doc.line(20, 55, 190, 55);
+
+        // Tajuk Dokumen
+        doc.setFontSize(12);
+        doc.setFont("helvetica", "bold");
+        doc.text("REKOD MAKLUMAT " + d.jenis.toUpperCase(), 105, 65, {align:'center'});
+
+        // --- 2. ISI KANDUNGAN (FORMAL TABLE LOOK) ---
+        let y = 80;
+        const startXLabel = 25;
+        const startXValue = 85; // Jarak lebih jauh supaya label panjang muat
+        const pageHeight = doc.internal.pageSize.height;
+
+        // Fungsi Penambah Baris Pintar (Elak Bertindan)
+        const addRow = (label, val) => {
+            // Cek jika halaman penuh
+            if (y > pageHeight - 30) {
+                doc.addPage();
+                y = 20;
+            }
+
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(10);
+            
+            // Bungkus Label (Wrap) jika terlalu panjang
+            const labelLines = doc.splitTextToSize(label, 55); 
+            doc.text(labelLines, startXLabel, y);
+
+            doc.setFont("helvetica", "normal");
+            // Bungkus Nilai (Wrap)
+            const valueText = val ? ": " + val : ": -";
+            const valueLines = doc.splitTextToSize(valueText, 100);
+            doc.text(valueLines, startXValue, y);
+
+            // Kira ketinggian baris berdasarkan teks paling panjang (Label atau Nilai)
+            const lineHeight = 6;
+            const maxLines = Math.max(labelLines.length, valueLines.length);
+            y += (maxLines * lineHeight) + 4; // Jarak antara baris
+        };
+
+        // Data Peribadi
+        doc.setFillColor(240, 240, 240);
+        doc.rect(20, y-5, 170, 8, 'F');
+        doc.setFont("helvetica", "bold");
+        doc.text("MAKLUMAT PEMEGANG JAWATAN", 25, y);
+        y += 10;
+
+        addRow("NAMA PENUH", d.nama);
+        // addRow("NO. KAD PENGENALAN", d.nokp); // Disembunyikan (Privasi)
+        addRow("JANTINA / UMUR", `${d.jantina} / ${d.umur}`);
+        addRow("NO. TELEFON", d.notel);
+        addRow("ALAMAT", d.alamat); // Alamat mungkin panjang, akan auto-wrap
+        addRow("PEKERJAAN", d.pekerjaan);
+
+        y += 5; // Jarak antara seksyen
+        
+        // Data Penempatan
+        doc.setFillColor(240, 240, 240);
+        doc.rect(20, y-5, 170, 8, 'F');
+        doc.setFont("helvetica", "bold");
+        doc.text("MAKLUMAT PENEMPATAN", 25, y);
+        y += 10;
+
         addRow("TEMPAT BERTUGAS", d.tempat);
-        if(d.kariah) addRow("KARIAH", d.kariah); 
-        // Display new date fields in PDF if available
+        
+        // Logic No Pendaftaran
+        let noPendaftaran = "-";
+        if (d.jenis === 'MASJID' || d.jenis === 'PEGAWAI') {
+             const masjidInfo = window.masjidInfoData.find(m => m.namaMasjid === d.tempat);
+             if(masjidInfo) noPendaftaran = masjidInfo.noPendaftaran;
+        }
+        if(noPendaftaran !== "-") addRow("NO. PENDAFTARAN MASJID", noPendaftaran);
+
+        if(d.kariah) addRow("KARIAH", d.kariah);
+        addRow("JAWATAN", d.jawatan);
+        
         if(d.tarikhLantikan) addRow("TARIKH LANTIKAN", d.tarikhLantikan);
         if(d.tarikhTamat) addRow("TARIKH TAMAT", d.tarikhTamat);
-        
-        y += 5; addRow("NO. TELEFON", d.notel); addRow("ALAMAT", d.alamat);
-        addRow("PARLIMEN", d.parlimen); addRow("DUN", d.dun); addRow("PEKERJAAN", d.pekerjaan);
-        doc.setFontSize(10); doc.setTextColor(150, 150, 150);
-        doc.text("DICETAK PADA: " + new Date().toLocaleDateString(), 105, 280, {align:'center'});
-        
-        // Open PDF in new tab instead of downloading
+        if(d.lantikan && !d.tarikhLantikan) addRow("TAHUN LANTIKAN", d.lantikan); // Fallback lama
+
+        addRow("PARLIMEN", d.parlimen);
+        addRow("DUN", d.dun);
+
+        // --- 3. FOOTER ---
+        const footerY = pageHeight - 20;
+        doc.setFontSize(8);
+        doc.setTextColor(100, 100, 100);
+        doc.setLineWidth(0.1);
+        doc.line(20, footerY - 5, 190, footerY - 5);
+        doc.text("Cetakan Komputer dari Portal Data Jawatankuasa Masjid JHEAIPP", 105, footerY, {align:'center'});
+        doc.text("Tarikh Cetakan: " + new Date().toLocaleDateString() + " " + new Date().toLocaleTimeString(), 105, footerY + 5, {align:'center'});
+
+        // Buka PDF
         const pdfBlob = doc.output('blob');
         const pdfUrl = URL.createObjectURL(pdfBlob);
         window.open(pdfUrl, '_blank');
