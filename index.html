@@ -21,7 +21,7 @@
             margin: 0;
             padding: 0;
             font-family: 'Inter', sans-serif;
-            background-color: #e2e8f0;
+            background-color: #e2e8f0; /* Slightly darker background for contrast */
             min-height: 100vh;
             display: flex;
             flex-direction: column;
@@ -41,7 +41,7 @@
 
         /* CONTENT CARD */
         .main-container { 
-            max-width: 1000px;
+            max-width: 1000px; /* Slightly narrower for form look */
             margin: 2rem auto; 
             padding: 0 1rem; 
             position: relative; 
@@ -56,7 +56,7 @@
             box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); 
             overflow: hidden; 
             min-height: 600px; 
-            border-top: 6px solid #fbbf24;
+            border-top: 6px solid #fbbf24; /* Yellow top border like gov forms */
             position: relative;
         }
 
@@ -397,7 +397,7 @@
                                 
                                 <div id="group-tahun-lantikan" style="display:none;"><label class="form-label">TAHUN LANTIKAN</label><input id="newTahunLantikan" type="number" class="form-input" placeholder="YYYY"></div>
                                 
-                                <!-- Date Fields (Now for Surau & Pegawai) -->
+                                <!-- Date Fields (Now for All Categories if needed, specifically asked for Surau/Pegawai/Masjid) -->
                                 <div id="group-tarikh-pegawai" style="display:none;" class="md:col-span-2 grid grid-cols-2 gap-4">
                                     <div><label class="form-label">TARIKH LANTIKAN</label><input id="newTarikhLantikan" type="date" class="form-input"></div>
                                     <div><label class="form-label">TARIKH TAMAT</label><input id="newTarikhTamat" type="date" class="form-input"></div>
@@ -1106,7 +1106,7 @@
             
             groupKariah.style.display = 'none'; 
             groupLantikan.style.display = 'none';
-            groupTarikhPegawai.style.display = 'none';
+            groupTarikhPegawai.style.display = 'grid'; // MASJID now uses dates
             jawatanAJK.forEach(j => selJawatan.add(new Option(j, j)));
         } 
         else if(jenis === 'SURAU') {
@@ -1122,7 +1122,7 @@
             selectKariah.style.display = 'block';
             
             groupLantikan.style.display = 'none';
-            groupTarikhPegawai.style.display = 'grid'; // Surau now has dates per earlier request
+            groupTarikhPegawai.style.display = 'grid'; 
             jawatanAJK.forEach(j => selJawatan.add(new Option(j, j)));
         } 
         else if(jenis === 'PEGAWAI') {
