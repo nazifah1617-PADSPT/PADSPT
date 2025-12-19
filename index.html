@@ -41,7 +41,7 @@
 
         /* CONTENT CARD */
         .main-container { 
-            max-width: 1000px; 
+            max-width: 1000px;
             margin: 2rem auto; 
             padding: 0 1rem; 
             position: relative; 
@@ -56,7 +56,7 @@
             box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); 
             overflow: hidden; 
             min-height: 600px; 
-            border-top: 6px solid #fbbf24; 
+            border-top: 6px solid #fbbf24;
             position: relative;
         }
 
@@ -377,7 +377,15 @@
                                     </select>
                                 </div>
 
-                                <div id="group-nama-kariah" style="display:none;"><label class="form-label">NAMA KARIAH</label><input id="newNamaKariah" class="form-input" oninput="this.value = this.value.toUpperCase()"></div>
+                                <!-- UPDATE: KARIAH is now a DROPDOWN selecting Masjid -->
+                                <div id="group-nama-kariah" style="display:none;">
+                                    <label class="form-label" id="label-nama-kariah">NAMA KARIAH / MASJID</label>
+                                    <input id="newNamaKariah" class="form-input" style="display:none;"> <!-- Old Input Hidden -->
+                                    <select id="newNamaKariahSelect" class="form-select" style="display:none;">
+                                        <option value="">PILIH KARIAH / MASJID</option>
+                                    </select>
+                                </div>
+
                                 <div><label class="form-label">JAWATAN</label><select id="newJawatan" class="form-select" required></select></div>
                                 <div><label class="form-label">PARLIMEN</label><select id="newParlimen" class="form-select" onchange="updateDunList()"><option value="">PILIH PARLIMEN</option></select></div>
                                 <div><label class="form-label">DUN</label><select id="newDun" class="form-select"><option value="">PILIH PARLIMEN DAHULU</option></select></div>
@@ -389,7 +397,7 @@
                                 
                                 <div id="group-tahun-lantikan" style="display:none;"><label class="form-label">TAHUN LANTIKAN</label><input id="newTahunLantikan" type="number" class="form-input" placeholder="YYYY"></div>
                                 
-                                <!-- Added Date Fields Here -->
+                                <!-- Date Fields (Now for Surau & Pegawai) -->
                                 <div id="group-tarikh-pegawai" style="display:none;" class="md:col-span-2 grid grid-cols-2 gap-4">
                                     <div><label class="form-label">TARIKH LANTIKAN</label><input id="newTarikhLantikan" type="date" class="form-input"></div>
                                     <div><label class="form-label">TARIKH TAMAT</label><input id="newTarikhTamat" type="date" class="form-input"></div>
@@ -700,13 +708,17 @@
         const sel1 = document.getElementById('inputNamaMasjid');
         // Dropdown 2: Borang Jawatankuasa (for Masjid/Pegawai)
         const sel2 = document.getElementById('newNamaTempatSelect');
+        // Dropdown 3: Borang Kariah for Surau (New)
+        const sel3 = document.getElementById('newNamaKariahSelect');
         
         const currentVal1 = sel1.value;
         const currentVal2 = sel2.value;
+        const currentVal3 = sel3.value;
 
         // Clear existing (keep first option)
         sel1.innerHTML = '<option value="">PILIH MASJID</option>';
         sel2.innerHTML = '<option value="">PILIH MASJID</option>';
+        sel3.innerHTML = '<option value="">PILIH KARIAH / MASJID</option>';
 
         // Use hardcoded list for adding NEW masjid info
         senaraiMasjid.forEach(masjid => {
@@ -714,19 +726,21 @@
         });
 
         // For Jawatankuasa Form, populate from the SAVED masjid_info collection
-        // IF exists. Otherwise default to hardcoded list
         if (window.masjidInfoData.length > 0) {
             window.masjidInfoData.forEach(info => {
                  sel2.add(new Option(info.namaMasjid, info.namaMasjid));
+                 sel3.add(new Option(info.namaMasjid, info.namaMasjid));
             });
         } else {
              senaraiMasjid.forEach(masjid => {
                 sel2.add(new Option(masjid, masjid));
+                sel3.add(new Option(masjid, masjid));
             });
         }
 
         if(currentVal1) sel1.value = currentVal1;
         if(currentVal2) sel2.value = currentVal2;
+        if(currentVal3) sel3.value = currentVal3;
     }
 
 
@@ -749,18 +763,36 @@
             return;
         }
 
+        // Logic for Kariah Value (Dropdown for Surau, Text for Others if any)
+        let kariahVal = "";
+        if(jenis === 'SURAU') {
+             kariahVal = document.getElementById('newNamaKariahSelect').value;
+             if(!kariahVal) {
+                 alert("SILA PILIH KARIAH / MASJID!");
+                 return;
+             }
+        } else {
+             // For others, kariah might be empty or hidden input
+             kariahVal = document.getElementById('newNamaKariah').value.toUpperCase();
+        }
+
         // Get No Pendaftaran based on selected place if category is Masjid
         let noPendaftaran = "-";
         if(jenis === 'MASJID' || jenis === 'PEGAWAI') {
             const info = window.masjidInfoData.find(m => m.namaMasjid === tempatVal);
             if(info) noPendaftaran = info.noPendaftaran;
+        } 
+        // If Surau, try to get No Pendaftaran from Kariah Masjid parent
+        else if (jenis === 'SURAU') {
+             const info = window.masjidInfoData.find(m => m.namaMasjid === kariahVal);
+             if(info) noPendaftaran = info.noPendaftaran; // Or maybe Surau doesn't have it? keeping it linked to kariah for reference
         }
 
         const item = {
             jenis: jenis,
             nama: document.getElementById('newNama').value.toUpperCase(),
             tempat: tempatVal,
-            kariah: document.getElementById('newNamaKariah').value.toUpperCase(),
+            kariah: kariahVal,
             jawatan: document.getElementById('newJawatan').value,
             parlimen: document.getElementById('newParlimen').value,
             dun: document.getElementById('newDun').value,
@@ -770,7 +802,7 @@
             notel: document.getElementById('newNotel').value,
             alamat: document.getElementById('newAlamat').value.toUpperCase(),
             pekerjaan: document.getElementById('newPekerjaan').value.toUpperCase(),
-            lantikan: document.getElementById('newTahunLantikan').value,
+            lantikan: document.getElementById('newTahunLantikan').value, // Used for AJK/Non-Pegawai if any
             tarikhLantikan: document.getElementById('newTarikhLantikan').value,
             tarikhTamat: document.getElementById('newTarikhTamat').value,
             noPendaftaran: noPendaftaran // Store linked info
@@ -840,7 +872,12 @@
                  document.getElementById('newNamaTempatSelect').value = item.tempat;
             }
 
-            document.getElementById('newNamaKariah').value = item.kariah || '';
+            // Set Kariah based on type
+             if (item.jenis === 'SURAU') {
+                 document.getElementById('newNamaKariahSelect').value = item.kariah;
+            } else {
+                 document.getElementById('newNamaKariah').value = item.kariah || '';
+            }
             
             window.updateFormFields(); // refresh fields visibility
             document.getElementById('newJawatan').value = item.jawatan;
@@ -965,7 +1002,7 @@
     };
 
     const senaraiMasjid = [
-        "MASJID AL-MUSTAQIM (SEK. MEN. SAINS)", "MASJID ALMA JAYA", "MASJID BAGAN NYIOR JURU", "MASJID BALIK BUKIT", "MASJID BATU KG PERTAMA", "MASJID BUKIT INDERA MUDA", "MASJID BUKIT TEH", "MASJID CHEROK TOK’KUN BAWAH", "MASJID GUAR PERAHU", "MASJID HAJI MD DESA", "MASJID HAJI SAAD TANAH LIAT", "MASJID JALAN BAHARU PERAI", "MASJID KG PELET", "MASJID KG SEKOLAH JURU", "MASJID KG SETOL", "MASJID KEBUN SIREH", "MASJID KG ALMA", "MASJID KG BARU ALMA", "MASJID KUALA JURU", "MASJID KUALA MENGKUANG", "MASJID KUALA TASEK", "MASJID KUBANG SEMANG", "MASJID KUBANG ULU", "MASJID MACHANG BUBUK", "MASJID MENGKUANG SEMARAK", "MASJID MENGKUANG TITI", "MASJID PADANG IBU", "MASJID PADANG LALANG", "MASJID PAPAN KG PERTAMA", "MASJID PENGKALAN TAMBANG", "MASJID PERAI", "MASJID PERMATANG BATU", "MASJID PERMATANG JANGGUS", "MASJID PERMATANG NIBONG", "MASJID PERMATANG PASIR", "MASJID PERMATANG PAUH", "MASJID PERMATANG TINGGI", "MASJID SAMA GAGAH", "MASJID SEBERANG JAYA", "MASJID SEMBILANG", "MASJID SUNGAI RAMBAI", "MASJID TAMAN GUAR PERAHU", "MASJID TAMAN PELANGI", "MASJID TASEK JUNJONG", "MASJID TENGAH BERAPIT", "MASJID TIMAH", "MASJID TOK LEBAI HASHIM", "MASJID TOKUN ATAS", "MASJID TUAN ABDULLAH", "MASJID DAERAH SEBERANG PERAI TENGAH"
+        "MASJID ALMA JAYA", "MASJID BAGAN NYIOR JURU", "MASJID BALIK BUKIT", "MASJID BATU KG PERTAMA", "MASJID BUKIT INDERA MUDA", "MASJID BUKIT TEH", "MASJID CHEROK TOK’KUN BAWAH", "MASJID GUAR PERAHU", "MASJID HAJI MD DESA", "MASJID HAJI SAAD TANAH LIAT", "MASJID JALAN BAHARU PERAI", "MASJID KG PELET", "MASJID KG SEKOLAH JURU", "MASJID KG SETOL", "MASJID KEBUN SIREH", "MASJID KG ALMA", "MASJID KG BARU ALMA", "MASJID KUALA JURU", "MASJID KUALA MENGKUANG", "MASJID KUALA TASEK", "MASJID KUBANG SEMANG", "MASJID KUBANG ULU", "MASJID MACHANG BUBUK", "MASJID MENGKUANG SEMARAK", "MASJID MENGKUANG TITI", "MASJID PADANG IBU", "MASJID PADANG LALANG", "MASJID PAPAN KG PERTAMA", "MASJID PENGKALAN TAMBANG", "MASJID PERAI", "MASJID PERMATANG BATU", "MASJID PERMATANG JANGGUS", "MASJID PERMATANG NIBONG", "MASJID PERMATANG PASIR", "MASJID PERMATANG PAUH", "MASJID PERMATANG TINGGI", "MASJID SAMA GAGAH", "MASJID SEBERANG JAYA", "MASJID SEMBILANG", "MASJID SUNGAI RAMBAI", "MASJID TAMAN GUAR PERAHU", "MASJID TAMAN PELANGI", "MASJID TASEK JUNJONG", "MASJID TENGAH BERAPIT", "MASJID TIMAH", "MASJID TOK LEBAI HASHIM", "MASJID TOKUN ATAS", "MASJID TUAN ABDULLAH", "MASJID DAERAH SEBERANG PERAI TENGAH", "MASJID AL-MUSTAQIM (SEK. MEN. SAINS)"
     ];
 
     const jawatanAJK = ["PENGERUSI", "TIMBALAN PENGERUSI", "SETIAUSAHA", "BENDAHARI", "AHLI JAWATANKUASA", "AJK WANITA", "PEMERIKSA KIRA-KIRA"];
@@ -1053,6 +1090,10 @@
         // Toggle Inputs for Tempat (Select vs Input)
         const inputTempat = document.getElementById('newNamaTempatInput');
         const selectTempat = document.getElementById('newNamaTempatSelect');
+        
+        // Toggle Kariah (Select vs Input)
+        const inputKariah = document.getElementById('newNamaKariah');
+        const selectKariah = document.getElementById('newNamaKariahSelect');
 
         selJawatan.innerHTML = '';
 
@@ -1075,9 +1116,13 @@
             inputTempat.required = true;
             selectTempat.required = false;
             
+            // Show Kariah Dropdown for Surau
             groupKariah.style.display = 'block'; 
+            inputKariah.style.display = 'none';
+            selectKariah.style.display = 'block';
+            
             groupLantikan.style.display = 'none';
-            groupTarikhPegawai.style.display = 'none';
+            groupTarikhPegawai.style.display = 'grid'; // Surau now has dates per earlier request
             jawatanAJK.forEach(j => selJawatan.add(new Option(j, j)));
         } 
         else if(jenis === 'PEGAWAI') {
@@ -1088,8 +1133,8 @@
             selectTempat.required = true;
             
             groupKariah.style.display = 'none'; 
-            groupLantikan.style.display = 'none'; // Old field hidden
-            groupTarikhPegawai.style.display = 'grid'; // New date fields shown
+            groupLantikan.style.display = 'none'; 
+            groupTarikhPegawai.style.display = 'grid'; 
             jawatanPegawai.forEach(j => selJawatan.add(new Option(j, j)));
         }
     }
@@ -1309,7 +1354,6 @@
         `}).join('');
     }
 
-    // FUNGSI PDF YANG DIPERBAIKI (ASYNCHRONOUS UNTUK GAMBAR)
     window.generatePDF = async function(d) {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
@@ -1317,7 +1361,6 @@
         // --- 1. SETUP LOGO & HEADER ---
         const logoUrl = "https://i.postimg.cc/7frn73HY/image.png"; 
 
-        // Fungsi untuk convert URL imej ke Base64 (untuk PDF)
         const getBase64ImageFromURL = (url) => {
             return new Promise((resolve, reject) => {
                 const img = new Image();
@@ -1337,9 +1380,8 @@
         };
 
         try {
-            // Cuba muat turun logo
             const logoData = await getBase64ImageFromURL(logoUrl);
-            doc.addImage(logoData, 'PNG', 95, 10, 20, 20); // Tengah atas
+            doc.addImage(logoData, 'PNG', 95, 10, 20, 20); 
         } catch (e) {
             console.warn("Gagal memuatkan logo untuk PDF", e);
         }
@@ -1355,24 +1397,20 @@
         doc.text("Lebuh Pantai, 10300 Pulau Pinang", 105, 44, {align:'center'});
         doc.text("Tel: 04-684 7000 | Faks: 04-684 7777 | E-mel: jheaipp@penang.gov.my", 105, 49, {align:'center'});
 
-        // Garisan Pemisah Header
         doc.setLineWidth(0.5);
         doc.line(20, 55, 190, 55);
 
-        // Tajuk Dokumen
         doc.setFontSize(12);
         doc.setFont("helvetica", "bold");
         doc.text("REKOD MAKLUMAT " + d.jenis.toUpperCase(), 105, 65, {align:'center'});
 
-        // --- 2. ISI KANDUNGAN (FORMAL TABLE LOOK) ---
+        // --- 2. ISI KANDUNGAN ---
         let y = 80;
         const startXLabel = 25;
-        const startXValue = 85; // Jarak lebih jauh supaya label panjang muat
+        const startXValue = 85; 
         const pageHeight = doc.internal.pageSize.height;
 
-        // Fungsi Penambah Baris Pintar (Elak Bertindan)
         const addRow = (label, val) => {
-            // Cek jika halaman penuh
             if (y > pageHeight - 30) {
                 doc.addPage();
                 y = 20;
@@ -1381,20 +1419,17 @@
             doc.setFont("helvetica", "bold");
             doc.setFontSize(10);
             
-            // Bungkus Label (Wrap) jika terlalu panjang
             const labelLines = doc.splitTextToSize(label, 55); 
             doc.text(labelLines, startXLabel, y);
 
             doc.setFont("helvetica", "normal");
-            // Bungkus Nilai (Wrap)
             const valueText = val ? ": " + val : ": -";
             const valueLines = doc.splitTextToSize(valueText, 100);
             doc.text(valueLines, startXValue, y);
 
-            // Kira ketinggian baris berdasarkan teks paling panjang (Label atau Nilai)
             const lineHeight = 6;
             const maxLines = Math.max(labelLines.length, valueLines.length);
-            y += (maxLines * lineHeight) + 4; // Jarak antara baris
+            y += (maxLines * lineHeight) + 4; 
         };
 
         // Data Peribadi
@@ -1405,13 +1440,13 @@
         y += 10;
 
         addRow("NAMA PENUH", d.nama);
-        // addRow("NO. KAD PENGENALAN", d.nokp); // Disembunyikan (Privasi)
+        // No KP Hidden
         addRow("JANTINA / UMUR", `${d.jantina} / ${d.umur}`);
         addRow("NO. TELEFON", d.notel);
-        addRow("ALAMAT", d.alamat); // Alamat mungkin panjang, akan auto-wrap
+        // Alamat Hidden
         addRow("PEKERJAAN", d.pekerjaan);
 
-        y += 5; // Jarak antara seksyen
+        y += 5; 
         
         // Data Penempatan
         doc.setFillColor(240, 240, 240);
@@ -1422,7 +1457,6 @@
 
         addRow("TEMPAT BERTUGAS", d.tempat);
         
-        // Logic No Pendaftaran
         let noPendaftaran = "-";
         if (d.jenis === 'MASJID' || d.jenis === 'PEGAWAI') {
              const masjidInfo = window.masjidInfoData.find(m => m.namaMasjid === d.tempat);
@@ -1435,12 +1469,12 @@
         
         if(d.tarikhLantikan) addRow("TARIKH LANTIKAN", d.tarikhLantikan);
         if(d.tarikhTamat) addRow("TARIKH TAMAT", d.tarikhTamat);
-        if(d.lantikan && !d.tarikhLantikan) addRow("TAHUN LANTIKAN", d.lantikan); // Fallback lama
+        if(d.lantikan && !d.tarikhLantikan) addRow("TAHUN LANTIKAN", d.lantikan); 
 
         addRow("PARLIMEN", d.parlimen);
         addRow("DUN", d.dun);
 
-        // --- 3. FOOTER ---
+        // Footer
         const footerY = pageHeight - 20;
         doc.setFontSize(8);
         doc.setTextColor(100, 100, 100);
@@ -1449,7 +1483,6 @@
         doc.text("Cetakan Komputer dari Portal Data Jawatankuasa Masjid JHEAIPP", 105, footerY, {align:'center'});
         doc.text("Tarikh Cetakan: " + new Date().toLocaleDateString() + " " + new Date().toLocaleTimeString(), 105, footerY + 5, {align:'center'});
 
-        // Buka PDF
         const pdfBlob = doc.output('blob');
         const pdfUrl = URL.createObjectURL(pdfBlob);
         window.open(pdfUrl, '_blank');
@@ -1457,4 +1490,3 @@
 </script>
 </body>
 </html>
-
