@@ -223,13 +223,21 @@
                     <div class="form-grid">
                         <div>
                             <label class="form-label">KATEGORI</label>
-                            <select id="publicKategori" class="form-select" onchange="updatePublicJawatanList(); performSearch()">
+                            <select id="publicKategori" class="form-select" onchange="updatePublicJawatanList(); updatePublicTempatList(); performSearch()">
                                 <option value="all">SEMUA KATEGORI</option>
                                 <option value="MASJID">MASJID</option>
                                 <option value="SURAU">SURAU</option>
                                 <option value="PEGAWAI">PEGAWAI MASJID</option>
                             </select>
                         </div>
+                        <!-- NEW INPUT: NAMA TEMPAT -->
+                        <div>
+                            <label class="form-label" id="publicTempatLabel">NAMA MASJID / SURAU</label>
+                            <select id="publicTempat" class="form-select" onchange="performSearch()">
+                                <option value="">SEMUA</option>
+                            </select>
+                        </div>
+                        
                         <div>
                             <label class="form-label">PARLIMEN</label>
                             <select id="publicParlimen" class="form-select" onchange="updatePublicDunList(); performSearch()">
@@ -248,8 +256,8 @@
                                 <option value="">SEMUA JAWATAN</option>
                             </select>
                         </div>
-                        <div class="md:col-span-2">
-                            <label class="form-label">CARIAN TEKS (NAMA / TEMPAT)</label>
+                        <div class="md:col-span-3"> <!-- Expanded to span full width on medium screens -->
+                            <label class="form-label">CARIAN TEKS (NAMA / NO. KP)</label>
                             <div class="relative">
                                 <input type="text" id="publicSearchText" class="form-input pl-10" placeholder="MASUKKAN KATA KUNCI CARIAN..." oninput="this.value = this.value.toUpperCase(); performSearch()">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 absolute left-3 top-2.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -564,6 +572,7 @@
             onSnapshot(qData, (snapshot) => {
                 window.appData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 window.renderAdminDataTable();
+                window.updatePublicTempatList(); // Populate Tempat Dropdown
                 window.performSearch(); // Update public view
             }, (err) => {
                 console.error("Data Listener Error:", err);
@@ -1079,6 +1088,43 @@
         });
     }
 
+    // NEW FUNCTION: UPDATE PUBLIC TEMPAT LIST
+    window.updatePublicTempatList = function() {
+        const cat = document.getElementById('publicKategori').value;
+        const tSel = document.getElementById('publicTempat');
+        const tLabel = document.getElementById('publicTempatLabel');
+
+        // Update Label dynamically
+        if (cat === 'MASJID' || cat === 'PEGAWAI') {
+            tLabel.innerText = "NAMA MASJID";
+        } else if (cat === 'SURAU') {
+            tLabel.innerText = "NAMA SURAU";
+        } else {
+            tLabel.innerText = "NAMA MASJID / SURAU";
+        }
+
+        // Get unique places from current data
+        let places = [];
+        if (cat === 'all') {
+            places = [...new Set(window.appData.map(d => d.tempat))];
+        } else {
+            places = [...new Set(window.appData.filter(d => d.jenis === cat).map(d => d.tempat))];
+        }
+        
+        // Sort alphabetically
+        places.sort();
+
+        // Populate Dropdown
+        const currentVal = tSel.value;
+        tSel.innerHTML = '<option value="">SEMUA</option>';
+        places.forEach(p => {
+            if(p) tSel.add(new Option(p, p));
+        });
+
+        // Restore selection if still valid
+        if (places.includes(currentVal)) tSel.value = currentVal;
+    }
+
     window.updateFormFields = function() {
         const jenis = document.getElementById('newJenis').value;
         const labelTempat = document.getElementById('label-nama-tempat');
@@ -1271,10 +1317,11 @@
         const par = document.getElementById('publicParlimen').value;
         const dun = document.getElementById('publicDun').value;
         const jaw = document.getElementById('publicJawatan').value; 
+        const tempat = document.getElementById('publicTempat').value; // Get Place Value
         const txt = document.getElementById('publicSearchText').value.toUpperCase();
 
         // 1. Initial State Check: If all fields are default/empty, show nothing
-        if (cat === 'all' && par === '' && dun === '' && jaw === '' && txt === '') {
+        if (cat === 'all' && par === '' && dun === '' && jaw === '' && txt === '' && tempat === '') {
             const con = document.getElementById('publicResults');
             // Show Initial State Message
             con.innerHTML = `
@@ -1283,7 +1330,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                     </svg>
                     <p class="font-semibold text-lg text-gray-600">Mulakan Carian Anda</p>
-                    <p class="text-sm text-gray-400">Sila masukkan kata kunci atau pilih tapisan di atas untuk melihat data.</p>
+                    <p class="text-sm text-gray-400">Sila pilih kategori, nama masjid/surau, atau masukkan kata kunci untuk memulakan carian.</p>
                 </div>
             `;
             return;
@@ -1293,10 +1340,12 @@
             if (cat !== 'all' && d.jenis !== cat) return false;
             if (par && d.parlimen !== par) return false;
             if (dun && d.dun !== dun) return false;
-            if (jaw && d.jawatan !== jaw) return false; 
+            if (jaw && d.jawatan !== jaw) return false;
+            if (tempat && d.tempat !== tempat) return false; // Filter by Place
+            
             if (txt && !(
                 (d.nama && d.nama.includes(txt)) ||
-                (d.tempat && d.tempat.includes(txt)) ||
+                (d.tempat && d.tempat.includes(txt)) || // Optional redundancy since we have dropdown now
                 (d.nokp && d.nokp.includes(txt))
             )) return false;
             return true;
