@@ -21,7 +21,7 @@
             margin: 0;
             padding: 0;
             font-family: 'Inter', sans-serif;
-            background-color: #e2e8f0; /* Slightly darker background for contrast */
+            background-color: #e2e8f0;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
@@ -41,7 +41,7 @@
 
         /* CONTENT CARD */
         .main-container { 
-            max-width: 1000px; /* Slightly narrower for form look */
+            max-width: 1000px;
             margin: 2rem auto; 
             padding: 0 1rem; 
             position: relative; 
@@ -56,7 +56,7 @@
             box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); 
             overflow: hidden; 
             min-height: 600px; 
-            border-top: 6px solid #fbbf24; /* Yellow top border like gov forms */
+            border-top: 6px solid #fbbf24;
             position: relative;
         }
 
@@ -121,6 +121,7 @@
         .form-label { display: block; font-size: 0.85rem; font-weight: 600; color: #475569; margin-bottom: 0.25rem; }
         .form-input, .form-select { width: 100%; padding: 0.6rem; font-size: 0.9rem; border: 1px solid #cbd5e1; border-radius: 0.375rem; transition: border-color 0.15s; }
         .form-input:focus, .form-select:focus { outline: none; border-color: #3b82f6; ring: 2px solid rgba(59, 130, 246, 0.2); }
+        .form-input[readonly] { background-color: #f3f4f6; color: #64748b; cursor: not-allowed; }
 
         /* RESULT CARDS */
         .results-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem; }
@@ -183,6 +184,16 @@
             background: #f8fafc;
             border-radius: 0.5rem;
             border: 1px dashed #cbd5e1;
+        }
+
+        /* Check KP Box */
+        .check-kp-box {
+            background-color: #eff6ff;
+            border: 1px solid #bfdbfe;
+            border-radius: 0.75rem;
+            padding: 2rem;
+            text-align: center;
+            margin-bottom: 2rem;
         }
     </style>
 </head>
@@ -256,7 +267,7 @@
                                 <option value="">SEMUA JAWATAN</option>
                             </select>
                         </div>
-                        <div class="md:col-span-3"> <!-- Expanded to span full width on medium screens -->
+                        <div class="md:col-span-3"> 
                             <label class="form-label">CARIAN TEKS (NAMA / NO. KP)</label>
                             <div class="relative">
                                 <input type="text" id="publicSearchText" class="form-input pl-10" placeholder="MASUKKAN KATA KUNCI CARIAN..." oninput="this.value = this.value.toUpperCase(); performSearch()">
@@ -355,13 +366,31 @@
                     <hr class="border-t-2 border-gray-200 my-8">
 
                     <!-- BAHAGIAN 2: DATA JAWATANKUASA -->
-                    <div class="bg-white border border-gray-200 rounded-lg p-6 mb-6 shadow-sm">
-                        <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-                             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                            </svg>
-                            BORANG TAMBAH DATA JAWATANKUASA
-                        </h3>
+                    <!-- SEMAKAN KP DAHULU SEBELUM BUKA BORANG -->
+                    <div id="checkICSection" class="bg-white border border-gray-200 rounded-lg p-6 mb-6 shadow-sm">
+                        <div class="check-kp-box">
+                            <h3 class="text-xl font-bold text-blue-900 mb-4">TAMBAH ATAU KEMASKINI DATA</h3>
+                            <p class="text-gray-600 mb-6">Sila masukkan No. Kad Pengenalan untuk semakan. Jika rekod wujud, anda boleh mengemaskininya.</p>
+                            
+                            <div class="max-w-md mx-auto flex gap-2">
+                                <input id="checkKpInput" class="form-input text-center text-lg tracking-wider" placeholder="800101075555" maxlength="12" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+                                <button onclick="checkIC()" class="btn btn-primary whitespace-nowrap px-6">SEMAK DATA</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- BORANG TAMBAH DATA (HIDDEN BY DEFAULT) -->
+                    <div id="formSection" class="bg-white border border-gray-200 rounded-lg p-6 mb-6 shadow-sm hidden">
+                        <div class="flex justify-between items-center mb-6">
+                            <h3 class="text-lg font-bold text-gray-800 flex items-center gap-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                                BORANG TAMBAH DATA JAWATANKUASA
+                            </h3>
+                            <button onclick="cancelAdd()" class="text-sm text-red-500 hover:text-red-700 font-bold underline">BATAL / KEMBALI</button>
+                        </div>
+
                         <form id="addDataForm" onsubmit="addNewData(event)">
                             <input type="hidden" id="editId" value="">
                             <div class="mb-4">
@@ -373,6 +402,7 @@
                                 </select>
                             </div>
                             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                <div><label class="form-label">NO. KP (12 DIGIT)</label><input id="newNokp" class="form-input bg-gray-100 cursor-not-allowed" readonly></div>
                                 <div><label class="form-label">NAMA PENUH</label><input id="newNama" class="form-input" oninput="this.value = this.value.toUpperCase()" required></div>
                                 
                                 <!-- TEMPAT / LOKASI -->
@@ -388,7 +418,7 @@
                                 <!-- UPDATE: KARIAH is now a DROPDOWN selecting Masjid -->
                                 <div id="group-nama-kariah" style="display:none;">
                                     <label class="form-label" id="label-nama-kariah">NAMA KARIAH / MASJID</label>
-                                    <input id="newNamaKariah" class="form-input" style="display:none;"> <!-- Old Input Hidden -->
+                                    <input id="newNamaKariah" class="form-input" style="display:none;"> 
                                     <select id="newNamaKariahSelect" class="form-select" style="display:none;">
                                         <option value="">PILIH KARIAH / MASJID</option>
                                     </select>
@@ -397,7 +427,7 @@
                                 <div><label class="form-label">JAWATAN</label><select id="newJawatan" class="form-select" required></select></div>
                                 <div><label class="form-label">PARLIMEN</label><select id="newParlimen" class="form-select" onchange="updateDunList()"><option value="">PILIH PARLIMEN</option></select></div>
                                 <div><label class="form-label">DUN</label><select id="newDun" class="form-select"><option value="">PILIH PARLIMEN DAHULU</option></select></div>
-                                <div><label class="form-label">NO. KP (12 DIGIT)</label><input id="newNokp" class="form-input" placeholder="800101075555" maxlength="14" oninput="calculateICDetails(this)" required></div>
+                                
                                 <div><label class="form-label">JANTINA (AUTO)</label><input id="newJantina" class="form-input bg-gray-100" readonly></div>
                                 <div><label class="form-label">UMUR (AUTO)</label><input id="newUmur" class="form-input bg-gray-100" readonly></div>
                                 <div><label class="form-label">NO. TELEFON</label><input id="newNotel" class="form-input" placeholder="01X-XXXXXXX" oninput="formatPhone(this)" required></div>
@@ -405,7 +435,7 @@
                                 
                                 <div id="group-tahun-lantikan" style="display:none;"><label class="form-label">TAHUN LANTIKAN</label><input id="newTahunLantikan" type="number" class="form-input" placeholder="YYYY"></div>
                                 
-                                <!-- Date Fields (Now for All Categories if needed, specifically asked for Surau/Pegawai/Masjid) -->
+                                <!-- Date Fields -->
                                 <div id="group-tarikh-pegawai" style="display:none;" class="md:col-span-2 grid grid-cols-2 gap-4">
                                     <div><label class="form-label">TARIKH LANTIKAN</label><input id="newTarikhLantikan" type="date" class="form-input"></div>
                                     <div><label class="form-label">TARIKH TAMAT</label><input id="newTarikhTamat" type="date" class="form-input"></div>
@@ -572,7 +602,7 @@
             onSnapshot(qData, (snapshot) => {
                 window.appData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 window.renderAdminDataTable();
-                window.updatePublicTempatList(); // Populate Tempat Dropdown
+                window.updatePublicTempatList(); // Ensure filters are populated
                 window.performSearch(); // Update public view
             }, (err) => {
                 console.error("Data Listener Error:", err);
@@ -752,6 +782,61 @@
         if(currentVal3) sel3.value = currentVal3;
     }
 
+    // CHECK IC FUNCTION (MODIFIED)
+    window.checkIC = function() {
+        const kpInput = document.getElementById('checkKpInput').value;
+        const kpClean = kpInput.replace(/[^0-9]/g, ''); // Ensure only numbers
+        
+        if(kpClean.length < 12) return alert("SILA MASUKKAN 12 DIGIT NO KP.");
+        
+        // Find existing based on clean IC
+        const exist = window.appData.find(d => d.nokp && d.nokp.replace(/[^0-9]/g, '') === kpClean);
+        
+        if(exist) {
+            // Jika data wujud, tanya nak update
+            if(confirm(`DATA SUDAH WUJUD!\n\nNama: ${exist.nama}\nJawatan: ${exist.jawatan}\n\nAdakah anda ingin MENGEMASKINI data ini?`)) {
+                // Panggil fungsi edit dengan parameter 'true' untuk skip confirmation kedua
+                window.editData(exist.id, true);
+            }
+        } else {
+            // New Entry
+            document.getElementById('checkICSection').classList.add('hidden');
+            document.getElementById('formSection').classList.remove('hidden');
+            
+            // Reset form but keep IC
+            document.getElementById('addDataForm').reset();
+            document.getElementById('editId').value = ""; // Pastikan ID kosong untuk create new
+            
+            // Set button style
+            const btn = document.querySelector("#addDataForm button[type=submit]");
+            btn.innerText = "SIMPAN DATA JAWATANKUASA";
+            btn.classList.remove('btn-primary');
+            btn.classList.add('btn-success');
+            
+            // Auto fill IC
+            const icInput = document.getElementById('newNokp');
+            // Format display XXXX-XX-XXXX
+            icInput.value = kpClean.substring(0, 6) + '-' + kpClean.substring(6, 8) + '-' + kpClean.substring(8);
+            window.calculateICDetails(icInput); // Auto calc gender/age
+            
+            // Scroll to form
+            document.getElementById('formSection').scrollIntoView({ behavior: 'smooth' });
+        }
+    }
+    
+    window.cancelAdd = function() {
+        document.getElementById('addDataForm').reset();
+        document.getElementById('checkICSection').classList.remove('hidden');
+        document.getElementById('formSection').classList.add('hidden');
+        document.getElementById('editId').value = "";
+        document.getElementById('checkKpInput').value = ""; // Clear check input
+        
+        const btn = document.querySelector("#addDataForm button[type=submit]");
+        btn.innerText = "SIMPAN DATA JAWATANKUASA";
+        btn.classList.remove('btn-primary');
+        btn.classList.add('btn-success');
+    }
+
 
     // JAWATANKUASA DATA OPERATIONS
     window.addNewData = async function(e) {
@@ -827,29 +912,19 @@
                 // Update existing
                 await updateDoc(doc(masjidCollection, editId), item);
                 alert("DATA BERJAYA DIKEMASKINI!");
-                document.getElementById('editId').value = ""; // Clear edit mode
-                btn.classList.remove('btn-primary'); 
-                btn.classList.add('btn-success');
-                btn.innerText = "SIMPAN REKOD"; // Reset text
+                // Reset flow
+                window.cancelAdd();
             } else {
                 // Add new
                 await addDoc(masjidCollection, item);
                 alert("DATA BERJAYA DISIMPAN!");
+                window.cancelAdd();
             }
-            document.getElementById('addDataForm').reset();
-            window.updateFormFields();
         } catch (err) {
             console.error(err);
             alert("Ralat menyimpan data: " + err.message);
-        } finally {
-            btn.innerText = editId ? "KEMASKINI REKOD" : "SIMPAN DATA JAWATANKUASA";
             btn.disabled = false;
-            // if we finished editing, reset button style
-            if(editId) {
-                 btn.innerText = "SIMPAN DATA JAWATANKUASA";
-                 btn.classList.remove('btn-primary');
-                 btn.classList.add('btn-success');
-            }
+            btn.innerText = oldText;
         }
     };
 
@@ -861,11 +936,15 @@
         }
     };
 
-    window.editData = function(id) {
+    window.editData = function(id, skipConfirm = false) {
         const item = window.appData.find(d => d.id === id);
         if(!item) return;
 
-        if(confirm("KEMASKINI DATA INI DI DALAM BORANG?")) {
+        if(skipConfirm || confirm("KEMASKINI DATA INI DI DALAM BORANG?")) {
+            // Force show form, hide check section
+            document.getElementById('checkICSection').classList.add('hidden');
+            document.getElementById('formSection').classList.remove('hidden');
+
             // Populate form
             document.getElementById('editId').value = id;
             
@@ -918,8 +997,8 @@
             btn.classList.remove('btn-success');
             btn.classList.add('btn-primary');
 
-            window.scrollTo(0,0);
-            alert("Data telah dimasukkan ke borang. Sila buat perubahan dan klik 'KEMASKINI REKOD'.");
+            // Scroll to form
+            document.getElementById('formSection').scrollIntoView({ behavior: 'smooth' });
         }
     };
 
@@ -1023,6 +1102,7 @@
         updateFormFields(); 
         updatePublicJawatanList();
         populateMasjidDropdown();
+        window.renderMasjidInfoTable = window.renderMasjidInfoTable || function() {}; // Fallback init
     });
 
     function populateMasjidDropdown() {
@@ -1152,7 +1232,8 @@
             
             groupKariah.style.display = 'none'; 
             groupLantikan.style.display = 'none';
-            groupTarikhPegawai.style.display = 'grid'; // MASJID now uses dates
+            // Show dates for Masjid as requested
+            groupTarikhPegawai.style.display = 'grid'; 
             jawatanAJK.forEach(j => selJawatan.add(new Option(j, j)));
         } 
         else if(jenis === 'SURAU') {
@@ -1317,11 +1398,10 @@
         const par = document.getElementById('publicParlimen').value;
         const dun = document.getElementById('publicDun').value;
         const jaw = document.getElementById('publicJawatan').value; 
-        const tempat = document.getElementById('publicTempat').value; // Get Place Value
         const txt = document.getElementById('publicSearchText').value.toUpperCase();
 
         // 1. Initial State Check: If all fields are default/empty, show nothing
-        if (cat === 'all' && par === '' && dun === '' && jaw === '' && txt === '' && tempat === '') {
+        if (cat === 'all' && par === '' && dun === '' && jaw === '' && txt === '') {
             const con = document.getElementById('publicResults');
             // Show Initial State Message
             con.innerHTML = `
@@ -1330,7 +1410,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                     </svg>
                     <p class="font-semibold text-lg text-gray-600">Mulakan Carian Anda</p>
-                    <p class="text-sm text-gray-400">Sila pilih kategori, nama masjid/surau, atau masukkan kata kunci untuk memulakan carian.</p>
+                    <p class="text-sm text-gray-400">Sila masukkan kata kunci atau pilih tapisan di atas untuk melihat data.</p>
                 </div>
             `;
             return;
@@ -1340,12 +1420,10 @@
             if (cat !== 'all' && d.jenis !== cat) return false;
             if (par && d.parlimen !== par) return false;
             if (dun && d.dun !== dun) return false;
-            if (jaw && d.jawatan !== jaw) return false;
-            if (tempat && d.tempat !== tempat) return false; // Filter by Place
-            
+            if (jaw && d.jawatan !== jaw) return false; 
             if (txt && !(
                 (d.nama && d.nama.includes(txt)) ||
-                (d.tempat && d.tempat.includes(txt)) || // Optional redundancy since we have dropdown now
+                (d.tempat && d.tempat.includes(txt)) ||
                 (d.nokp && d.nokp.includes(txt))
             )) return false;
             return true;
