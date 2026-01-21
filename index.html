@@ -184,6 +184,16 @@
             border-radius: 0.5rem;
             border: 1px dashed #cbd5e1;
         }
+
+        /* Check KP Box */
+        .check-kp-box {
+            background-color: #eff6ff;
+            border: 1px solid #bfdbfe;
+            border-radius: 0.75rem;
+            padding: 2rem;
+            text-align: center;
+            margin-bottom: 2rem;
+        }
     </style>
 </head>
 <body>
@@ -254,7 +264,7 @@
                                 <option value="">SEMUA JAWATAN</option>
                             </select>
                         </div>
-                        <div class="md:col-span-3">
+                        <div class="md:col-span-3"> 
                             <label class="form-label">CARIAN TEKS (NAMA / NO. KP)</label>
                             <div class="relative">
                                 <input type="text" id="publicSearchText" class="form-input pl-10" placeholder="MASUKKAN KATA KUNCI CARIAN..." oninput="this.value = this.value.toUpperCase(); performSearch()">
@@ -437,7 +447,15 @@
                     </div>
 
                     <div class="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
-                        <div class="bg-gray-50 px-6 py-4 border-b border-gray-200"><h3 class="font-bold text-gray-800">SENARAI JAWATANKUASA & PEGAWAI</h3></div>
+                         <div class="bg-gray-50 px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+                            <h3 class="font-bold text-gray-800">SENARAI JAWATANKUASA & PEGAWAI</h3>
+                            <div class="flex gap-2">
+                                <button class="px-3 py-1 bg-blue-600 text-white text-xs rounded font-bold admin-filter-btn" onclick="window.setAdminFilter('all', this)">SEMUA</button>
+                                <button class="px-3 py-1 bg-white border border-blue-200 text-blue-600 text-xs rounded font-bold admin-filter-btn" onclick="window.setAdminFilter('MASJID', this)">MASJID</button>
+                                <button class="px-3 py-1 bg-white border border-blue-200 text-blue-600 text-xs rounded font-bold admin-filter-btn" onclick="window.setAdminFilter('SURAU', this)">SURAU</button>
+                                <button class="px-3 py-1 bg-white border border-blue-200 text-blue-600 text-xs rounded font-bold admin-filter-btn" onclick="window.setAdminFilter('PEGAWAI', this)">PEGAWAI</button>
+                            </div>
+                        </div>
                         <div class="overflow-x-auto">
                             <table class="data-table">
                                 <thead><tr><th>KATEGORI</th><th>NAMA</th><th>TEMPAT / KARIAH</th><th>JAWATAN</th><th>NO. KP</th><th class="text-center">TINDAKAN</th></tr></thead>
@@ -568,8 +586,9 @@
     window.db = db;
     window.appData = [];
     window.appUsers = [];
-    window.masjidInfoData = []; // Store masjid specific info
+    window.masjidInfoData = []; 
     window.currentUser = null;
+    window.adminDataFilter = 'all'; // Default Filter
 
     // Use specific paths to avoid permission issues
     const masjidCollection = collection(db, 'masjid_data');
@@ -589,8 +608,8 @@
             onSnapshot(qData, (snapshot) => {
                 window.appData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 window.renderAdminDataTable();
-                window.updatePublicTempatList(); // Populate Tempat Dropdown
-                window.performSearch(); // Update public view
+                window.updatePublicTempatList(); 
+                window.performSearch(); 
             }, (err) => {
                 console.error("Data Listener Error:", err);
                 if (err.code === 'permission-denied') {
@@ -601,20 +620,18 @@
             // Listen for Masjid Info Changes
             const qMasjidInfo = query(masjidInfoCollection);
             onSnapshot(qMasjidInfo, (snapshot) => {
-                // Sort masjid by name
                 window.masjidInfoData = snapshot.docs
                     .map(doc => ({ id: doc.id, ...doc.data() }))
                     .sort((a, b) => a.namaMasjid.localeCompare(b.namaMasjid));
                 
                 window.renderMasjidInfoTable();
-                window.updateMasjidDropdowns(); // Update all dropdowns
+                window.updateMasjidDropdowns(); 
             });
 
             // Listen for User Changes
             const qUsers = query(usersCollection);
             onSnapshot(qUsers, (snapshot) => {
                 window.appUsers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                // Ensure default admin exists if list is empty
                 if(window.appUsers.length === 0) createDefaultAdmin();
                 window.renderUserTable();
             }, (err) => {
@@ -640,7 +657,19 @@
         } catch(e) { console.error(e); }
     }
 
-    // --- EXPOSE FUNCTIONS TO WINDOW FOR HTML ONCLICK ---
+    // --- EXPOSE FUNCTIONS ---
+
+    window.setAdminFilter = function(filter, btn) {
+        window.adminDataFilter = filter;
+        document.querySelectorAll('.admin-filter-btn').forEach(b => {
+            b.classList.remove('bg-blue-600', 'text-white');
+            b.classList.add('bg-white', 'text-blue-600', 'border', 'border-blue-200');
+        });
+        btn.classList.remove('bg-white', 'text-blue-600', 'border', 'border-blue-200');
+        btn.classList.add('bg-blue-600', 'text-white');
+        
+        window.renderAdminDataTable();
+    }
     
     // MASJID INFO OPERATIONS
     window.addNewMasjidInfo = async function(e) {
@@ -730,28 +759,22 @@
 
     // UPDATE ALL DROPDOWNS WITH MASJID DATA
     window.updateMasjidDropdowns = function() {
-        // Dropdown 1: Borang Maklumat Masjid
         const sel1 = document.getElementById('inputNamaMasjid');
-        // Dropdown 2: Borang Jawatankuasa (for Masjid/Pegawai)
         const sel2 = document.getElementById('newNamaTempatSelect');
-        // Dropdown 3: Borang Kariah for Surau (New)
         const sel3 = document.getElementById('newNamaKariahSelect');
         
         const currentVal1 = sel1.value;
         const currentVal2 = sel2.value;
         const currentVal3 = sel3.value;
 
-        // Clear existing (keep first option)
         sel1.innerHTML = '<option value="">PILIH MASJID</option>';
         sel2.innerHTML = '<option value="">PILIH MASJID</option>';
         sel3.innerHTML = '<option value="">PILIH KARIAH / MASJID</option>';
 
-        // Use hardcoded list for adding NEW masjid info
         senaraiMasjid.forEach(masjid => {
             sel1.add(new Option(masjid, masjid));
         });
 
-        // For Jawatankuasa Form, populate from the SAVED masjid_info collection
         if (window.masjidInfoData.length > 0) {
             window.masjidInfoData.forEach(info => {
                  sel2.add(new Option(info.namaMasjid, info.namaMasjid));
@@ -769,61 +792,6 @@
         if(currentVal3) sel3.value = currentVal3;
     }
 
-    // CHECK IC FUNCTION (MODIFIED)
-    window.checkIC = function() {
-        const kpInput = document.getElementById('checkKpInput').value;
-        const kpClean = kpInput.replace(/[^0-9]/g, ''); // Ensure only numbers
-        
-        if(kpClean.length < 12) return alert("SILA MASUKKAN 12 DIGIT NO KP.");
-        
-        // Find existing based on clean IC
-        const exist = window.appData.find(d => d.nokp && d.nokp.replace(/[^0-9]/g, '') === kpClean);
-        
-        if(exist) {
-            // Jika data wujud, tanya nak update
-            if(confirm(`DATA SUDAH WUJUD!\n\nNama: ${exist.nama}\nJawatan: ${exist.jawatan}\n\nAdakah anda ingin MENGEMASKINI data ini?`)) {
-                // Panggil fungsi edit dengan parameter 'true' untuk skip confirmation kedua
-                window.editData(exist.id, true);
-            }
-        } else {
-            // New Entry
-            document.getElementById('checkICSection').classList.add('hidden');
-            document.getElementById('formSection').classList.remove('hidden');
-            
-            // Reset form but keep IC
-            document.getElementById('addDataForm').reset();
-            document.getElementById('editId').value = ""; // Pastikan ID kosong untuk create new
-            
-            // Set button style
-            const btn = document.querySelector("#addDataForm button[type=submit]");
-            btn.innerText = "SIMPAN DATA JAWATANKUASA";
-            btn.classList.remove('btn-primary');
-            btn.classList.add('btn-success');
-            
-            // Auto fill IC
-            const icInput = document.getElementById('newNokp');
-            // Format display XXXX-XX-XXXX
-            icInput.value = kpClean.substring(0, 6) + '-' + kpClean.substring(6, 8) + '-' + kpClean.substring(8);
-            window.calculateICDetails(icInput); // Auto calc gender/age
-            
-            // Scroll to form
-            document.getElementById('formSection').scrollIntoView({ behavior: 'smooth' });
-        }
-    }
-    
-    window.cancelAdd = function() {
-        document.getElementById('addDataForm').reset();
-        document.getElementById('checkICSection').classList.remove('hidden');
-        document.getElementById('formSection').classList.add('hidden');
-        document.getElementById('editId').value = "";
-        document.getElementById('checkKpInput').value = ""; // Clear check input
-        
-        const btn = document.querySelector("#addDataForm button[type=submit]");
-        btn.innerText = "SIMPAN DATA JAWATANKUASA";
-        btn.classList.remove('btn-primary');
-        btn.classList.add('btn-success');
-    }
-
 
     // JAWATANKUASA DATA OPERATIONS
     window.addNewData = async function(e) {
@@ -831,7 +799,6 @@
         const editId = document.getElementById('editId').value;
         const jenis = document.getElementById('newJenis').value;
         
-        // Logic to grab tempat value
         let tempatVal = "";
         if(jenis === 'SURAU') {
              tempatVal = document.getElementById('newNamaTempatInput').value.toUpperCase();
@@ -844,7 +811,6 @@
             return;
         }
 
-        // Logic for Kariah Value (Dropdown for Surau, Text for Others if any)
         let kariahVal = "";
         if(jenis === 'SURAU') {
              kariahVal = document.getElementById('newNamaKariahSelect').value;
@@ -853,20 +819,17 @@
                  return;
              }
         } else {
-             // For others, kariah might be empty or hidden input
              kariahVal = document.getElementById('newNamaKariah').value.toUpperCase();
         }
 
-        // Get No Pendaftaran based on selected place if category is Masjid
         let noPendaftaran = "-";
         if(jenis === 'MASJID' || jenis === 'PEGAWAI') {
             const info = window.masjidInfoData.find(m => m.namaMasjid === tempatVal);
             if(info) noPendaftaran = info.noPendaftaran;
         } 
-        // If Surau, try to get No Pendaftaran from Kariah Masjid parent
         else if (jenis === 'SURAU') {
              const info = window.masjidInfoData.find(m => m.namaMasjid === kariahVal);
-             if(info) noPendaftaran = info.noPendaftaran; // Or maybe Surau doesn't have it? keeping it linked to kariah for reference
+             if(info) noPendaftaran = info.noPendaftaran;
         }
 
         const item = {
@@ -883,10 +846,10 @@
             notel: document.getElementById('newNotel').value,
             alamat: document.getElementById('newAlamat').value.toUpperCase(),
             pekerjaan: document.getElementById('newPekerjaan').value.toUpperCase(),
-            lantikan: document.getElementById('newTahunLantikan').value, // Used for AJK/Non-Pegawai if any
+            lantikan: document.getElementById('newTahunLantikan').value, 
             tarikhLantikan: document.getElementById('newTarikhLantikan').value,
             tarikhTamat: document.getElementById('newTarikhTamat').value,
-            noPendaftaran: noPendaftaran // Store linked info
+            noPendaftaran: noPendaftaran
         };
 
         const btn = document.querySelector("#addDataForm button[type=submit]");
@@ -896,13 +859,10 @@
 
         try {
             if(editId) {
-                // Update existing
                 await updateDoc(doc(masjidCollection, editId), item);
                 alert("DATA BERJAYA DIKEMASKINI!");
-                // Reset flow
                 window.cancelAdd();
             } else {
-                // Add new
                 await addDoc(masjidCollection, item);
                 alert("DATA BERJAYA DISIMPAN!");
                 window.cancelAdd();
@@ -928,39 +888,32 @@
         if(!item) return;
 
         if(skipConfirm || confirm("KEMASKINI DATA INI DI DALAM BORANG?")) {
-            // Force show form, hide check section
             document.getElementById('checkICSection').classList.add('hidden');
             document.getElementById('formSection').classList.remove('hidden');
 
-            // Populate form
             document.getElementById('editId').value = id;
-            
             document.getElementById('newJenis').value = item.jenis;
             window.updateFormFields();
             
             document.getElementById('newNama').value = item.nama;
             
-            // Set Tempat based on type
             if (item.jenis === 'SURAU') {
                  document.getElementById('newNamaTempatInput').value = item.tempat;
             } else {
                  document.getElementById('newNamaTempatSelect').value = item.tempat;
             }
 
-            // Set Kariah based on type
              if (item.jenis === 'SURAU') {
                  document.getElementById('newNamaKariahSelect').value = item.kariah;
             } else {
                  document.getElementById('newNamaKariah').value = item.kariah || '';
             }
             
-            window.updateFormFields(); // refresh fields visibility
+            window.updateFormFields();
             document.getElementById('newJawatan').value = item.jawatan;
-            
             document.getElementById('newParlimen').value = item.parlimen;
             window.updateDunList();
             document.getElementById('newDun').value = item.dun;
-            
             document.getElementById('newNokp').value = item.nokp;
             document.getElementById('newJantina').value = item.jantina;
             document.getElementById('newUmur').value = item.umur;
@@ -968,23 +921,18 @@
             document.getElementById('newAlamat').value = item.alamat;
             document.getElementById('newPekerjaan').value = item.pekerjaan;
             
-            // Handle new fields
             if (document.getElementById('newTahunLantikan')) 
                 document.getElementById('newTahunLantikan').value = item.lantikan || '';
-                
             if (document.getElementById('newTarikhLantikan'))
                 document.getElementById('newTarikhLantikan').value = item.tarikhLantikan || '';
-                
             if (document.getElementById('newTarikhTamat'))
                 document.getElementById('newTarikhTamat').value = item.tarikhTamat || '';
 
-            // Change button state
             const btn = document.querySelector("#addDataForm button[type=submit]");
             btn.innerText = "KEMASKINI REKOD";
             btn.classList.remove('btn-success');
             btn.classList.add('btn-primary');
 
-            // Scroll to form
             document.getElementById('formSection').scrollIntoView({ behavior: 'smooth' });
         }
     };
@@ -992,8 +940,6 @@
     window.createNewUser = async function(e) {
         e.preventDefault();
         const u = document.getElementById('createUsername').value.toLowerCase();
-        
-        // Check local array first to avoid duplicates
         if(window.appUsers.find(x => x.username === u)) return alert("USERNAME WUJUD!");
 
         const newUser = {
@@ -1045,7 +991,7 @@
                 const btn = document.querySelector("#adminImportTab button.btn-success");
                 btn.innerText = "SEDANG IMPORT...";
                 btn.disabled = true;
-                await Promise.all(batchPromises); // Wait for all adds
+                await Promise.all(batchPromises); 
                 alert(`BERJAYA IMPORT ${count} REKOD KE DATABASE!`);
                 btn.innerText = "PROSES FAIL";
                 btn.disabled = false;
@@ -1089,7 +1035,7 @@
         updateFormFields(); 
         updatePublicJawatanList();
         populateMasjidDropdown();
-        window.renderMasjidInfoTable = window.renderMasjidInfoTable || function() {}; // Fallback init
+        window.renderMasjidInfoTable = window.renderMasjidInfoTable || function() {};
     });
 
     function populateMasjidDropdown() {
@@ -1219,7 +1165,7 @@
             
             groupKariah.style.display = 'none'; 
             groupLantikan.style.display = 'none';
-            groupTarikhPegawai.style.display = 'grid'; // MASJID now uses dates
+            groupTarikhPegawai.style.display = 'grid'; // MASJID uses dates
             jawatanAJK.forEach(j => selJawatan.add(new Option(j, j)));
         } 
         else if(jenis === 'SURAU') {
@@ -1342,7 +1288,13 @@
         const tbody = document.getElementById('adminDataTable');
         const isSuperAdmin = window.currentUser && window.currentUser.role === 'superadmin';
         
-        tbody.innerHTML = window.appData.map((item) => {
+        // Apply Filter if set
+        let filteredData = window.appData;
+        if (window.adminDataFilter !== 'all') {
+            filteredData = window.appData.filter(item => item.jenis === window.adminDataFilter);
+        }
+
+        tbody.innerHTML = filteredData.map((item) => {
             const id = item.id;
             const delBtn = isSuperAdmin ? 
                 `<button class="text-red-500 hover:text-red-700 font-bold ml-3" onclick="deleteData('${id}')">PADAM</button>` : '';
@@ -1388,7 +1340,6 @@
         const txt = document.getElementById('publicSearchText').value.toUpperCase();
 
         // 1. Initial State Check: If all fields are default/empty, show nothing
-        // Pastikan 'tempat' juga diperiksa di sini
         if (cat === 'all' && par === '' && dun === '' && jaw === '' && txt === '' && tempat === '') {
             const con = document.getElementById('publicResults');
             // Show Initial State Message
@@ -1405,18 +1356,12 @@
         }
 
         const res = window.appData.filter(d => {
-            // Category Filter
             if (cat !== 'all' && d.jenis !== cat) return false;
-            // Parlimen Filter
             if (par && d.parlimen !== par) return false;
-            // DUN Filter
             if (dun && d.dun !== dun) return false;
-            // Jawatan Filter
             if (jaw && d.jawatan !== jaw) return false; 
-            // Tempat Filter (FIXED)
-            if (tempat && d.tempat !== tempat) return false;
+            if (tempat && d.tempat !== tempat) return false; // Fixed: Now filters by place correctly
 
-            // Text Filter
             if (txt && !(
                 (d.nama && d.nama.includes(txt)) ||
                 (d.tempat && d.tempat.includes(txt)) ||
