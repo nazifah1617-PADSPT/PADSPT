@@ -7,6 +7,7 @@
     
     <!-- External Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
 
@@ -41,7 +42,7 @@
 
         /* CONTENT CARD */
         .main-container { 
-            max-width: 1000px; /* Slightly narrower for form look */
+            max-width: 1200px; /* Slightly narrower for form look */
             margin: 2rem auto; 
             padding: 0 1rem; 
             position: relative; 
@@ -145,6 +146,14 @@
         .data-table td { padding: 0.75rem 1rem; border-bottom: 1px solid #e2e8f0; color: #334155; }
         .data-table tr:hover { background: #f8fafc; }
 
+        /* PUBLIC RESULTS TABLE */
+        .results-list { display: block; width: 100%; overflow-x: auto; }
+        .public-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; background: white; border: 1px solid #e2e8f0; border-radius: 0.5rem; }
+        .public-table th { background: #1e3a8a; color: white; padding: 12px 10px; text-align: left; font-weight: 600; text-transform: uppercase; white-space: nowrap; font-size: 0.8rem; }
+        .public-table td { padding: 12px 10px; border-bottom: 1px solid #e2e8f0; color: #334155; vertical-align: top; }
+        .public-table tr:hover { background-color: #f8fafc; }
+        .public-table tr:last-child td { border-bottom: none; }
+
         /* BUTTONS */
         .btn { display: inline-flex; align-items: center; justify-content: center; padding: 0.6rem 1.25rem; border-radius: 0.375rem; font-weight: 600; font-size: 0.9rem; cursor: pointer; transition: all 0.2s; border: none; width: 100%; }
         .btn-primary { background: #2563eb; color: white; }
@@ -240,6 +249,7 @@
                                 <option value="PEGAWAI">PEGAWAI MASJID</option>
                             </select>
                         </div>
+                        <!-- NEW INPUT: NAMA TEMPAT -->
                         <div>
                             <label class="form-label" id="publicTempatLabel">NAMA MASJID / SURAU</label>
                             <select id="publicTempat" class="form-select" onchange="performSearch()">
@@ -276,7 +286,7 @@
                     </div>
                 </div>
 
-                <div id="publicResults" class="results-grid">
+                <div id="publicResults" class="results-list">
                     <!-- Initial State Message (Shown by default) -->
                     <div class="initial-state-msg col-span-full">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto text-gray-400 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -402,17 +412,14 @@
                                 <div><label class="form-label">NO. KP (12 DIGIT)</label><input id="newNokp" class="form-input bg-gray-100 cursor-not-allowed" readonly></div>
                                 <div><label class="form-label">NAMA PENUH</label><input id="newNama" class="form-input" oninput="this.value = this.value.toUpperCase()" required></div>
                                 
-                                <!-- TEMPAT / LOKASI -->
                                 <div id="group-nama-tempat">
                                     <label class="form-label" id="label-nama-tempat">NAMA MASJID</label>
-                                    <!-- Dynamic Inputs: Select will be shown for Masjid/Pegawai, Input for Surau -->
                                     <input id="newNamaTempatInput" class="form-input" oninput="this.value = this.value.toUpperCase()" style="display:none;" placeholder="MASUKKAN NAMA SURAU">
                                     <select id="newNamaTempatSelect" class="form-select" style="display:block;">
                                         <option value="">PILIH MASJID</option>
                                     </select>
                                 </div>
 
-                                <!-- UPDATE: KARIAH is now a DROPDOWN selecting Masjid -->
                                 <div id="group-nama-kariah" style="display:none;">
                                     <label class="form-label" id="label-nama-kariah">NAMA KARIAH / MASJID</label>
                                     <input id="newNamaKariah" class="form-input" style="display:none;"> 
@@ -432,7 +439,6 @@
                                 
                                 <div id="group-tahun-lantikan" style="display:none;"><label class="form-label">TAHUN LANTIKAN</label><input id="newTahunLantikan" type="number" class="form-input" placeholder="YYYY"></div>
                                 
-                                <!-- Date Fields -->
                                 <div id="group-tarikh-pegawai" style="display:none;" class="md:col-span-2 grid grid-cols-2 gap-4">
                                     <div><label class="form-label">TARIKH LANTIKAN</label><input id="newTarikhLantikan" type="date" class="form-input"></div>
                                     <div><label class="form-label">TARIKH TAMAT</label><input id="newTarikhTamat" type="date" class="form-input"></div>
@@ -792,6 +798,61 @@
         if(currentVal3) sel3.value = currentVal3;
     }
 
+    // CHECK IC FUNCTION (MODIFIED)
+    window.checkIC = function() {
+        const kpInput = document.getElementById('checkKpInput').value;
+        const kpClean = kpInput.replace(/[^0-9]/g, ''); // Ensure only numbers
+        
+        if(kpClean.length < 12) return alert("SILA MASUKKAN 12 DIGIT NO KP.");
+        
+        // Find existing based on clean IC
+        const exist = window.appData.find(d => d.nokp && d.nokp.replace(/[^0-9]/g, '') === kpClean);
+        
+        if(exist) {
+            // Jika data wujud, tanya nak update
+            if(confirm(`DATA SUDAH WUJUD!\n\nNama: ${exist.nama}\nJawatan: ${exist.jawatan}\n\nAdakah anda ingin MENGEMASKINI data ini?`)) {
+                // Panggil fungsi edit dengan parameter 'true' untuk skip confirmation kedua
+                window.editData(exist.id, true);
+            }
+        } else {
+            // New Entry
+            document.getElementById('checkICSection').classList.add('hidden');
+            document.getElementById('formSection').classList.remove('hidden');
+            
+            // Reset form but keep IC
+            document.getElementById('addDataForm').reset();
+            document.getElementById('editId').value = ""; // Pastikan ID kosong untuk create new
+            
+            // Set button style
+            const btn = document.querySelector("#addDataForm button[type=submit]");
+            btn.innerText = "SIMPAN DATA JAWATANKUASA";
+            btn.classList.remove('btn-primary');
+            btn.classList.add('btn-success');
+            
+            // Auto fill IC
+            const icInput = document.getElementById('newNokp');
+            // Format display XXXX-XX-XXXX
+            icInput.value = kpClean.substring(0, 6) + '-' + kpClean.substring(6, 8) + '-' + kpClean.substring(8);
+            window.calculateICDetails(icInput); // Auto calc gender/age
+            
+            // Scroll to form
+            document.getElementById('formSection').scrollIntoView({ behavior: 'smooth' });
+        }
+    }
+    
+    window.cancelAdd = function() {
+        document.getElementById('addDataForm').reset();
+        document.getElementById('checkICSection').classList.remove('hidden');
+        document.getElementById('formSection').classList.add('hidden');
+        document.getElementById('editId').value = "";
+        document.getElementById('checkKpInput').value = ""; // Clear check input
+        
+        const btn = document.querySelector("#addDataForm button[type=submit]");
+        btn.innerText = "SIMPAN DATA JAWATANKUASA";
+        btn.classList.remove('btn-primary');
+        btn.classList.add('btn-success');
+    }
+
 
     // JAWATANKUASA DATA OPERATIONS
     window.addNewData = async function(e) {
@@ -799,6 +860,7 @@
         const editId = document.getElementById('editId').value;
         const jenis = document.getElementById('newJenis').value;
         
+        // Logic to grab tempat value
         let tempatVal = "";
         if(jenis === 'SURAU') {
              tempatVal = document.getElementById('newNamaTempatInput').value.toUpperCase();
@@ -811,6 +873,7 @@
             return;
         }
 
+        // Logic for Kariah Value (Dropdown for Surau, Text for Others if any)
         let kariahVal = "";
         if(jenis === 'SURAU') {
              kariahVal = document.getElementById('newNamaKariahSelect').value;
@@ -822,6 +885,7 @@
              kariahVal = document.getElementById('newNamaKariah').value.toUpperCase();
         }
 
+        // Get No Pendaftaran based on selected place if category is Masjid
         let noPendaftaran = "-";
         if(jenis === 'MASJID' || jenis === 'PEGAWAI') {
             const info = window.masjidInfoData.find(m => m.namaMasjid === tempatVal);
@@ -1035,7 +1099,7 @@
         updateFormFields(); 
         updatePublicJawatanList();
         populateMasjidDropdown();
-        window.renderMasjidInfoTable = window.renderMasjidInfoTable || function() {};
+        window.renderMasjidInfoTable = window.renderMasjidInfoTable || function() {}; // Fallback init
     });
 
     function populateMasjidDropdown() {
@@ -1373,53 +1437,36 @@
         const con = document.getElementById('publicResults');
         if(!res.length) return con.innerHTML = '<div class="col-span-full text-center py-8 text-gray-500">TIADA REKOD DIJUMPAI.</div>';
         
-        con.innerHTML = res.map(d => {
-            // Find Matching Masjid Info for Registration Number
-            let noPendaftaranDisplay = "";
-            if (d.jenis === 'MASJID' || d.jenis === 'PEGAWAI') {
-                 const masjidInfo = window.masjidInfoData.find(m => m.namaMasjid === d.tempat);
-                 if(masjidInfo) noPendaftaranDisplay = `<div class="text-xs text-gray-500 mt-1">NO. PENDAFTARAN: ${masjidInfo.noPendaftaran}</div>`;
-            }
+        con.innerHTML = `
+        <div class="overflow-x-auto shadow-md sm:rounded-lg">
+            <table class="public-table">
+                <thead>
+                    <tr>
+                        <th>NAMA</th>
+                        <th>JAWATAN</th>
+                        <th>TEMPAT BERTUGAS</th>
+                        <th>KATEGORI</th>
+                        <th>NO. TEL</th>
+                        <th class="text-center">TINDAKAN</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+        
+        con.innerHTML += res.map(d => `
+            <tr>
+                <td class="font-medium text-gray-900 whitespace-nowrap">${d.nama}</td>
+                <td>${d.jawatan}</td>
+                <td>${d.tempat}</td>
+                <td><span class="bg-blue-100 text-blue-800 text-xs font-medium mr-2 px-2.5 py-0.5 rounded">${d.jenis}</span></td>
+                <td>${d.notel}</td>
+                <td class="text-center">
+                    <button class="font-medium text-blue-600 dark:text-blue-500 hover:underline" onclick='generatePDF(${JSON.stringify(d).replace(/'/g, "&apos;")})'>PAPAR PDF</button>
+                </td>
+            </tr>
+        `).join('');
 
-            return `
-            <div class="result-card">
-                <div class="card-header">
-                    <div class="card-name">${d.nama}</div>
-                    <span class="card-badge badge-${d.jenis}">${d.jenis}</span>
-                </div>
-                <div class="card-body">
-                    <div class="info-row">
-                        <div class="info-label">JAWATAN</div>
-                        <div class="info-value font-bold text-blue-800">${d.jawatan}</div>
-                    </div>
-                    <div class="info-row">
-                        <div class="info-label">TEMPAT BERTUGAS</div>
-                        <div class="info-value">${d.tempat}</div>
-                        ${noPendaftaranDisplay}
-                        ${d.kariah ? `<div class="text-xs text-gray-500 mt-1">KARIAH: ${d.kariah}</div>` : ''}
-                    </div>
-                    <div class="info-row">
-                        <div class="info-label">MAKLUMAT PERIBADI</div>
-                        <div class="info-value text-sm">${d.umur} / ${d.jantina}</div>
-                        <div class="info-value text-sm mt-1">PEKERJAAN: ${d.pekerjaan || '-'}</div>
-                    </div>
-                     <div class="info-row">
-                        <div class="info-label">NO. TELEFON</div>
-                        <div class="info-value">${d.notel}</div>
-                    </div>
-                    <div class="grid grid-cols-2 gap-2 mt-2 pt-2 border-t border-gray-100">
-                        <div><div class="info-label">PARLIMEN</div><div class="info-value text-xs">${d.parlimen || '-'}</div></div>
-                        <div><div class="info-label">DUN</div><div class="info-value text-xs">${d.dun || '-'}</div></div>
-                    </div>
-                </div>
-                <div class="card-footer">
-                    <button class="btn btn-outline" onclick='generatePDF(${JSON.stringify(d).replace(/'/g, "&apos;")})'>
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
-                        PAPAR PDF
-                    </button>
-                </div>
-            </div>
-        `}).join('');
+        con.innerHTML += `</tbody></table></div>`;
     }
 
     window.generatePDF = async function(d) {
@@ -1472,84 +1519,54 @@
         doc.setFont("helvetica", "bold");
         doc.text("REKOD MAKLUMAT " + d.jenis.toUpperCase(), 105, 65, {align:'center'});
 
-        // --- 2. ISI KANDUNGAN ---
-        let y = 80;
-        const startXLabel = 25;
-        const startXValue = 85; 
-        const pageHeight = doc.internal.pageSize.height;
+        // --- 2. TABLE CONTENT (AutoTable) ---
+        // Prepare Data Array
+        const tableBody = [
+            ['NAMA PENUH', d.nama],
+            // ['NO. KAD PENGENALAN', d.nokp], // Hidden per request
+            ['JANTINA / UMUR', `${d.jantina} / ${d.umur}`],
+            ['JAWATAN', d.jawatan],
+            ['TEMPAT BERTUGAS', d.tempat]
+        ];
 
-        const addRow = (label, val) => {
-            if (y > pageHeight - 30) {
-                doc.addPage();
-                y = 20;
-            }
-
-            doc.setFont("helvetica", "bold");
-            doc.setFontSize(10);
-            
-            const labelLines = doc.splitTextToSize(label, 55); 
-            doc.text(labelLines, startXLabel, y);
-
-            doc.setFont("helvetica", "normal");
-            const valueText = val ? ": " + val : ": -";
-            const valueLines = doc.splitTextToSize(valueText, 100);
-            doc.text(valueLines, startXValue, y);
-
-            const lineHeight = 6;
-            const maxLines = Math.max(labelLines.length, valueLines.length);
-            y += (maxLines * lineHeight) + 4; 
-        };
-
-        // Data Peribadi
-        doc.setFillColor(240, 240, 240);
-        doc.rect(20, y-5, 170, 8, 'F');
-        doc.setFont("helvetica", "bold");
-        doc.text("MAKLUMAT PEMEGANG JAWATAN", 25, y);
-        y += 10;
-
-        addRow("NAMA PENUH", d.nama);
-        // No KP Hidden
-        addRow("JANTINA / UMUR", `${d.jantina} / ${d.umur}`);
-        addRow("NO. TELEFON", d.notel);
-        // Alamat Hidden
-        addRow("PEKERJAAN", d.pekerjaan);
-
-        y += 5; 
-        
-        // Data Penempatan
-        doc.setFillColor(240, 240, 240);
-        doc.rect(20, y-5, 170, 8, 'F');
-        doc.setFont("helvetica", "bold");
-        doc.text("MAKLUMAT PENEMPATAN", 25, y);
-        y += 10;
-
-        addRow("TEMPAT BERTUGAS", d.tempat);
-        
+        // Fetch No Pendaftaran logic
         let noPendaftaran = "-";
         if (d.jenis === 'MASJID' || d.jenis === 'PEGAWAI') {
              const masjidInfo = window.masjidInfoData.find(m => m.namaMasjid === d.tempat);
              if(masjidInfo) noPendaftaran = masjidInfo.noPendaftaran;
         }
-        if(noPendaftaran !== "-") addRow("NO. PENDAFTARAN MASJID", noPendaftaran);
+        if(noPendaftaran !== "-") tableBody.push(['NO. PENDAFTARAN MASJID', noPendaftaran]);
 
-        if(d.kariah) addRow("KARIAH", d.kariah);
-        addRow("JAWATAN", d.jawatan);
+        if(d.kariah) tableBody.push(['KARIAH', d.kariah]);
         
-        if(d.tarikhLantikan) addRow("TARIKH LANTIKAN", d.tarikhLantikan);
-        if(d.tarikhTamat) addRow("TARIKH TAMAT", d.tarikhTamat);
-        if(d.lantikan && !d.tarikhLantikan) addRow("TAHUN LANTIKAN", d.lantikan); 
+        if(d.tarikhLantikan) tableBody.push(['TARIKH LANTIKAN', d.tarikhLantikan]);
+        if(d.tarikhTamat) tableBody.push(['TARIKH TAMAT', d.tarikhTamat]);
+        
+        tableBody.push(['NO. TELEFON', d.notel]);
+        // tableBody.push(['ALAMAT', d.alamat]); // Hidden
+        tableBody.push(['PARLIMEN', d.parlimen]);
+        tableBody.push(['DUN', d.dun]);
+        tableBody.push(['PEKERJAAN', d.pekerjaan]);
 
-        addRow("PARLIMEN", d.parlimen);
-        addRow("DUN", d.dun);
+        doc.autoTable({
+            startY: 80,
+            head: [['PERKARA', 'BUTIRAN']],
+            body: tableBody,
+            theme: 'grid',
+            headStyles: { fillColor: [30, 58, 138], halign: 'center' },
+            columnStyles: { 
+                0: { fontStyle: 'bold', cellWidth: 70, valign: 'middle' },
+                1: { valign: 'middle' }
+            },
+            styles: { fontSize: 10, cellPadding: 3 }
+        });
 
         // Footer
-        const footerY = pageHeight - 20;
+        const pageHeight = doc.internal.pageSize.height;
         doc.setFontSize(8);
         doc.setTextColor(100, 100, 100);
-        doc.setLineWidth(0.1);
-        doc.line(20, footerY - 5, 190, footerY - 5);
-        doc.text("Cetakan Komputer dari Portal Data Jawatankuasa Masjid JHEAIPP", 105, footerY, {align:'center'});
-        doc.text("Tarikh Cetakan: " + new Date().toLocaleDateString() + " " + new Date().toLocaleTimeString(), 105, footerY + 5, {align:'center'});
+        doc.text("Cetakan Komputer dari Portal Data Jawatankuasa Masjid JHEAIPP", 105, pageHeight - 15, {align:'center'});
+        doc.text("Tarikh Cetakan: " + new Date().toLocaleDateString() + " " + new Date().toLocaleTimeString(), 105, pageHeight - 10, {align:'center'});
 
         const pdfBlob = doc.output('blob');
         const pdfUrl = URL.createObjectURL(pdfBlob);
