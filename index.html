@@ -40,9 +40,9 @@
             flex-direction: column;
         }
 
-        /* CONTENT CARD */
+        /* MAIN CONTAINER */
         .main-container { 
-            max-width: 1200px; /* Slightly narrower for form look */
+            max-width: 1200px; /* Lebar penuh untuk jadual */
             margin: 2rem auto; 
             padding: 0 1rem; 
             position: relative; 
@@ -57,7 +57,7 @@
             box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); 
             overflow: hidden; 
             min-height: 600px; 
-            border-top: 6px solid #fbbf24; /* Yellow top border like gov forms */
+            border-top: 6px solid #fbbf24; 
             position: relative;
         }
 
@@ -99,7 +99,7 @@
         .admin-content { display: none; }
         .admin-content.active { display: block; }
 
-        /* FORMS */
+        /* SEARCH PANEL */
         .search-panel { 
             background-color: #f8fafc; 
             border: 1px solid #cbd5e1; 
@@ -122,29 +122,7 @@
         .form-label { display: block; font-size: 0.85rem; font-weight: 600; color: #475569; margin-bottom: 0.25rem; }
         .form-input, .form-select { width: 100%; padding: 0.6rem; font-size: 0.9rem; border: 1px solid #cbd5e1; border-radius: 0.375rem; transition: border-color 0.15s; }
         .form-input:focus, .form-select:focus { outline: none; border-color: #3b82f6; ring: 2px solid rgba(59, 130, 246, 0.2); }
-
-        /* RESULT CARDS */
-        .results-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem; }
-        .result-card { background: white; border: 1px solid #e2e8f0; border-radius: 0.5rem; overflow: hidden; transition: transform 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-        .result-card:hover { transform: translateY(-3px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); border-color: #93c5fd; }
-        .card-header { background: #f8fafc; padding: 1rem; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: flex-start; }
-        .card-name { font-weight: 700; color: #1e3a8a; font-size: 1rem; line-height: 1.4; }
-        .card-badge { font-size: 0.7rem; font-weight: 700; padding: 0.2rem 0.6rem; border-radius: 9999px; text-transform: uppercase; letter-spacing: 0.05em; }
-        .badge-masjid { background: #dbeafe; color: #1e40af; border: 1px solid #bfdbfe; }
-        .badge-surau { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
-        .badge-pegawai { background: #ffedd5; color: #9a3412; border: 1px solid #fed7aa; }
-        .card-body { padding: 1rem; }
-        .info-row { margin-bottom: 0.75rem; }
-        .info-label { font-size: 0.7rem; text-transform: uppercase; color: #64748b; font-weight: 600; margin-bottom: 0.1rem; }
-        .info-value { font-size: 0.9rem; color: #334155; font-weight: 500; }
-        .card-footer { padding: 0.75rem 1rem; background: #fafafa; border-top: 1px solid #e2e8f0; }
-
-        /* TABLES */
-        .table-container { border: 1px solid #e2e8f0; border-radius: 0.5rem; overflow: hidden; margin-top: 1rem; }
-        .data-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
-        .data-table th { background: #f1f5f9; color: #475569; font-weight: 700; text-align: left; padding: 0.75rem 1rem; border-bottom: 1px solid #e2e8f0; text-transform: uppercase; }
-        .data-table td { padding: 0.75rem 1rem; border-bottom: 1px solid #e2e8f0; color: #334155; }
-        .data-table tr:hover { background: #f8fafc; }
+        .form-input[readonly] { background-color: #f3f4f6; color: #64748b; cursor: not-allowed; }
 
         /* PUBLIC RESULTS TABLE */
         .results-list { display: block; width: 100%; overflow-x: auto; }
@@ -153,6 +131,13 @@
         .public-table td { padding: 12px 10px; border-bottom: 1px solid #e2e8f0; color: #334155; vertical-align: top; }
         .public-table tr:hover { background-color: #f8fafc; }
         .public-table tr:last-child td { border-bottom: none; }
+
+        /* TABLES ADMIN */
+        .table-container { border: 1px solid #e2e8f0; border-radius: 0.5rem; overflow: hidden; margin-top: 1rem; }
+        .data-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+        .data-table th { background: #f1f5f9; color: #475569; font-weight: 700; text-align: left; padding: 0.75rem 1rem; border-bottom: 1px solid #e2e8f0; text-transform: uppercase; }
+        .data-table td { padding: 0.75rem 1rem; border-bottom: 1px solid #e2e8f0; color: #334155; }
+        .data-table tr:hover { background: #f8fafc; }
 
         /* BUTTONS */
         .btn { display: inline-flex; align-items: center; justify-content: center; padding: 0.6rem 1.25rem; border-radius: 0.375rem; font-weight: 600; font-size: 0.9rem; cursor: pointer; transition: all 0.2s; border: none; width: 100%; }
@@ -249,7 +234,6 @@
                                 <option value="PEGAWAI">PEGAWAI MASJID</option>
                             </select>
                         </div>
-                        <!-- NEW INPUT: NAMA TEMPAT -->
                         <div>
                             <label class="form-label" id="publicTempatLabel">NAMA MASJID / SURAU</label>
                             <select id="publicTempat" class="form-select" onchange="performSearch()">
@@ -851,6 +835,7 @@
         btn.innerText = "SIMPAN DATA JAWATANKUASA";
         btn.classList.remove('btn-primary');
         btn.classList.add('btn-success');
+        btn.disabled = false; // RE-ENABLE BUTTON
     }
 
 
