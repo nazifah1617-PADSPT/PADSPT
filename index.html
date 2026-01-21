@@ -21,7 +21,7 @@
             margin: 0;
             padding: 0;
             font-family: 'Inter', sans-serif;
-            background-color: #e2e8f0;
+            background-color: #e2e8f0; /* Slightly darker background for contrast */
             min-height: 100vh;
             display: flex;
             flex-direction: column;
@@ -41,7 +41,7 @@
 
         /* CONTENT CARD */
         .main-container { 
-            max-width: 1000px;
+            max-width: 1000px; /* Slightly narrower for form look */
             margin: 2rem auto; 
             padding: 0 1rem; 
             position: relative; 
@@ -56,7 +56,7 @@
             box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); 
             overflow: hidden; 
             min-height: 600px; 
-            border-top: 6px solid #fbbf24;
+            border-top: 6px solid #fbbf24; /* Yellow top border like gov forms */
             position: relative;
         }
 
@@ -121,7 +121,6 @@
         .form-label { display: block; font-size: 0.85rem; font-weight: 600; color: #475569; margin-bottom: 0.25rem; }
         .form-input, .form-select { width: 100%; padding: 0.6rem; font-size: 0.9rem; border: 1px solid #cbd5e1; border-radius: 0.375rem; transition: border-color 0.15s; }
         .form-input:focus, .form-select:focus { outline: none; border-color: #3b82f6; ring: 2px solid rgba(59, 130, 246, 0.2); }
-        .form-input[readonly] { background-color: #f3f4f6; color: #64748b; cursor: not-allowed; }
 
         /* RESULT CARDS */
         .results-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem; }
@@ -185,16 +184,6 @@
             border-radius: 0.5rem;
             border: 1px dashed #cbd5e1;
         }
-
-        /* Check KP Box */
-        .check-kp-box {
-            background-color: #eff6ff;
-            border: 1px solid #bfdbfe;
-            border-radius: 0.75rem;
-            padding: 2rem;
-            text-align: center;
-            margin-bottom: 2rem;
-        }
     </style>
 </head>
 <body>
@@ -241,14 +230,12 @@
                                 <option value="PEGAWAI">PEGAWAI MASJID</option>
                             </select>
                         </div>
-                        <!-- NEW INPUT: NAMA TEMPAT -->
                         <div>
                             <label class="form-label" id="publicTempatLabel">NAMA MASJID / SURAU</label>
                             <select id="publicTempat" class="form-select" onchange="performSearch()">
                                 <option value="">SEMUA</option>
                             </select>
                         </div>
-                        
                         <div>
                             <label class="form-label">PARLIMEN</label>
                             <select id="publicParlimen" class="form-select" onchange="updatePublicDunList(); performSearch()">
@@ -267,7 +254,7 @@
                                 <option value="">SEMUA JAWATAN</option>
                             </select>
                         </div>
-                        <div class="md:col-span-3"> 
+                        <div class="md:col-span-3">
                             <label class="form-label">CARIAN TEKS (NAMA / NO. KP)</label>
                             <div class="relative">
                                 <input type="text" id="publicSearchText" class="form-input pl-10" placeholder="MASUKKAN KATA KUNCI CARIAN..." oninput="this.value = this.value.toUpperCase(); performSearch()">
@@ -602,7 +589,7 @@
             onSnapshot(qData, (snapshot) => {
                 window.appData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 window.renderAdminDataTable();
-                window.updatePublicTempatList(); // Ensure filters are populated
+                window.updatePublicTempatList(); // Populate Tempat Dropdown
                 window.performSearch(); // Update public view
             }, (err) => {
                 console.error("Data Listener Error:", err);
@@ -1232,8 +1219,7 @@
             
             groupKariah.style.display = 'none'; 
             groupLantikan.style.display = 'none';
-            // Show dates for Masjid as requested
-            groupTarikhPegawai.style.display = 'grid'; 
+            groupTarikhPegawai.style.display = 'grid'; // MASJID now uses dates
             jawatanAJK.forEach(j => selJawatan.add(new Option(j, j)));
         } 
         else if(jenis === 'SURAU') {
@@ -1398,10 +1384,12 @@
         const par = document.getElementById('publicParlimen').value;
         const dun = document.getElementById('publicDun').value;
         const jaw = document.getElementById('publicJawatan').value; 
+        const tempat = document.getElementById('publicTempat').value; // Ambil nilai tempat
         const txt = document.getElementById('publicSearchText').value.toUpperCase();
 
         // 1. Initial State Check: If all fields are default/empty, show nothing
-        if (cat === 'all' && par === '' && dun === '' && jaw === '' && txt === '') {
+        // Pastikan 'tempat' juga diperiksa di sini
+        if (cat === 'all' && par === '' && dun === '' && jaw === '' && txt === '' && tempat === '') {
             const con = document.getElementById('publicResults');
             // Show Initial State Message
             con.innerHTML = `
@@ -1417,10 +1405,18 @@
         }
 
         const res = window.appData.filter(d => {
+            // Category Filter
             if (cat !== 'all' && d.jenis !== cat) return false;
+            // Parlimen Filter
             if (par && d.parlimen !== par) return false;
+            // DUN Filter
             if (dun && d.dun !== dun) return false;
+            // Jawatan Filter
             if (jaw && d.jawatan !== jaw) return false; 
+            // Tempat Filter (FIXED)
+            if (tempat && d.tempat !== tempat) return false;
+
+            // Text Filter
             if (txt && !(
                 (d.nama && d.nama.includes(txt)) ||
                 (d.tempat && d.tempat.includes(txt)) ||
