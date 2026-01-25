@@ -229,7 +229,7 @@
 
             <div class="content-padding">
                 <div id="adminDataTab" class="admin-tab-pane">
-                    <!-- Masjid Info Section -->
+                    <!-- Section 1: Masjid Info -->
                     <div class="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-8 shadow-sm relative overflow-hidden">
                          <div class="absolute top-0 left-0 w-1.5 h-full bg-blue-600"></div>
                          <h3 class="text-lg font-bold text-blue-900 mb-6 flex items-center gap-2">
@@ -250,16 +250,29 @@
                             </div>
                         </form>
                         <div class="mt-8 bg-white border border-gray-200 rounded-lg overflow-hidden">
-                            <table class="data-table">
-                                <thead><tr><th>NAMA MASJID</th><th>NO. PENDAFTARAN</th><th>NO. AKAUN</th><th class="text-center">TINDAKAN</th></tr></thead>
-                                <tbody id="masjidInfoTable"></tbody>
-                            </table>
+                             <div class="p-3 bg-gray-100 border-b border-gray-200 flex justify-between items-center">
+                                <h4 class="font-bold text-xs text-gray-500 uppercase">Senarai Masjid Berdaftar</h4>
+                                <input id="searchMasjidInfo" type="text" class="px-3 py-1 text-sm border rounded" placeholder="Cari dalam senarai..." oninput="window.renderMasjidInfoTable()">
+                            </div>
+                            <div class="overflow-y-auto max-h-64">
+                                <table class="data-table w-full">
+                                    <thead class="sticky top-0 bg-gray-50 z-10 shadow-sm">
+                                        <tr>
+                                            <th class="pl-4">NAMA MASJID</th>
+                                            <th>NO. PENDAFTARAN</th>
+                                            <th>NO. AKAUN</th>
+                                            <th class="text-center pr-4">TINDAKAN</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="masjidInfoTable" class="bg-white divide-y divide-gray-100"></tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
 
                     <hr class="border-t-2 border-gray-200 my-8">
 
-                    <!-- Jawatankuasa Section -->
+                    <!-- Section 2: Jawatankuasa -->
                     <div id="checkICSection" class="check-kp-box mb-6">
                         <h3 class="text-xl font-bold text-blue-900 mb-4">TAMBAH ATAU KEMASKINI DATA</h3>
                         <div class="max-w-md mx-auto flex gap-2">
@@ -314,13 +327,13 @@
                     </div>
 
                     <div class="bg-white border rounded-lg overflow-hidden">
-                        <div class="p-4 bg-gray-50 flex justify-between">
-                            <span class="font-bold">SENARAI DATA</span>
+                        <div class="p-4 bg-gray-50 flex justify-between items-center">
+                            <h3 class="font-bold text-gray-800">SENARAI JAWATANKUASA</h3>
                             <div class="flex gap-2">
-                                <button class="px-3 py-1 bg-blue-600 text-white text-xs rounded admin-filter-btn" onclick="window.setAdminFilter('all', this)">SEMUA</button>
-                                <button class="px-3 py-1 bg-white border text-xs rounded admin-filter-btn" onclick="window.setAdminFilter('MASJID', this)">MASJID</button>
-                                <button class="px-3 py-1 bg-white border text-xs rounded admin-filter-btn" onclick="window.setAdminFilter('SURAU', this)">SURAU</button>
-                                <button class="px-3 py-1 bg-white border text-xs rounded admin-filter-btn" onclick="window.setAdminFilter('PEGAWAI', this)">PEGAWAI</button>
+                                <button class="px-3 py-1 bg-blue-600 text-white text-xs rounded font-bold admin-filter-btn" onclick="window.setAdminFilter('all', this)">SEMUA</button>
+                                <button class="px-3 py-1 bg-white border text-blue-600 text-xs rounded font-bold admin-filter-btn" onclick="window.setAdminFilter('MASJID', this)">MASJID</button>
+                                <button class="px-3 py-1 bg-white border text-blue-600 text-xs rounded font-bold admin-filter-btn" onclick="window.setAdminFilter('SURAU', this)">SURAU</button>
+                                <button class="px-3 py-1 bg-white border text-blue-600 text-xs rounded font-bold admin-filter-btn" onclick="window.setAdminFilter('PEGAWAI', this)">PEGAWAI</button>
                             </div>
                         </div>
                         <table class="data-table">
@@ -354,7 +367,7 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div class="bg-blue-50 p-6 rounded-lg border border-blue-100">
                             <h4 class="font-bold text-blue-900 text-lg mb-2">SIMPAN DATA (EKSPORT)</h4>
-                            <p class="text-sm text-blue-700 mb-4">Muat turun pangkalan data.</p>
+                            <p class="text-sm text-blue-700 mb-4">Muat turun pangkalan data semasa sebagai fail CSV.</p>
                             <button onclick="window.exportToCSV()" class="btn btn-primary">MUAT TURUN CSV</button>
                         </div>
                         <div class="bg-green-50 p-6 rounded-lg border border-green-100">
@@ -445,6 +458,7 @@
         "IMAM": 8, "BILAL": 9, "SIAK": 10
     };
 
+    // --- HELPER FUNCTIONS ---
     window.populateParlimen = (id) => {
         const sel = document.getElementById(id);
         if(!sel) return;
@@ -668,13 +682,22 @@
 
     window.renderMasjidInfoTable = () => {
         const tbody = document.getElementById('masjidInfoTable');
+        const filterText = document.getElementById('searchMasjidInfo')?.value.toUpperCase() || "";
         const isSuper = window.currentUser && window.currentUser.role === 'superadmin';
-        tbody.innerHTML = window.masjidInfoData.map(d => `
-            <tr class="border-b hover:bg-gray-50">
-                <td>${d.namaMasjid}</td><td>${d.noPendaftaran}</td><td>${d.noAkaun}</td>
-                <td class="text-center">
-                    <button class="text-blue-600 font-bold" onclick="window.editMasjidInfo('${d.id}')">EDIT</button>
-                    ${isSuper ? `<button class="text-red-500 font-bold ml-2" onclick="window.deleteMasjidInfo('${d.id}')">PADAM</button>` : ''}
+        
+        const filteredData = window.masjidInfoData.filter(d => 
+            d.namaMasjid.includes(filterText) || 
+            d.noPendaftaran.includes(filterText)
+        );
+
+        tbody.innerHTML = filteredData.map(d => `
+            <tr class="border-b hover:bg-gray-50 transition-colors">
+                <td class="font-medium text-gray-700 py-3 px-4">${d.namaMasjid}</td>
+                <td class="text-gray-600 py-3 px-4 text-sm">${d.noPendaftaran}</td>
+                <td class="text-gray-600 py-3 px-4 text-sm">${d.noAkaun}</td>
+                <td class="text-center py-3 px-4">
+                    <button class="text-blue-600 hover:text-blue-800 p-1 font-bold" onclick="window.editMasjidInfo('${d.id}')">EDIT</button>
+                    ${isSuper ? `<button class="text-red-500 hover:text-red-700 ml-2 p-1 font-bold" onclick="window.deleteMasjidInfo('${d.id}')">PADAM</button>` : ''}
                 </td>
             </tr>
         `).join('');
@@ -684,9 +707,9 @@
         const cat = document.getElementById('publicKategori').value;
         const place = document.getElementById('publicTempat').value;
         const txt = document.getElementById('publicSearchText').value.toUpperCase();
-        const jaw = document.getElementById('publicJawatan').value; 
-        const par = document.getElementById('publicParlimen').value; // Added for new logic
-        const dun = document.getElementById('publicDun').value; // Added for new logic
+        const jaw = document.getElementById('publicJawatan').value;
+        const par = document.getElementById('publicParlimen').value;
+        const dun = document.getElementById('publicDun').value;
         
         let showBulkPrint = false;
         let printType = "";
@@ -701,11 +724,11 @@
             showBulkPrint = true;
             printType = 'JAWATAN';
             btnLabel = `CETAK SENARAI ${jaw}`;
-        } else if (par !== '') { // New Parlimen
+        } else if (par !== '') { 
             showBulkPrint = true;
             printType = 'PARLIMEN';
             btnLabel = `CETAK SENARAI PARLIMEN ${par}`;
-        } else if (dun !== '') { // New DUN
+        } else if (dun !== '') { 
             showBulkPrint = true;
             printType = 'DUN';
             btnLabel = `CETAK SENARAI DUN ${dun}`;
@@ -737,7 +760,6 @@
 
         let html = ``;
         if (showBulkPrint) {
-             // Pass params correctly
              const param = place || jaw || par || dun;
              html += `
             <div class="mb-4 text-center">
@@ -786,24 +808,29 @@
         const cat = document.getElementById('publicKategori').value;
         const place = document.getElementById('publicTempat').value;
         const jaw = document.getElementById('publicJawatan').value;
-        const par = document.getElementById('publicParlimen').value;
-        const dun = document.getElementById('publicDun').value;
 
-        // Filter Data
         let items = window.appData.filter(x => {
             if(cat !== 'all' && x.jenis !== cat) return false;
             if(place && x.tempat !== place) return false;
             if(jaw && x.jawatan !== jaw) return false;
-            if(par && x.parlimen !== par) return false;
-            if(dun && x.dun !== dun) return false;
+            // For PARLIMEN/DUN types, the param is passed directly
+            if (type === 'PARLIMEN' && x.parlimen !== param) return false;
+            if (type === 'DUN' && x.dun !== param) return false;
             return true;
         });
 
-        // Sorting
+        // Sorting Logic
         if (type === 'PLACE') {
+             // By Rank
             items.sort((a, b) => (positionRank[a.jawatan] || 99) - (positionRank[b.jawatan] || 99));
         } else {
-            items.sort((a, b) => a.tempat.localeCompare(b.tempat)); 
+             // By Place Name, then Rank
+             items.sort((a, b) => {
+                 if (a.tempat === b.tempat) {
+                     return (positionRank[a.jawatan] || 99) - (positionRank[b.jawatan] || 99);
+                 }
+                 return a.tempat.localeCompare(b.tempat);
+             });
         }
         
         // Logo
@@ -835,20 +862,11 @@
             headers = [['BIL', 'NAMA PENUH', 'JAWATAN', 'NO. TELEFON']];
             body = items.map((x, i) => [i+1, x.nama, x.jawatan, x.notel]);
         } 
-        else if (type === 'JAWATAN') {
-            title = `SENARAI ${param}`;
-            subTitle = cat !== 'all' ? `KATEGORI: ${cat}` : "SEMUA KATEGORI";
-            headers = [['BIL', 'NAMA PENUH', 'TEMPAT BERTUGAS', 'NO. TELEFON']];
-            body = items.map((x, i) => [i+1, x.nama, x.tempat, x.notel]);
-        }
-        else if (type === 'PARLIMEN') {
-            title = `SENARAI JAWATANKUASA PARLIMEN ${param}`;
-            subTitle = cat !== 'all' ? `KATEGORI: ${cat}` : "SEMUA KATEGORI";
-            headers = [['BIL', 'NAMA PENUH', 'JAWATAN', 'TEMPAT BERTUGAS']];
-            body = items.map((x, i) => [i+1, x.nama, x.jawatan, x.tempat]);
-        }
-        else if (type === 'DUN') {
-            title = `SENARAI JAWATANKUASA DUN ${param}`;
+        else {
+            if(type === 'JAWATAN') title = `SENARAI ${param}`;
+            else if(type === 'PARLIMEN') title = `SENARAI JAWATANKUASA PARLIMEN ${param}`;
+            else if(type === 'DUN') title = `SENARAI JAWATANKUASA DUN ${param}`;
+
             subTitle = cat !== 'all' ? `KATEGORI: ${cat}` : "SEMUA KATEGORI";
             headers = [['BIL', 'NAMA PENUH', 'JAWATAN', 'TEMPAT BERTUGAS']];
             body = items.map((x, i) => [i+1, x.nama, x.jawatan, x.tempat]);
@@ -856,7 +874,7 @@
 
         doc.text(title, 105, 45, {align:'center'});
         doc.setFontSize(11); doc.setFont("helvetica", "bold");
-        doc.text(subTitle, 105, 55, {align:'center'}); // Adjusted Y
+        doc.text(subTitle, 105, 55, {align:'center'}); 
         doc.line(14, 62, 196, 62);
 
         doc.autoTable({
@@ -869,6 +887,56 @@
             columnStyles: { 0: { halign: 'center', cellWidth: 15 } }
         });
 
+        window.open(URL.createObjectURL(doc.output('blob')), '_blank');
+    };
+
+    window.generatePDF = async (d) => {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        
+        try {
+            const img = await new Promise((resolve) => {
+                const i = new Image(); i.crossOrigin="Anonymous";
+                i.onload = () => {
+                    const c = document.createElement('canvas'); c.width=i.width; c.height=i.height;
+                    c.getContext('2d').drawImage(i,0,0); resolve(c.toDataURL('image/png'));
+                };
+                i.src = "https://i.postimg.cc/7frn73HY/image.png";
+            });
+            doc.addImage(img, 'PNG', 95, 10, 20, 20);
+        } catch(e) {}
+
+        doc.setFont("helvetica", "bold"); doc.setFontSize(12);
+        doc.text("JABATAN HAL EHWAL AGAMA ISLAM PULAU PINANG", 105, 38, {align:'center'});
+        doc.setFont("helvetica", "normal"); doc.setFontSize(9);
+        doc.text("Lebuh Pantai, 10300 Pulau Pinang | Tel: 04-684 7000", 105, 44, {align:'center'});
+        doc.line(20, 50, 190, 50);
+
+        doc.setFontSize(11); doc.setFont("helvetica", "bold");
+        doc.text(`REKOD MAKLUMAT ${d.jenis}`, 105, 60, {align:'center'});
+
+        const body = [
+            ['NAMA PENUH', d.nama],
+            ['JAWATAN', d.jawatan],
+            ['TEMPAT BERTUGAS', d.tempat],
+            ['NO. PENDAFTARAN', d.noPendaftaran || '-'],
+            ['TEMPOH LANTIKAN', `${d.tarikhLantikan || '-'} HINGGA ${d.tarikhTamat || '-'}`],
+            ['NO. TELEFON', d.notel],
+            ['PARLIMEN / DUN', `${d.parlimen}\n${d.dun}`]
+        ];
+
+        doc.autoTable({
+            startY: 70,
+            body: body,
+            theme: 'grid',
+            styles: { fontSize: 10, cellPadding: 3, valign: 'middle' },
+            columnStyles: { 0: { fontStyle: 'bold', cellWidth: 60, fillColor: [240, 240, 240] } }
+        });
+
+        const finalY = doc.lastAutoTable.finalY + 20;
+        doc.setFontSize(8); doc.setTextColor(100);
+        doc.text("Dicetak pada: " + new Date().toLocaleString(), 105, finalY, {align:'center'});
+        
         window.open(URL.createObjectURL(doc.output('blob')), '_blank');
     };
 
@@ -950,8 +1018,42 @@
         } else { alert("Nama pengguna atau kata laluan salah."); }
     }
     
+    window.renderAdminDataTable = () => {
+        const tbody = document.getElementById('adminDataTable');
+        const isSuper = window.currentUser && window.currentUser.role === 'superadmin';
+        
+        let filteredData = window.appData;
+        if (window.adminDataFilter !== 'all') {
+            filteredData = window.appData.filter(item => item.jenis === window.adminDataFilter);
+        }
+
+        tbody.innerHTML = filteredData.map((item) => {
+            const id = item.id;
+            const delBtn = isSuper ? 
+                `<button class="text-red-500 hover:text-red-700 font-bold ml-3" onclick="window.deleteData('${id}')">PADAM</button>` : '';
+            return `<tr class="border-b hover:bg-gray-50">
+                <td><span class="text-xs font-bold px-2 py-1 rounded bg-blue-100 text-blue-800 uppercase">${item.jenis}</span></td>
+                <td class="font-medium">${item.nama}</td>
+                <td>${item.tempat} <span class="text-gray-500 text-xs block">${item.kariah || ''}</span></td>
+                <td>${item.jawatan}</td>
+                <td class="font-mono text-sm">${item.nokp}</td>
+                <td class="text-center"><button class="text-blue-600 hover:text-blue-800 font-bold" onclick="window.editData('${id}')">EDIT</button>${delBtn}</td>
+            </tr>`;
+        }).join('');
+    };
+
+    window.renderUserTable = () => {
+        document.getElementById('userListTable').innerHTML = window.appUsers.map((u) => `
+            <tr>
+                <td class="font-bold">${u.username.toUpperCase()}</td>
+                <td><span class="px-2 py-1 rounded text-xs ${u.role==='superadmin'?'bg-purple-100 text-purple-800':'bg-gray-100 text-gray-800'}">${u.role.toUpperCase()}</span></td>
+                <td class="text-center">${u.username!=='admin' ? `<button class="text-red-500 hover:text-red-700" onclick="window.delUser('${u.id}')">PADAM</button>` : ''}</td>
+            </tr>
+        `).join('');
+    }
+    
     // --- Init Function Defined Last ---
-    async function init() {
+    const init = async () => {
         try {
             await signInAnonymously(auth);
             document.getElementById('loadingOverlay').style.display = 'none';
@@ -982,7 +1084,7 @@
             window.updatePublicJawatanList();
             window.updateMasjidDropdowns();
         } catch (e) { console.error(e); }
-    }
+    };
 
     init();
 
