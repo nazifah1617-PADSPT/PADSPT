@@ -11,7 +11,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
 
-    <!-- Google Fonts: Inter for professional look -->
+    <!-- Google Fonts: Inter -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
     <style>
@@ -22,29 +22,26 @@
             margin: 0;
             padding: 0;
             font-family: 'Inter', sans-serif;
-            background-color: #e2e8f0; /* Slightly darker background for contrast */
+            background-color: #f1f5f9;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
         }
 
-        /* FORCE UPPERCASE INPUTS */
         input[type="text"], textarea, select {
             text-transform: uppercase;
         }
 
-        /* Loading Overlay */
         #loadingOverlay {
             display: flex; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(255,255,255,0.95); z-index: 3000; align-items: center; justify-content: center;
             flex-direction: column;
         }
 
-        /* MAIN CONTAINER */
         .main-container { 
-            max-width: 1200px; /* Lebar penuh untuk jadual */
+            max-width: 1280px; 
             margin: 2rem auto; 
-            padding: 0 1rem; 
+            padding: 0 1.5rem; 
             position: relative; 
             z-index: 10; 
             width: 100%; 
@@ -54,19 +51,19 @@
         .content-card { 
             background: white; 
             border-radius: 1rem; 
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); 
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); 
             overflow: hidden; 
             min-height: 600px; 
             border-top: 6px solid #fbbf24; 
             position: relative;
         }
 
-        /* BRANDING SECTION (INSIDE FORM) */
         .form-header {
             text-align: center;
             padding: 2.5rem 2rem 1.5rem;
             border-bottom: 1px solid #e2e8f0;
             margin-bottom: 1rem;
+            background: #fff;
         }
 
         .gov-logo {
@@ -77,13 +74,7 @@
         }
 
         .header-title {
-            font-size: 1.5rem;
-            font-weight: 800;
-            color: #1e3a8a;
-            letter-spacing: 0.025em;
-            text-transform: uppercase;
-            line-height: 1.3;
-            margin-bottom: 0.5rem;
+            font-size: 1.5rem; font-weight: 800; color: #1e3a8a; text-transform: uppercase;
         }
 
         .header-subtitle {
@@ -101,93 +92,62 @@
 
         /* SEARCH PANEL */
         .search-panel { 
-            background-color: #f8fafc; 
-            border: 1px solid #cbd5e1; 
-            border-radius: 0.75rem; 
-            padding: 1.5rem; 
-            margin-bottom: 2rem; 
+            background-color: #f8fafc; border: 1px solid #cbd5e1; border-radius: 0.75rem; padding: 1.5rem; margin-bottom: 2rem; 
         }
 
-        .panel-title { 
-            font-size: 1.1rem; 
-            font-weight: 700; 
-            color: #1e40af; 
-            margin-bottom: 1rem; 
-            display: flex; 
-            align-items: center; 
-            gap: 0.5rem; 
+        .results-wrapper {
+            border: 1px solid #e2e8f0; border-radius: 0.5rem; overflow-x: auto; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
         }
-        
-        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; }
-        .form-label { display: block; font-size: 0.85rem; font-weight: 600; color: #475569; margin-bottom: 0.25rem; }
-        .form-input, .form-select { width: 100%; padding: 0.6rem; font-size: 0.9rem; border: 1px solid #cbd5e1; border-radius: 0.375rem; transition: border-color 0.15s; }
-        .form-input:focus, .form-select:focus { outline: none; border-color: #3b82f6; ring: 2px solid rgba(59, 130, 246, 0.2); }
-        .form-input[readonly] { background-color: #f3f4f6; color: #64748b; cursor: not-allowed; }
 
-        /* PUBLIC RESULTS TABLE */
-        .results-list { display: block; width: 100%; overflow-x: auto; }
-        .public-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; background: white; border: 1px solid #e2e8f0; border-radius: 0.5rem; }
-        .public-table th { background: #1e3a8a; color: white; padding: 12px 10px; text-align: left; font-weight: 600; text-transform: uppercase; white-space: nowrap; font-size: 0.8rem; }
-        .public-table td { padding: 12px 10px; border-bottom: 1px solid #e2e8f0; color: #334155; vertical-align: top; }
-        .public-table tr:hover { background-color: #f8fafc; }
-        .public-table tr:last-child td { border-bottom: none; }
+        .custom-table {
+            width: 100%; border-collapse: collapse; font-size: 0.85rem; background-color: white; min-width: 900px;
+        }
 
-        /* TABLES ADMIN */
-        .table-container { border: 1px solid #e2e8f0; border-radius: 0.5rem; overflow: hidden; margin-top: 1rem; }
-        .data-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
-        .data-table th { background: #f1f5f9; color: #475569; font-weight: 700; text-align: left; padding: 0.75rem 1rem; border-bottom: 1px solid #e2e8f0; text-transform: uppercase; }
-        .data-table td { padding: 0.75rem 1rem; border-bottom: 1px solid #e2e8f0; color: #334155; }
-        .data-table tr:hover { background: #f8fafc; }
+        .custom-table thead { background-color: #1e3a8a; color: white; }
+        .custom-table th { padding: 12px 16px; text-align: left; border-bottom: 3px solid #fbbf24; }
+        .custom-table td { padding: 12px 16px; border-bottom: 1px solid #f1f5f9; color: #334155; }
+        .custom-table tbody tr:nth-child(even) { background-color: #f8fafc; }
+        .custom-table tbody tr:hover { background-color: #eff6ff; }
 
-        /* BUTTONS */
-        .btn { display: inline-flex; align-items: center; justify-content: center; padding: 0.6rem 1.25rem; border-radius: 0.375rem; font-weight: 600; font-size: 0.9rem; cursor: pointer; transition: all 0.2s; border: none; width: 100%; }
+        .tbl-badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 10px; font-weight: 700; text-transform: uppercase; }
+        .bg-masjid { background-color: #dbeafe; color: #1e40af; border: 1px solid #93c5fd; }
+        .bg-surau { background-color: #dcfce7; color: #166534; border: 1px solid #86efac; }
+        .bg-pegawai { background-color: #ffedd5; color: #9a3412; border: 1px solid #fdba74; }
+
+        .btn-pdf-sm { background-color: #dc2626; color: white; padding: 6px 12px; border-radius: 6px; font-size: 11px; font-weight: 700; border: none; cursor: pointer; }
+
+        .btn-bulk-pdf {
+            background-color: #059669;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 1rem;
+            transition: all 0.2s;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 4px 6px -1px rgba(5, 150, 105, 0.3);
+        }
+        .btn-bulk-pdf:hover { background-color: #047857; transform: translateY(-1px); }
+
+        .form-label { display: block; font-size: 0.75rem; font-weight: 700; color: #64748b; margin-bottom: 0.4rem; }
+        .form-input, .form-select { width: 100%; padding: 0.6rem; font-size: 0.9rem; border: 1px solid #cbd5e1; border-radius: 0.375rem; }
+
+        .btn { display: inline-flex; align-items: center; justify-content: center; padding: 0.75rem 1.5rem; border-radius: 0.5rem; font-weight: 600; cursor: pointer; border: none; }
         .btn-primary { background: #2563eb; color: white; }
         .btn-success { background: #059669; color: white; }
-        .btn-outline { background: transparent; border: 1px solid #2563eb; color: #2563eb; }
-        .btn-outline:hover { background: #eff6ff; }
-        .active-tab { background: #eff6ff; color: #1d4ed8; border-color: #bfdbfe; }
-
-        /* FOOTER */
-        .gov-footer { background-color: #1e3a8a; color: white; padding-top: 2rem; padding-bottom: 2rem; border-top: 5px solid #fbbf24; margin-top: auto; }
-        .footer-content { max-width: 1000px; margin: 0 auto; padding: 0 1rem; display: grid; grid-template-columns: 1fr; gap: 2rem; }
-        @media (min-width: 768px) { .footer-content { grid-template-columns: 2fr 1fr; } .footer-right { text-align: right; } }
-        @media (max-width: 768px) { .footer-content { text-align: center; } .footer-right { text-align: center; margin-top: 1rem; } .footer-right .flex { justify-content: center; } }
-
-        /* LOGIN OVERLAY */
-        .login-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.8); z-index: 2000; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
+        
+        .gov-footer { background-color: #1e3a8a; color: white; padding: 2rem 0; border-top: 5px solid #fbbf24; margin-top: auto; }
+        .login-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.8); z-index: 2000; align-items: center; justify-content: center; }
         .login-overlay.active { display: flex; }
-        .login-box { background: white; padding: 2.5rem; border-radius: 1rem; width: 90%; max-width: 400px; text-align: center; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); }
-        
-        /* LOGOUT BUTTON INSIDE CARD */
-        .logout-btn { 
-            position: absolute; top: 1rem; right: 1rem; 
-            background: #fee2e2; color: #991b1b; 
-            padding: 0.4rem 1rem; border-radius: 0.375rem; 
-            font-size: 0.8rem; font-weight: 600;
-            cursor: pointer; border: 1px solid #fecaca; 
-            display: none; transition: all 0.2s;
-        }
-        .logout-btn:hover { background: #fecaca; }
-        
-        /* Initial State Message */
-        .initial-state-msg {
-            text-align: center;
-            padding: 3rem;
-            color: #64748b;
-            background: #f8fafc;
-            border-radius: 0.5rem;
-            border: 1px dashed #cbd5e1;
-        }
-
-        /* Check KP Box */
-        .check-kp-box {
-            background-color: #eff6ff;
-            border: 1px solid #bfdbfe;
-            border-radius: 0.75rem;
-            padding: 2rem;
-            text-align: center;
-            margin-bottom: 2rem;
-        }
+        .login-box { background: white; padding: 2.5rem; border-radius: 1rem; width: 90%; max-width: 400px; text-align: center; }
+        .logout-btn { position: absolute; top: 1rem; right: 1rem; background: #fee2e2; color: #991b1b; padding: 0.4rem 1rem; border-radius: 0.375rem; font-size: 0.8rem; font-weight: 600; cursor: pointer; display: none; }
+        .check-kp-box { background-color: #eff6ff; border: 1px solid #bfdbfe; border-radius: 0.75rem; padding: 2rem; text-align: center; }
+        .active-tab { background: #eff6ff; color: #1d4ed8; border-color: #bfdbfe; }
     </style>
 </head>
 <body>
@@ -198,36 +158,24 @@
     <p id="configStatus" class="text-sm text-gray-500 mt-2">Menunggu konfigurasi...</p>
 </div>
 
-<!-- MAIN CONTENT WRAPPER -->
 <div class="main-container">
     <div class="content-card">
-        
-        <!-- LOGOUT BUTTON (Only visible to Admin) -->
-        <button id="logoutBtn" class="logout-btn" onclick="logout()">
-            LOG KELUAR
-        </button>
+        <button id="logoutBtn" class="logout-btn" onclick="window.logout()">LOG KELUAR</button>
 
-        <!-- BRANDING SECTION (INSIDE CARD) -->
         <div class="form-header">
-            <img id="logoImg" src="https://i.postimg.cc/HsVZqzF5/JATAPenang.png" alt="Jata Pulau Pinang" class="gov-logo" crossorigin="anonymous">
+            <img id="logoImg" src="https://i.postimg.cc/HsVZqzF5/JATAPenang.png" alt="Jata" class="gov-logo" crossorigin="anonymous">
             <h1 class="header-title">PORTAL DATA MAKLUMAT MASJID DAN SURAU</h1>
             <p class="header-subtitle">JABATAN HAL EHWAL AGAMA ISLAM PULAU PINANG</p>
         </div>
         
-        <!-- PUBLIC MODE -->
+        <!-- CARIAN AWAM -->
         <div id="publicMode" class="admin-content active">
             <div class="content-padding">
                 <div class="search-panel">
-                    <div class="panel-title">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                        </svg>
-                        CARIAN & PENAPISAN DATA
-                    </div>
                     <div class="form-grid">
                         <div>
                             <label class="form-label">KATEGORI</label>
-                            <select id="publicKategori" class="form-select" onchange="updatePublicJawatanList(); updatePublicTempatList(); performSearch()">
+                            <select id="publicKategori" class="form-select" onchange="window.updatePublicJawatanList(); window.updatePublicTempatList(); window.performSearch()">
                                 <option value="all">SEMUA KATEGORI</option>
                                 <option value="MASJID">MASJID</option>
                                 <option value="SURAU">SURAU</option>
@@ -236,230 +184,157 @@
                         </div>
                         <div>
                             <label class="form-label" id="publicTempatLabel">NAMA MASJID / SURAU</label>
-                            <select id="publicTempat" class="form-select" onchange="performSearch()">
+                            <select id="publicTempat" class="form-select" onchange="window.performSearch()">
                                 <option value="">SEMUA</option>
                             </select>
                         </div>
                         <div>
                             <label class="form-label">PARLIMEN</label>
-                            <select id="publicParlimen" class="form-select" onchange="updatePublicDunList(); performSearch()">
+                            <select id="publicParlimen" class="form-select" onchange="window.updatePublicDunList(); window.performSearch()">
                                 <option value="">SEMUA PARLIMEN</option>
                             </select>
                         </div>
                         <div>
                             <label class="form-label">DUN</label>
-                            <select id="publicDun" class="form-select" onchange="performSearch()">
+                            <select id="publicDun" class="form-select" onchange="window.performSearch()">
                                 <option value="">SEMUA DUN</option>
                             </select>
                         </div>
                         <div>
                             <label class="form-label">JAWATAN</label>
-                            <select id="publicJawatan" class="form-select" onchange="performSearch()">
+                            <select id="publicJawatan" class="form-select" onchange="window.performSearch()">
                                 <option value="">SEMUA JAWATAN</option>
                             </select>
                         </div>
-                        <div class="md:col-span-3"> 
-                            <label class="form-label">CARIAN TEKS (NAMA / NO. KP)</label>
-                            <div class="relative">
-                                <input type="text" id="publicSearchText" class="form-input pl-10" placeholder="MASUKKAN KATA KUNCI CARIAN..." oninput="this.value = this.value.toUpperCase(); performSearch()">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 absolute left-3 top-2.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                                </svg>
-                            </div>
+                        <div class="md:col-span-3">
+                            <label class="form-label">CARIAN TEKS</label>
+                            <input type="text" id="publicSearchText" class="form-input" placeholder="NAMA / NO KP..." oninput="window.performSearch()">
                         </div>
                     </div>
                 </div>
-
-                <div id="publicResults" class="results-list">
-                    <!-- Initial State Message (Shown by default) -->
-                    <div class="initial-state-msg col-span-full">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto text-gray-400 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                        </svg>
-                        <p class="font-medium text-gray-600">Sila masukkan kata kunci atau pilih tapisan untuk memulakan carian.</p>
-                    </div>
-                </div>
+                <div id="publicResults" class="results-wrapper"></div>
             </div>
         </div>
 
-        <!-- ADMIN MODE -->
+        <!-- PANEL PENTADBIR -->
         <div id="adminMode" class="admin-content">
             <div class="bg-blue-50 border-y border-blue-100 p-4 mb-6 flex justify-between items-center mx-8 rounded-lg">
-                <div class="flex items-center gap-2">
-                    <div class="bg-blue-600 text-white p-2 rounded-lg">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd" />
-                        </svg>
-                    </div>
-                    <div>
-                        <h2 class="font-bold text-blue-900">PANEL PENGURUSAN</h2>
-                        <div id="currentUserBadge" class="text-xs text-blue-600 font-medium"></div>
-                    </div>
-                </div>
-                <div class="flex gap-2 flex-wrap">
-                    <button class="px-4 py-2 bg-white border border-blue-200 text-blue-600 rounded-md text-xs font-bold hover:bg-blue-50 active-tab" onclick="switchAdminTab('data', this)">PENGURUSAN DATA</button>
-                    <!-- USERS TAB BTN (Hidden for non-superadmin) -->
-                    <button class="px-4 py-2 bg-white border border-blue-200 text-blue-600 rounded-md text-xs font-bold hover:bg-blue-50" id="usersTabBtn" onclick="switchAdminTab('users', this)">PENGGUNA</button>
-                    <!-- IMPORT TAB BTN (Hidden for non-superadmin) -->
-                    <button class="px-4 py-2 bg-white border border-blue-200 text-blue-600 rounded-md text-xs font-bold hover:bg-blue-50" id="importTabBtn" onclick="switchAdminTab('import', this)">IMPORT/EKSPORT</button>
+                <div id="currentUserBadge" class="font-bold text-blue-900">PANEL PENGURUSAN</div>
+                <div class="flex gap-2">
+                    <button class="px-4 py-2 bg-white border border-blue-200 text-blue-600 rounded-md text-xs font-bold active-tab" onclick="window.switchAdminTab('data', this)">DATA</button>
+                    <button id="usersTabBtn" class="px-4 py-2 bg-white border border-blue-200 text-blue-600 rounded-md text-xs font-bold" onclick="window.switchAdminTab('users', this)">PENGGUNA</button>
+                    <button id="importTabBtn" class="px-4 py-2 bg-white border border-blue-200 text-blue-600 rounded-md text-xs font-bold" onclick="window.switchAdminTab('import', this)">IMPORT</button>
                 </div>
             </div>
 
             <div class="content-padding">
-                <!-- TAB: DATA (GABUNGAN MAKLUMAT MASJID + JAWATANKUASA) -->
                 <div id="adminDataTab" class="admin-tab-pane">
-                    
-                    <!-- BAHAGIAN 1: PENGURUSAN MAKLUMAT MASJID -->
+                    <!-- Masjid Info Section -->
                     <div class="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-8 shadow-sm relative overflow-hidden">
                          <div class="absolute top-0 left-0 w-1.5 h-full bg-blue-600"></div>
                          <h3 class="text-lg font-bold text-blue-900 mb-6 flex items-center gap-2">
-                             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                            </svg>
                             PENGURUSAN MAKLUMAT MASJID (RASMI)
                         </h3>
-                        
-                        <form id="addMasjidForm" onsubmit="addNewMasjidInfo(event)">
-                            <input type="hidden" id="editMasjidId" value="">
+                        <form id="addMasjidForm" onsubmit="window.addNewMasjidInfo(event)">
+                            <input type="hidden" id="editMasjidId">
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div class="md:col-span-2">
                                     <label class="form-label">NAMA MASJID</label>
-                                    <select id="inputNamaMasjid" class="form-select bg-white" required>
-                                        <option value="">PILIH MASJID</option>
-                                    </select>
+                                    <select id="inputNamaMasjid" class="form-select bg-white" required></select>
                                 </div>
-                                <div>
-                                    <label class="form-label">NO. PENDAFTARAN MASJID</label>
-                                    <input id="inputNoPendaftaran" class="form-input bg-white" oninput="this.value = this.value.toUpperCase()" required>
-                                </div>
-                                <div>
-                                    <label class="form-label">NO. AKAUN MASJID</label>
-                                    <input id="inputNoAkaun" class="form-input bg-white" oninput="this.value = this.value.toUpperCase()" required>
-                                </div>
+                                <div><label class="form-label">NO. PENDAFTARAN</label><input id="inputNoPendaftaran" class="form-input bg-white" required></div>
+                                <div><label class="form-label">NO. AKAUN</label><input id="inputNoAkaun" class="form-input bg-white" required></div>
                             </div>
-                            <div class="mt-6 flex justify-end">
-                                <button type="submit" id="saveMasjidBtn" class="btn btn-success w-auto px-8 shadow-md">SIMPAN MAKLUMAT MASJID</button>
+                            <div class="mt-6 text-right">
+                                <button type="submit" id="saveMasjidBtn" class="btn btn-success px-8">SIMPAN MAKLUMAT</button>
                             </div>
                         </form>
-                        
-                        <!-- TABEL MAKLUMAT MASJID -->
-                        <div class="mt-8 bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
-                            <div class="bg-blue-100 px-6 py-3 border-b border-gray-200"><h4 class="font-bold text-blue-800 text-sm">SENARAI MAKLUMAT MASJID</h4></div>
-                            <div class="overflow-x-auto max-h-60">
-                                <table class="data-table">
-                                    <thead><tr><th>NAMA MASJID</th><th>NO. PENDAFTARAN</th><th>NO. AKAUN</th><th class="text-center">TINDAKAN</th></tr></thead>
-                                    <tbody id="masjidInfoTable"></tbody>
-                                </table>
-                            </div>
+                        <div class="mt-8 bg-white border border-gray-200 rounded-lg overflow-hidden">
+                            <table class="data-table">
+                                <thead><tr><th>NAMA MASJID</th><th>NO. PENDAFTARAN</th><th>NO. AKAUN</th><th class="text-center">TINDAKAN</th></tr></thead>
+                                <tbody id="masjidInfoTable"></tbody>
+                            </table>
                         </div>
                     </div>
 
                     <hr class="border-t-2 border-gray-200 my-8">
 
-                    <!-- BAHAGIAN 2: DATA JAWATANKUASA -->
-                    <!-- SEMAKAN KP DAHULU SEBELUM BUKA BORANG -->
-                    <div id="checkICSection" class="bg-white border border-gray-200 rounded-lg p-6 mb-6 shadow-sm">
-                        <div class="check-kp-box">
-                            <h3 class="text-xl font-bold text-blue-900 mb-4">TAMBAH ATAU KEMASKINI DATA</h3>
-                            <p class="text-gray-600 mb-6">Sila masukkan No. Kad Pengenalan untuk semakan. Jika rekod wujud, anda boleh mengemaskininya.</p>
-                            
-                            <div class="max-w-md mx-auto flex gap-2">
-                                <input id="checkKpInput" class="form-input text-center text-lg tracking-wider" placeholder="800101075555" maxlength="12" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
-                                <button onclick="checkIC()" class="btn btn-primary whitespace-nowrap px-6">SEMAK DATA</button>
-                            </div>
+                    <!-- Jawatankuasa Section -->
+                    <div id="checkICSection" class="check-kp-box mb-6">
+                        <h3 class="text-xl font-bold text-blue-900 mb-4">TAMBAH ATAU KEMASKINI DATA</h3>
+                        <div class="max-w-md mx-auto flex gap-2">
+                            <input id="checkKpInput" class="form-input text-center text-lg tracking-wider" placeholder="NO KP 12 DIGIT" maxlength="12">
+                            <button onclick="window.checkIC()" class="btn btn-primary px-6">SEMAK DATA</button>
                         </div>
                     </div>
 
-                    <!-- BORANG TAMBAH DATA (HIDDEN BY DEFAULT) -->
-                    <div id="formSection" class="bg-white border border-gray-200 rounded-lg p-6 mb-6 shadow-sm hidden">
-                        <div class="flex justify-between items-center mb-6">
-                            <h3 class="text-lg font-bold text-gray-800 flex items-center gap-2">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                </svg>
-                                BORANG TAMBAH DATA JAWATANKUASA
-                            </h3>
-                            <button onclick="cancelAdd()" class="text-sm text-red-500 hover:text-red-700 font-bold underline">BATAL / KEMBALI</button>
+                    <div id="formSection" class="hidden bg-gray-50 p-6 rounded-lg border mb-8">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="font-bold text-gray-800">BORANG DATA JAWATANKUASA</h3>
+                            <button onclick="window.cancelAdd()" class="text-red-500 font-bold underline">BATAL</button>
                         </div>
-
-                        <form id="addDataForm" onsubmit="addNewData(event)">
-                            <input type="hidden" id="editId" value="">
-                            <div class="mb-4">
-                                <label class="form-label text-base">KATEGORI DATA</label>
-                                <select id="newJenis" class="form-select bg-gray-50 border-blue-300 text-blue-900 font-medium" onchange="updateFormFields()">
-                                    <option value="MASJID">MASJID</option>
-                                    <option value="SURAU">SURAU</option>
-                                    <option value="PEGAWAI">PEGAWAI MASJID</option>
-                                </select>
-                            </div>
-                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                <div><label class="form-label">NO. KP (12 DIGIT)</label><input id="newNokp" class="form-input bg-gray-100 cursor-not-allowed" readonly></div>
-                                <div><label class="form-label">NAMA PENUH</label><input id="newNama" class="form-input" oninput="this.value = this.value.toUpperCase()" required></div>
-                                
+                        <form id="addDataForm" onsubmit="window.addNewData(event)">
+                            <input type="hidden" id="editId">
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div><label class="form-label">NO KP</label><input id="newNokp" class="form-input bg-gray-200" readonly></div>
+                                <div><label class="form-label">NAMA PENUH</label><input id="newNama" class="form-input" required></div>
+                                <div><label class="form-label">KATEGORI</label>
+                                    <select id="newJenis" class="form-select" onchange="window.updateFormFields()" required>
+                                        <option value="MASJID">MASJID</option>
+                                        <option value="SURAU">SURAU</option>
+                                        <option value="PEGAWAI">PEGAWAI MASJID</option>
+                                    </select>
+                                </div>
                                 <div id="group-nama-tempat">
                                     <label class="form-label" id="label-nama-tempat">NAMA MASJID</label>
-                                    <input id="newNamaTempatInput" class="form-input" oninput="this.value = this.value.toUpperCase()" style="display:none;" placeholder="MASUKKAN NAMA SURAU">
-                                    <select id="newNamaTempatSelect" class="form-select" style="display:block;">
-                                        <option value="">PILIH MASJID</option>
-                                    </select>
+                                    <select id="newNamaTempatSelect" class="form-select"></select>
+                                    <input id="newNamaTempatInput" class="form-input hidden">
                                 </div>
-
-                                <div id="group-nama-kariah" style="display:none;">
-                                    <label class="form-label" id="label-nama-kariah">NAMA KARIAH / MASJID</label>
-                                    <input id="newNamaKariah" class="form-input" style="display:none;"> 
-                                    <select id="newNamaKariahSelect" class="form-select" style="display:none;">
-                                        <option value="">PILIH KARIAH / MASJID</option>
-                                    </select>
+                                <div id="group-nama-kariah" class="hidden">
+                                    <label class="form-label">KARIAH / MASJID</label>
+                                    <select id="newNamaKariahSelect" class="form-select"></select>
+                                    <input id="newNamaKariah" class="form-input hidden">
                                 </div>
-
                                 <div><label class="form-label">JAWATAN</label><select id="newJawatan" class="form-select" required></select></div>
-                                <div><label class="form-label">PARLIMEN</label><select id="newParlimen" class="form-select" onchange="updateDunList()"><option value="">PILIH PARLIMEN</option></select></div>
-                                <div><label class="form-label">DUN</label><select id="newDun" class="form-select"><option value="">PILIH PARLIMEN DAHULU</option></select></div>
-                                
-                                <div><label class="form-label">JANTINA (AUTO)</label><input id="newJantina" class="form-input bg-gray-100" readonly></div>
-                                <div><label class="form-label">UMUR (AUTO)</label><input id="newUmur" class="form-input bg-gray-100" readonly></div>
-                                <div><label class="form-label">NO. TELEFON</label><input id="newNotel" class="form-input" placeholder="01X-XXXXXXX" oninput="formatPhone(this)" required></div>
-                                <div><label class="form-label">PEKERJAAN</label><input id="newPekerjaan" class="form-input" oninput="this.value = this.value.toUpperCase()"></div>
-                                
-                                <div id="group-tahun-lantikan" style="display:none;"><label class="form-label">TAHUN LANTIKAN</label><input id="newTahunLantikan" type="number" class="form-input" placeholder="YYYY"></div>
-                                
-                                <div id="group-tarikh-pegawai" style="display:none;" class="md:col-span-2 grid grid-cols-2 gap-4">
+                                <div><label class="form-label">PARLIMEN</label><select id="newParlimen" class="form-select" onchange="window.updateDunList()" required></select></div>
+                                <div><label class="form-label">DUN</label><select id="newDun" class="form-select" required></select></div>
+                                <div><label class="form-label">NO TEL</label><input id="newNotel" class="form-input" required></div>
+                                <div><label class="form-label">PEKERJAAN</label><input id="newPekerjaan" class="form-input"></div>
+                                <div id="group-tarikh-pegawai" class="md:col-span-2 grid grid-cols-2 gap-4">
                                     <div><label class="form-label">TARIKH LANTIKAN</label><input id="newTarikhLantikan" type="date" class="form-input"></div>
                                     <div><label class="form-label">TARIKH TAMAT</label><input id="newTarikhTamat" type="date" class="form-input"></div>
                                 </div>
-                                
-                                <div class="md:col-span-3"><label class="form-label">ALAMAT LENGKAP</label><input id="newAlamat" class="form-input" oninput="this.value = this.value.toUpperCase()" required></div>
+                                <div class="md:col-span-3"><label class="form-label">ALAMAT</label><textarea id="newAlamat" class="form-input" rows="2"></textarea></div>
+                                <div class="hidden"><input id="newTahunLantikan"><input id="newJantina"><input id="newUmur"></div>
                             </div>
-                            <div class="mt-6 flex justify-end">
-                                <button type="submit" id="saveBtn" class="btn btn-success w-auto px-8 shadow-md">SIMPAN DATA JAWATANKUASA</button>
+                            <div class="mt-6 text-right">
+                                <button type="submit" id="saveBtn" class="btn btn-success px-12">SIMPAN DATA</button>
                             </div>
                         </form>
                     </div>
 
-                    <div class="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
-                         <div class="bg-gray-50 px-6 py-4 border-b border-gray-200 flex justify-between items-center">
-                            <h3 class="font-bold text-gray-800">SENARAI JAWATANKUASA & PEGAWAI</h3>
+                    <div class="bg-white border rounded-lg overflow-hidden">
+                        <div class="p-4 bg-gray-50 flex justify-between">
+                            <span class="font-bold">SENARAI DATA</span>
                             <div class="flex gap-2">
-                                <button class="px-3 py-1 bg-blue-600 text-white text-xs rounded font-bold admin-filter-btn" onclick="window.setAdminFilter('all', this)">SEMUA</button>
-                                <button class="px-3 py-1 bg-white border border-blue-200 text-blue-600 text-xs rounded font-bold admin-filter-btn" onclick="window.setAdminFilter('MASJID', this)">MASJID</button>
-                                <button class="px-3 py-1 bg-white border border-blue-200 text-blue-600 text-xs rounded font-bold admin-filter-btn" onclick="window.setAdminFilter('SURAU', this)">SURAU</button>
-                                <button class="px-3 py-1 bg-white border border-blue-200 text-blue-600 text-xs rounded font-bold admin-filter-btn" onclick="window.setAdminFilter('PEGAWAI', this)">PEGAWAI</button>
+                                <button class="px-3 py-1 bg-blue-600 text-white text-xs rounded admin-filter-btn" onclick="window.setAdminFilter('all', this)">SEMUA</button>
+                                <button class="px-3 py-1 bg-white border text-xs rounded admin-filter-btn" onclick="window.setAdminFilter('MASJID', this)">MASJID</button>
+                                <button class="px-3 py-1 bg-white border text-xs rounded admin-filter-btn" onclick="window.setAdminFilter('SURAU', this)">SURAU</button>
+                                <button class="px-3 py-1 bg-white border text-xs rounded admin-filter-btn" onclick="window.setAdminFilter('PEGAWAI', this)">PEGAWAI</button>
                             </div>
                         </div>
-                        <div class="overflow-x-auto">
-                            <table class="data-table">
-                                <thead><tr><th>KATEGORI</th><th>NAMA</th><th>TEMPAT / KARIAH</th><th>JAWATAN</th><th>NO. KP</th><th class="text-center">TINDAKAN</th></tr></thead>
-                                <tbody id="adminDataTable"></tbody>
-                            </table>
-                        </div>
+                        <table class="data-table">
+                            <thead><tr><th>KATEGORI</th><th>NAMA</th><th>TEMPAT</th><th>JAWATAN</th><th>KP</th><th>TINDAKAN</th></tr></thead>
+                            <tbody id="adminDataTable"></tbody>
+                        </table>
                     </div>
                 </div>
-
-                <!-- TAB: USERS -->
+                
+                <!-- Users Tab -->
                 <div id="adminUsersTab" class="admin-tab-pane hidden">
-                    <div class="bg-orange-50 border border-orange-100 rounded-lg p-6 mb-6">
+                     <div class="bg-orange-50 border border-orange-100 rounded-lg p-6 mb-6">
                         <h3 class="text-lg font-bold text-orange-800 mb-4">PENGURUSAN AKSES PENGGUNA</h3>
-                        <form onsubmit="createNewUser(event)" class="flex flex-wrap gap-4 items-end">
+                        <form onsubmit="window.createNewUser(event)" class="flex flex-wrap gap-4 items-end">
                             <div class="flex-1 min-w-[200px]"><label class="form-label">NAMA PENGGUNA</label><input id="createUsername" class="form-input" required oninput="this.value = this.value.toLowerCase()"></div>
                             <div class="flex-1 min-w-[200px]"><label class="form-label">KATA LALUAN</label><input id="createPassword" class="form-input" required></div>
                             <div class="flex-1 min-w-[200px]"><label class="form-label">PERANAN</label><select id="createRole" class="form-select"><option value="user">USER BIASA</option><option value="superadmin">SUPER ADMIN</option></select></div>
@@ -474,19 +349,19 @@
                     </div>
                 </div>
 
-                <!-- TAB: IMPORT -->
+                <!-- Import Tab -->
                 <div id="adminImportTab" class="admin-tab-pane hidden">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div class="bg-blue-50 p-6 rounded-lg border border-blue-100">
                             <h4 class="font-bold text-blue-900 text-lg mb-2">SIMPAN DATA (EKSPORT)</h4>
-                            <p class="text-sm text-blue-700 mb-4">Muat turun pangkalan data semasa sebagai fail CSV.</p>
-                            <button onclick="exportToCSV()" class="btn btn-primary">MUAT TURUN CSV</button>
+                            <p class="text-sm text-blue-700 mb-4">Muat turun pangkalan data.</p>
+                            <button onclick="window.exportToCSV()" class="btn btn-primary">MUAT TURUN CSV</button>
                         </div>
                         <div class="bg-green-50 p-6 rounded-lg border border-green-100">
                             <h4 class="font-bold text-green-900 text-lg mb-2">MUAT NAIK DATA (IMPORT)</h4>
                             <p class="text-sm text-green-700 mb-4">Muat naik fail CSV untuk menambah data ke pangkalan data.</p>
                             <input type="file" id="csvFileInput" accept=".csv" class="form-input mb-2 bg-white">
-                            <button onclick="importFromCSV()" class="btn btn-success">PROSES FAIL</button>
+                            <button onclick="window.importFromCSV()" class="btn btn-success">PROSES FAIL</button>
                         </div>
                     </div>
                 </div>
@@ -495,67 +370,28 @@
     </div>
 </div>
 
-<!-- FOOTER -->
-<footer class="gov-footer">
-    <div class="footer-content">
-        <div class="footer-left text-center md:text-left">
-            <p class="font-semibold mb-2">Jabatan Hal Ehwal Agama Islam Negeri Pulau Pinang</p>
-            <div class="text-sm opacity-90 space-y-1">
-                <p>Lebuh Pantai, 10300 Pulau Pinang</p>
-                <p>Tel: 04-684 7000 &nbsp;|&nbsp; Faks: 04-684 7777</p>
-                <p>E-mel: jheaipp@penang.gov.my</p>
-            </div>
-        </div>
-        <div class="footer-right text-center md:text-right mt-6 md:mt-0">
-            <h4 class="font-bold text-sm mb-3 uppercase tracking-wider text-yellow-400">Maklumat Sistem</h4>
-            <div class="text-sm space-y-1 opacity-90">
-                <div class="flex justify-center md:justify-end gap-2"><span class="opacity-70">Versi:</span> <span class="font-mono">v2.1.0</span></div>
-                <div class="flex justify-center md:justify-end gap-2"><span class="opacity-70">Build:</span> <span class="font-mono">20251210</span></div>
-                <div class="flex justify-center md:justify-end gap-2 items-center"><span class="opacity-70">Status:</span> <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-green-400 inline-block"></span> Aktif</span></div>
-                <div class="flex justify-center md:justify-end gap-2"><span class="opacity-70">Kemaskini:</span> <span>10 Dis 2025</span></div>
-                <div class="flex justify-center md:justify-end mt-4">
-                    <button onclick="showAdminLogin()" class="text-xs text-blue-300 hover:text-white flex items-center gap-1 transition-colors">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
-                        Portal Pentadbir
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="footer-bottom border-t border-blue-800 mt-8 pt-6 text-center text-sm opacity-80 px-4">
-        <p class="mb-1">© 2025 Jabatan Hal Ehwal Agama Islam Negeri Pulau Pinang (JHEAIPP)</p>
-        <p class="mb-2">Hak Cipta Terpelihara.</p>
-        <p class="text-xs mb-1 font-medium text-blue-200">Portal Data Maklumat Masjid dan Surau</p>
-        <p class="text-xs">Sokongan Teknikal: <a href="mailto:it.jheaipp@gmail.com" class="hover:text-yellow-400 transition-colors">it.jheaipp@gmail.com</a></p>
-    </div>
-</footer>
-
-<!-- LOGIN MODAL -->
 <div id="loginOverlay" class="login-overlay">
     <div class="login-box">
-        <div class="mb-6">
-            <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4 text-blue-600">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
-            </div>
-            <h2 class="text-xl font-bold text-gray-800">AKSES PENTADBIR</h2>
-            <p class="text-sm text-gray-500">Sila log masuk untuk meneruskan</p>
-        </div>
-        <form onsubmit="handleLogin(event)">
-            <div class="mb-4 text-left"><label class="form-label">NAMA PENGGUNA</label><input type="text" id="loginUser" class="form-input" required oninput="this.value = this.value.toLowerCase()"></div>
-            <div class="mb-6 text-left"><label class="form-label">KATA LALUAN</label><input type="password" id="loginPass" class="form-input" required></div>
-            <button type="submit" class="btn btn-primary mb-3">LOG MASUK</button>
-            <button type="button" class="text-sm text-gray-500 hover:text-gray-700 underline" onclick="closeLogin()">KEMBALI KE CARIAN AWAM</button>
+        <h2 class="text-xl font-bold mb-4">AKSES PENTADBIR</h2>
+        <form onsubmit="window.handleLogin(event)">
+            <input type="text" id="loginUser" class="form-input mb-2" placeholder="NAMA PENGGUNA" required>
+            <input type="password" id="loginPass" class="form-input mb-4" placeholder="KATA LALUAN" required>
+            <button type="submit" class="btn btn-primary w-full mb-2">LOG MASUK</button>
+            <button type="button" onclick="window.closeLogin()" class="text-gray-500 underline">BATAL</button>
         </form>
     </div>
 </div>
 
-<!-- SCRIPTS -->
+<footer class="gov-footer text-center">
+    <p class="mb-2">© 2026 Jabatan Hal Ehwal Agama Islam Negeri Pulau Pinang</p>
+    <button onclick="window.showAdminLogin()" class="text-xs text-blue-200 hover:text-white underline">Portal Pentadbir</button>
+</footer>
+
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
     import { getFirestore, collection, addDoc, onSnapshot, doc, deleteDoc, updateDoc, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-    import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 
-    // --- CONFIGURATION START ---
     const firebaseConfig = {
       apiKey: "AIzaSyBdUOBecR0_NxejwEBBkYP8J4FZ9wtrhBg",
       authDomain: "data-maklumat-masjid-dan-surau.firebaseapp.com",
@@ -565,496 +401,22 @@
       appId: "1:253702850390:web:efc240bc4aa9b94f05f8f7",
       measurementId: "G-0074NEEZBF"
     };
-    // --- CONFIGURATION END ---
 
-    // Init Firebase with custom config
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
     const auth = getAuth(app);
 
-    // Global Vars
+    const masjidCollection = collection(db, 'masjid_data');
+    const usersCollection = collection(db, 'app_users');
+    const masjidInfoCollection = collection(db, 'masjid_info');
+
     window.db = db;
     window.appData = [];
     window.appUsers = [];
-    window.masjidInfoData = []; 
+    window.masjidInfoData = [];
     window.currentUser = null;
-    window.adminDataFilter = 'all'; // Default Filter
+    window.adminDataFilter = 'all';
 
-    // Use specific paths to avoid permission issues
-    const masjidCollection = collection(db, 'masjid_data');
-    const usersCollection = collection(db, 'app_users');
-    const masjidInfoCollection = collection(db, 'masjid_info'); // New collection
-
-    async function init() {
-        try {
-            // Attempt anonymous sign-in (Standard for public apps)
-            await signInAnonymously(auth);
-            
-            console.log("Connected to Database");
-            document.getElementById('loadingOverlay').style.display = 'none';
-
-            // Listen for Data Changes (Jawatankuasa)
-            const qData = query(masjidCollection);
-            onSnapshot(qData, (snapshot) => {
-                window.appData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                window.renderAdminDataTable();
-                window.updatePublicTempatList(); 
-                window.performSearch(); 
-            }, (err) => {
-                console.error("Data Listener Error:", err);
-                if (err.code === 'permission-denied') {
-                    alert("Akses Ditolak (Permission Denied)!\n\nSila pergi ke Firebase Console > Firestore Database > Rules, dan ubah kepada:\n\nallow read, write: if true;");
-                }
-            });
-
-            // Listen for Masjid Info Changes
-            const qMasjidInfo = query(masjidInfoCollection);
-            onSnapshot(qMasjidInfo, (snapshot) => {
-                window.masjidInfoData = snapshot.docs
-                    .map(doc => ({ id: doc.id, ...doc.data() }))
-                    .sort((a, b) => a.namaMasjid.localeCompare(b.namaMasjid));
-                
-                window.renderMasjidInfoTable();
-                window.updateMasjidDropdowns(); 
-            });
-
-            // Listen for User Changes
-            const qUsers = query(usersCollection);
-            onSnapshot(qUsers, (snapshot) => {
-                window.appUsers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                if(window.appUsers.length === 0) createDefaultAdmin();
-                window.renderUserTable();
-            }, (err) => {
-                console.error("User Listener Error:", err);
-            });
-
-        } catch (error) {
-            console.error("Auth Failed:", error);
-            alert("Gagal menyambung ke Firebase: " + error.message);
-        }
-    }
-    
-    init();
-
-    async function createDefaultAdmin() {
-        try {
-            await addDoc(usersCollection, {
-                username: 'admin',
-                password: 'super123',
-                role: 'superadmin'
-            });
-            console.log("Default admin created");
-        } catch(e) { console.error(e); }
-    }
-
-    // --- EXPOSE FUNCTIONS ---
-
-    window.setAdminFilter = function(filter, btn) {
-        window.adminDataFilter = filter;
-        document.querySelectorAll('.admin-filter-btn').forEach(b => {
-            b.classList.remove('bg-blue-600', 'text-white');
-            b.classList.add('bg-white', 'text-blue-600', 'border', 'border-blue-200');
-        });
-        btn.classList.remove('bg-white', 'text-blue-600', 'border', 'border-blue-200');
-        btn.classList.add('bg-blue-600', 'text-white');
-        
-        window.renderAdminDataTable();
-    }
-    
-    // MASJID INFO OPERATIONS
-    window.addNewMasjidInfo = async function(e) {
-        e.preventDefault();
-        const editId = document.getElementById('editMasjidId').value;
-        const item = {
-            namaMasjid: document.getElementById('inputNamaMasjid').value,
-            noPendaftaran: document.getElementById('inputNoPendaftaran').value,
-            noAkaun: document.getElementById('inputNoAkaun').value
-        };
-
-        const btn = document.getElementById('saveMasjidBtn');
-        btn.innerText = "MENYIMPAN...";
-        btn.disabled = true;
-
-        try {
-            if(editId) {
-                await updateDoc(doc(masjidInfoCollection, editId), item);
-                alert("MAKLUMAT MASJID BERJAYA DIKEMASKINI!");
-                document.getElementById('editMasjidId').value = "";
-                btn.classList.remove('btn-primary'); 
-                btn.classList.add('btn-success');
-                btn.innerText = "SIMPAN MAKLUMAT MASJID";
-            } else {
-                await addDoc(masjidInfoCollection, item);
-                alert("MAKLUMAT MASJID BERJAYA DISIMPAN!");
-            }
-            document.getElementById('addMasjidForm').reset();
-        } catch (err) {
-            console.error(err);
-            alert("Ralat menyimpan data: " + err.message);
-        } finally {
-            btn.innerText = editId ? "KEMASKINI REKOD" : "SIMPAN MAKLUMAT MASJID";
-            btn.disabled = false;
-             if(editId) {
-                 btn.innerText = "SIMPAN MAKLUMAT MASJID";
-                 btn.classList.remove('btn-primary');
-                 btn.classList.add('btn-success');
-            }
-        }
-    };
-
-    window.deleteMasjidInfo = async function(id) {
-        if(confirm("PADAM MAKLUMAT MASJID INI?")) {
-            try {
-                await deleteDoc(doc(masjidInfoCollection, id));
-            } catch(e) { alert("Ralat memadam data."); }
-        }
-    };
-
-    window.editMasjidInfo = function(id) {
-        const item = window.masjidInfoData.find(d => d.id === id);
-        if(!item) return;
-
-        if(confirm("KEMASKINI MAKLUMAT INI?")) {
-            document.getElementById('editMasjidId').value = id;
-            document.getElementById('inputNamaMasjid').value = item.namaMasjid;
-            document.getElementById('inputNoPendaftaran').value = item.noPendaftaran;
-            document.getElementById('inputNoAkaun').value = item.noAkaun;
-
-            const btn = document.getElementById('saveMasjidBtn');
-            btn.innerText = "KEMASKINI REKOD";
-            btn.classList.remove('btn-success');
-            btn.classList.add('btn-primary');
-            
-            // Scroll to form
-            document.getElementById('addMasjidForm').scrollIntoView({ behavior: 'smooth' });
-        }
-    }
-
-    window.renderMasjidInfoTable = function() {
-        const tbody = document.getElementById('masjidInfoTable');
-        const isSuperAdmin = window.currentUser && window.currentUser.role === 'superadmin';
-        
-        tbody.innerHTML = window.masjidInfoData.map((item) => {
-            const id = item.id;
-            const delBtn = isSuperAdmin ? 
-                `<button class="text-red-500 hover:text-red-700 font-bold ml-3" onclick="deleteMasjidInfo('${id}')">PADAM</button>` : '';
-            return `<tr class="border-b hover:bg-gray-50">
-                <td class="font-medium">${item.namaMasjid}</td>
-                <td>${item.noPendaftaran}</td>
-                <td>${item.noAkaun}</td>
-                <td class="text-center"><button class="text-blue-600 hover:text-blue-800 font-bold" onclick="editMasjidInfo('${id}')">EDIT</button>${delBtn}</td>
-            </tr>`;
-        }).join('');
-    }
-
-    // UPDATE ALL DROPDOWNS WITH MASJID DATA
-    window.updateMasjidDropdowns = function() {
-        const sel1 = document.getElementById('inputNamaMasjid');
-        const sel2 = document.getElementById('newNamaTempatSelect');
-        const sel3 = document.getElementById('newNamaKariahSelect');
-        
-        const currentVal1 = sel1.value;
-        const currentVal2 = sel2.value;
-        const currentVal3 = sel3.value;
-
-        sel1.innerHTML = '<option value="">PILIH MASJID</option>';
-        sel2.innerHTML = '<option value="">PILIH MASJID</option>';
-        sel3.innerHTML = '<option value="">PILIH KARIAH / MASJID</option>';
-
-        senaraiMasjid.forEach(masjid => {
-            sel1.add(new Option(masjid, masjid));
-        });
-
-        if (window.masjidInfoData.length > 0) {
-            window.masjidInfoData.forEach(info => {
-                 sel2.add(new Option(info.namaMasjid, info.namaMasjid));
-                 sel3.add(new Option(info.namaMasjid, info.namaMasjid));
-            });
-        } else {
-             senaraiMasjid.forEach(masjid => {
-                sel2.add(new Option(masjid, masjid));
-                sel3.add(new Option(masjid, masjid));
-            });
-        }
-
-        if(currentVal1) sel1.value = currentVal1;
-        if(currentVal2) sel2.value = currentVal2;
-        if(currentVal3) sel3.value = currentVal3;
-    }
-
-    // CHECK IC FUNCTION (MODIFIED)
-    window.checkIC = function() {
-        const kpInput = document.getElementById('checkKpInput').value;
-        const kpClean = kpInput.replace(/[^0-9]/g, ''); // Ensure only numbers
-        
-        if(kpClean.length < 12) return alert("SILA MASUKKAN 12 DIGIT NO KP.");
-        
-        // Find existing based on clean IC
-        const exist = window.appData.find(d => d.nokp && d.nokp.replace(/[^0-9]/g, '') === kpClean);
-        
-        if(exist) {
-            // Jika data wujud, tanya nak update
-            if(confirm(`DATA SUDAH WUJUD!\n\nNama: ${exist.nama}\nJawatan: ${exist.jawatan}\n\nAdakah anda ingin MENGEMASKINI data ini?`)) {
-                // Panggil fungsi edit dengan parameter 'true' untuk skip confirmation kedua
-                window.editData(exist.id, true);
-            }
-        } else {
-            // New Entry
-            document.getElementById('checkICSection').classList.add('hidden');
-            document.getElementById('formSection').classList.remove('hidden');
-            
-            // Reset form but keep IC
-            document.getElementById('addDataForm').reset();
-            document.getElementById('editId').value = ""; // Pastikan ID kosong untuk create new
-            
-            // Set button style
-            const btn = document.querySelector("#addDataForm button[type=submit]");
-            btn.innerText = "SIMPAN DATA JAWATANKUASA";
-            btn.classList.remove('btn-primary');
-            btn.classList.add('btn-success');
-            
-            // Auto fill IC
-            const icInput = document.getElementById('newNokp');
-            // Format display XXXX-XX-XXXX
-            icInput.value = kpClean.substring(0, 6) + '-' + kpClean.substring(6, 8) + '-' + kpClean.substring(8);
-            window.calculateICDetails(icInput); // Auto calc gender/age
-            
-            // Scroll to form
-            document.getElementById('formSection').scrollIntoView({ behavior: 'smooth' });
-        }
-    }
-    
-    window.cancelAdd = function() {
-        document.getElementById('addDataForm').reset();
-        document.getElementById('checkICSection').classList.remove('hidden');
-        document.getElementById('formSection').classList.add('hidden');
-        document.getElementById('editId').value = "";
-        document.getElementById('checkKpInput').value = ""; // Clear check input
-        
-        const btn = document.querySelector("#addDataForm button[type=submit]");
-        btn.innerText = "SIMPAN DATA JAWATANKUASA";
-        btn.classList.remove('btn-primary');
-        btn.classList.add('btn-success');
-        btn.disabled = false; // RE-ENABLE BUTTON
-    }
-
-
-    // JAWATANKUASA DATA OPERATIONS
-    window.addNewData = async function(e) {
-        e.preventDefault();
-        const editId = document.getElementById('editId').value;
-        const jenis = document.getElementById('newJenis').value;
-        
-        // Logic to grab tempat value
-        let tempatVal = "";
-        if(jenis === 'SURAU') {
-             tempatVal = document.getElementById('newNamaTempatInput').value.toUpperCase();
-        } else {
-             tempatVal = document.getElementById('newNamaTempatSelect').value;
-        }
-
-        if(!tempatVal) {
-            alert("SILA PILIH/MASUKKAN NAMA TEMPAT!");
-            return;
-        }
-
-        // Logic for Kariah Value (Dropdown for Surau, Text for Others if any)
-        let kariahVal = "";
-        if(jenis === 'SURAU') {
-             kariahVal = document.getElementById('newNamaKariahSelect').value;
-             if(!kariahVal) {
-                 alert("SILA PILIH KARIAH / MASJID!");
-                 return;
-             }
-        } else {
-             kariahVal = document.getElementById('newNamaKariah').value.toUpperCase();
-        }
-
-        // Get No Pendaftaran based on selected place if category is Masjid
-        let noPendaftaran = "-";
-        if(jenis === 'MASJID' || jenis === 'PEGAWAI') {
-            const info = window.masjidInfoData.find(m => m.namaMasjid === tempatVal);
-            if(info) noPendaftaran = info.noPendaftaran;
-        } 
-        else if (jenis === 'SURAU') {
-             const info = window.masjidInfoData.find(m => m.namaMasjid === kariahVal);
-             if(info) noPendaftaran = info.noPendaftaran;
-        }
-
-        const item = {
-            jenis: jenis,
-            nama: document.getElementById('newNama').value.toUpperCase(),
-            tempat: tempatVal,
-            kariah: kariahVal,
-            jawatan: document.getElementById('newJawatan').value,
-            parlimen: document.getElementById('newParlimen').value,
-            dun: document.getElementById('newDun').value,
-            nokp: document.getElementById('newNokp').value,
-            jantina: document.getElementById('newJantina').value,
-            umur: document.getElementById('newUmur').value,
-            notel: document.getElementById('newNotel').value,
-            alamat: document.getElementById('newAlamat').value.toUpperCase(),
-            pekerjaan: document.getElementById('newPekerjaan').value.toUpperCase(),
-            lantikan: document.getElementById('newTahunLantikan').value, 
-            tarikhLantikan: document.getElementById('newTarikhLantikan').value,
-            tarikhTamat: document.getElementById('newTarikhTamat').value,
-            noPendaftaran: noPendaftaran
-        };
-
-        const btn = document.querySelector("#addDataForm button[type=submit]");
-        const oldText = btn.innerText;
-        btn.innerText = "MENYIMPAN...";
-        btn.disabled = true;
-
-        try {
-            if(editId) {
-                await updateDoc(doc(masjidCollection, editId), item);
-                alert("DATA BERJAYA DIKEMASKINI!");
-                window.cancelAdd();
-            } else {
-                await addDoc(masjidCollection, item);
-                alert("DATA BERJAYA DISIMPAN!");
-                window.cancelAdd();
-            }
-        } catch (err) {
-            console.error(err);
-            alert("Ralat menyimpan data: " + err.message);
-            btn.disabled = false;
-            btn.innerText = oldText;
-        }
-    };
-
-    window.deleteData = async function(id) {
-        if(confirm("PADAM DATA INI?")) {
-            try {
-                await deleteDoc(doc(masjidCollection, id));
-            } catch(e) { alert("Ralat memadam data."); }
-        }
-    };
-
-    window.editData = function(id, skipConfirm = false) {
-        const item = window.appData.find(d => d.id === id);
-        if(!item) return;
-
-        if(skipConfirm || confirm("KEMASKINI DATA INI DI DALAM BORANG?")) {
-            document.getElementById('checkICSection').classList.add('hidden');
-            document.getElementById('formSection').classList.remove('hidden');
-
-            document.getElementById('editId').value = id;
-            document.getElementById('newJenis').value = item.jenis;
-            window.updateFormFields();
-            
-            document.getElementById('newNama').value = item.nama;
-            
-            if (item.jenis === 'SURAU') {
-                 document.getElementById('newNamaTempatInput').value = item.tempat;
-            } else {
-                 document.getElementById('newNamaTempatSelect').value = item.tempat;
-            }
-
-             if (item.jenis === 'SURAU') {
-                 document.getElementById('newNamaKariahSelect').value = item.kariah;
-            } else {
-                 document.getElementById('newNamaKariah').value = item.kariah || '';
-            }
-            
-            window.updateFormFields();
-            document.getElementById('newJawatan').value = item.jawatan;
-            document.getElementById('newParlimen').value = item.parlimen;
-            window.updateDunList();
-            document.getElementById('newDun').value = item.dun;
-            document.getElementById('newNokp').value = item.nokp;
-            document.getElementById('newJantina').value = item.jantina;
-            document.getElementById('newUmur').value = item.umur;
-            document.getElementById('newNotel').value = item.notel;
-            document.getElementById('newAlamat').value = item.alamat;
-            document.getElementById('newPekerjaan').value = item.pekerjaan;
-            
-            if (document.getElementById('newTahunLantikan')) 
-                document.getElementById('newTahunLantikan').value = item.lantikan || '';
-            if (document.getElementById('newTarikhLantikan'))
-                document.getElementById('newTarikhLantikan').value = item.tarikhLantikan || '';
-            if (document.getElementById('newTarikhTamat'))
-                document.getElementById('newTarikhTamat').value = item.tarikhTamat || '';
-
-            const btn = document.querySelector("#addDataForm button[type=submit]");
-            btn.innerText = "KEMASKINI REKOD";
-            btn.classList.remove('btn-success');
-            btn.classList.add('btn-primary');
-
-            document.getElementById('formSection').scrollIntoView({ behavior: 'smooth' });
-        }
-    };
-
-    window.createNewUser = async function(e) {
-        e.preventDefault();
-        const u = document.getElementById('createUsername').value.toLowerCase();
-        if(window.appUsers.find(x => x.username === u)) return alert("USERNAME WUJUD!");
-
-        const newUser = {
-            username: u,
-            password: document.getElementById('createPassword').value,
-            role: document.getElementById('createRole').value
-        };
-
-        try {
-            await addDoc(usersCollection, newUser);
-            alert("USER DICIPTA!");
-            e.target.reset();
-        } catch(err) { alert("Ralat mencipta user."); }
-    };
-
-    window.delUser = async function(id) {
-        if(confirm("PADAM USER?")) {
-            try { await deleteDoc(doc(usersCollection, id)); } 
-            catch(e) { alert("Ralat memadam user."); }
-        }
-    };
-
-    // Import Logic (Batch Add to Firestore)
-    window.importFromCSV = function() {
-        const f = document.getElementById('csvFileInput').files[0];
-        if(!f) return alert("PILIH FAIL!");
-        const r = new FileReader();
-        r.onload = async e => {
-            const rows = e.target.result.split('\n').filter(x=>x.trim());
-            const headers = rows[0].split(',').map(h=>h.replace(/"/g,'').trim());
-            
-            let count = 0;
-            const batchPromises = [];
-            
-            for(let i=1; i<rows.length; i++) {
-                const cols = rows[i].match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g);
-                if(!cols) continue;
-                let obj = {};
-                headers.forEach((h, idx) => {
-                    if(cols[idx]) obj[h] = cols[idx].replace(/^"|"$/g,'').replace(/""/g,'"').toUpperCase();
-                });
-                if(obj.nama) {
-                    batchPromises.push(addDoc(masjidCollection, obj));
-                    count++;
-                }
-            }
-            
-            if(count > 0) {
-                const btn = document.querySelector("#adminImportTab button.btn-success");
-                btn.innerText = "SEDANG IMPORT...";
-                btn.disabled = true;
-                await Promise.all(batchPromises); 
-                alert(`BERJAYA IMPORT ${count} REKOD KE DATABASE!`);
-                btn.innerText = "PROSES FAIL";
-                btn.disabled = false;
-                document.getElementById('csvFileInput').value = '';
-            } else {
-                alert("TIADA DATA SAH DIJUMPAI.");
-            }
-        };
-        r.readAsText(f);
-    }
-</script>
-
-<script>
-    // --- NON-FIREBASE HELPER SCRIPTS ---
     const parlimenDun = {
         "P41 KEPALA BATAS": ["N01 PENAGA", "N02 BERTAM", "N03 PINANG TUNGGAL"],
         "P42 TASEK GELUGOR": ["N04 PERMATANG BERANGAN", "N05 SUNGAI DUA", "N06 TELOK AYER TAWAR"],
@@ -1077,203 +439,482 @@
 
     const jawatanAJK = ["PENGERUSI", "TIMBALAN PENGERUSI", "SETIAUSAHA", "BENDAHARI", "AHLI JAWATANKUASA", "AJK WANITA", "PEMERIKSA KIRA-KIRA"];
     const jawatanPegawai = ["IMAM", "BILAL", "SIAK"];
+    
+    const positionRank = {
+        "PENGERUSI": 1, "TIMBALAN PENGERUSI": 2, "SETIAUSAHA": 3, "BENDAHARI": 4, "AHLI JAWATANKUASA": 5, "AJK WANITA": 6, "PEMERIKSA KIRA-KIRA": 7,
+        "IMAM": 8, "BILAL": 9, "SIAK": 10
+    };
 
-    document.addEventListener("DOMContentLoaded", () => {
-        populateParlimen('newParlimen');
-        populateParlimen('publicParlimen');
-        updateFormFields(); 
-        updatePublicJawatanList();
-        populateMasjidDropdown();
-        window.renderMasjidInfoTable = window.renderMasjidInfoTable || function() {}; // Fallback init
-    });
-
-    function populateMasjidDropdown() {
-        const sel = document.getElementById('inputNamaMasjid');
-        senaraiMasjid.forEach(masjid => {
-            sel.add(new Option(masjid, masjid));
-        });
-    }
-
-    function populateParlimen(id) {
+    window.populateParlimen = (id) => {
         const sel = document.getElementById(id);
         if(!sel) return;
-        sel.innerHTML = '<option value="">SEMUA PARLIMEN</option>';
-        if(id === 'newParlimen') sel.innerHTML = '<option value="">PILIH PARLIMEN</option>';
-        for(let p in parlimenDun) {
-            let opt = document.createElement('option');
-            opt.value = p; opt.innerText = p; sel.appendChild(opt);
-        }
-    }
+        sel.innerHTML = `<option value="">SEMUA PARLIMEN</option>`;
+        for(let p in parlimenDun) sel.add(new Option(p, p));
+    };
 
-    window.updateDunList = function() {
+    window.updateDunList = () => {
         const p = document.getElementById('newParlimen').value;
         const dSel = document.getElementById('newDun');
-        dSel.innerHTML = '<option value="">PILIH DUN</option>';
-        if(p && parlimenDun[p]) {
-            parlimenDun[p].forEach(dun => {
-                let opt = document.createElement('option');
-                opt.value = dun; opt.innerText = dun; dSel.appendChild(opt);
-            });
-        }
-    }
+        dSel.innerHTML = `<option value="">PILIH DUN</option>`;
+        if(parlimenDun[p]) parlimenDun[p].forEach(d => dSel.add(new Option(d, d)));
+    };
 
-    window.updatePublicDunList = function() {
+    window.updatePublicDunList = () => {
         const p = document.getElementById('publicParlimen').value;
         const dSel = document.getElementById('publicDun');
-        dSel.innerHTML = '<option value="">SEMUA DUN</option>';
-        if(p && parlimenDun[p]) {
-            parlimenDun[p].forEach(dun => {
-                let opt = document.createElement('option');
-                opt.value = dun; opt.innerText = dun; dSel.appendChild(opt);
-            });
-        }
-    }
+        dSel.innerHTML = `<option value="">SEMUA DUN</option>`;
+        if(p && parlimenDun[p]) parlimenDun[p].forEach(d => dSel.add(new Option(d, d)));
+    };
 
-    window.updatePublicJawatanList = function() {
+    window.updatePublicJawatanList = () => {
         const cat = document.getElementById('publicKategori').value;
         const jSel = document.getElementById('publicJawatan');
-        jSel.innerHTML = '<option value="">SEMUA JAWATAN</option>';
-        let options = [];
-        if (cat === 'all') {
-            options = [...new Set([...jawatanAJK, ...jawatanPegawai])].sort();
-        } else if (cat === 'PEGAWAI') {
-            options = jawatanPegawai;
-        } else {
-            options = jawatanAJK;
-        }
+        jSel.innerHTML = `<option value="">SEMUA JAWATAN</option>`;
+        let opts = (cat === 'PEGAWAI') ? jawatanPegawai : (cat === 'all' ? [...new Set([...jawatanAJK, ...jawatanPegawai])] : jawatanAJK);
+        opts.forEach(o => jSel.add(new Option(o, o)));
+    };
 
-        options.forEach(j => {
-            let opt = document.createElement('option');
-            opt.value = j;
-            opt.innerText = j;
-            jSel.appendChild(opt);
-        });
-    }
-
-    // NEW FUNCTION: UPDATE PUBLIC TEMPAT LIST
-    window.updatePublicTempatList = function() {
+    window.updatePublicTempatList = () => {
         const cat = document.getElementById('publicKategori').value;
         const tSel = document.getElementById('publicTempat');
         const tLabel = document.getElementById('publicTempatLabel');
 
-        // Update Label dynamically
-        if (cat === 'MASJID' || cat === 'PEGAWAI') {
-            tLabel.innerText = "NAMA MASJID";
-        } else if (cat === 'SURAU') {
-            tLabel.innerText = "NAMA SURAU";
-        } else {
-            tLabel.innerText = "NAMA MASJID / SURAU";
-        }
-
-        // Get unique places from current data
-        let places = [];
-        if (cat === 'all') {
-            places = [...new Set(window.appData.map(d => d.tempat))];
-        } else {
-            places = [...new Set(window.appData.filter(d => d.jenis === cat).map(d => d.tempat))];
-        }
+        tLabel.innerText = (cat === 'SURAU') ? "NAMA SURAU" : (cat === 'MASJID' || cat === 'PEGAWAI' ? "NAMA MASJID" : "NAMA MASJID / SURAU");
         
-        // Sort alphabetically
+        let places = [];
+        if (cat === 'all') places = [...new Set(window.appData.map(d => d.tempat))];
+        else places = [...new Set(window.appData.filter(d => d.jenis === cat).map(d => d.tempat))];
+        
         places.sort();
+        const curVal = tSel.value;
+        tSel.innerHTML = `<option value="">SEMUA</option>`;
+        places.forEach(p => { if(p) tSel.add(new Option(p, p)); });
+        if(places.includes(curVal)) tSel.value = curVal;
+    };
 
-        // Populate Dropdown
-        const currentVal = tSel.value;
-        tSel.innerHTML = '<option value="">SEMUA</option>';
-        places.forEach(p => {
-            if(p) tSel.add(new Option(p, p));
+    window.updateMasjidDropdowns = () => {
+        const sel1 = document.getElementById('inputNamaMasjid');
+        const sel2 = document.getElementById('newNamaTempatSelect');
+        const sel3 = document.getElementById('newNamaKariahSelect');
+        
+        if(sel1) sel1.innerHTML = '<option value="">PILIH MASJID</option>';
+        if(sel2) sel2.innerHTML = '<option value="">PILIH MASJID</option>';
+        if(sel3) sel3.innerHTML = '<option value="">PILIH KARIAH / MASJID</option>';
+
+        const list = window.masjidInfoData.length > 0 ? window.masjidInfoData.map(x => x.namaMasjid) : senaraiMasjid;
+        list.forEach(m => {
+            if(sel1) sel1.add(new Option(m, m));
+            if(sel2) sel2.add(new Option(m, m));
+            if(sel3) sel3.add(new Option(m, m));
+        });
+    };
+
+    window.updateFormFields = () => {
+        const jenis = document.getElementById('newJenis').value;
+        const jSel = document.getElementById('newJawatan');
+        jSel.innerHTML = '';
+        let opts = (jenis === 'PEGAWAI') ? jawatanPegawai : jawatanAJK;
+        opts.forEach(o => jSel.add(new Option(o, o)));
+
+        document.getElementById('label-nama-tempat').innerText = (jenis === 'SURAU') ? "NAMA SURAU" : "NAMA MASJID";
+        document.getElementById('newNamaTempatInput').classList.toggle('hidden', jenis !== 'SURAU');
+        document.getElementById('newNamaTempatSelect').classList.toggle('hidden', jenis === 'SURAU');
+        document.getElementById('group-nama-kariah').classList.toggle('hidden', jenis !== 'SURAU');
+        document.getElementById('group-tarikh-pegawai').classList.toggle('hidden', false);
+    };
+
+    window.calculateICDetails = (input) => {
+        let val = input.value.replace(/\D/g, '');
+        if(val.length > 12) val = val.substring(0,12);
+        if(val.length > 6) input.value = val.substring(0,6)+'-'+val.substring(6,8)+'-'+val.substring(8);
+        else if(val.length > 6) input.value = val.substring(0,6)+'-'+val.substring(6);
+        else input.value = val;
+
+        if(val.length === 12) {
+            const last = parseInt(val.slice(-1));
+            document.getElementById('newJantina').value = (last % 2 !== 0) ? 'LELAKI' : 'PEREMPUAN';
+            const y = parseInt(val.substring(0,2));
+            const curY = new Date().getFullYear();
+            const fullY = (y > (curY % 100)) ? (1900 + y) : (2000 + y);
+            document.getElementById('newUmur').value = (curY - fullY) + ' TAHUN';
+        }
+    };
+
+    window.formatPhone = (input) => {
+        let val = input.value.replace(/\D/g, '');
+        if(val.length > 3) input.value = val.substring(0,3)+'-'+val.substring(3);
+        else input.value = val;
+    };
+
+    window.cancelAdd = () => {
+        document.getElementById('formSection').classList.add('hidden');
+        document.getElementById('checkICSection').classList.remove('hidden');
+        document.getElementById('addDataForm').reset();
+        document.getElementById('editId').value = "";
+        document.getElementById('saveBtn').innerText = "SIMPAN DATA";
+        document.getElementById('saveBtn').disabled = false;
+    };
+
+    window.addNewData = async (e) => {
+        e.preventDefault();
+        const btn = document.getElementById('saveBtn');
+        const id = document.getElementById('editId').value;
+        btn.disabled = true;
+        btn.innerText = "PROSES...";
+
+        const jenis = document.getElementById('newJenis').value;
+        const tempat = (jenis === 'SURAU') ? document.getElementById('newNamaTempatInput').value.toUpperCase() : document.getElementById('newNamaTempatSelect').value;
+        
+        if(!tempat) {
+            alert("SILA MASUKKAN TEMPAT!");
+            btn.disabled = false;
+            return;
+        }
+
+        let noReg = "-";
+        if(jenis !== 'SURAU') {
+            const info = window.masjidInfoData.find(m => m.namaMasjid === tempat);
+            if(info) noReg = info.noPendaftaran;
+        }
+
+        const data = {
+            jenis: jenis,
+            nama: document.getElementById('newNama').value.toUpperCase(),
+            nokp: document.getElementById('newNokp').value,
+            tempat: tempat,
+            kariah: (jenis === 'SURAU') ? document.getElementById('newNamaKariahSelect').value : "",
+            jawatan: document.getElementById('newJawatan').value,
+            parlimen: document.getElementById('newParlimen').value,
+            dun: document.getElementById('newDun').value,
+            jantina: document.getElementById('newJantina').value,
+            umur: document.getElementById('newUmur').value,
+            notel: document.getElementById('newNotel').value,
+            pekerjaan: document.getElementById('newPekerjaan').value.toUpperCase(),
+            tarikhLantikan: document.getElementById('newTarikhLantikan').value,
+            tarikhTamat: document.getElementById('newTarikhTamat').value,
+            alamat: document.getElementById('newAlamat').value.toUpperCase(),
+            noPendaftaran: noReg
+        };
+
+        try {
+            if(id) await updateDoc(doc(masjidCollection, id), data);
+            else await addDoc(masjidCollection, data);
+            alert("DATA BERJAYA DISIMPAN");
+            window.cancelAdd();
+        } catch(err) { alert(err.message); }
+        finally { btn.disabled = false; }
+    };
+
+    window.deleteData = async (id) => {
+        if(confirm("PADAM?")) await deleteDoc(doc(masjidCollection, id));
+    };
+
+    window.editData = (id, skip = false) => {
+        const item = window.appData.find(x => x.id === id);
+        if(!item) return;
+        document.getElementById('checkICSection').classList.add('hidden');
+        document.getElementById('formSection').classList.remove('hidden');
+        document.getElementById('editId').value = id;
+        document.getElementById('newNokp').value = item.nokp;
+        document.getElementById('newNama').value = item.nama;
+        document.getElementById('newJenis').value = item.jenis;
+        window.updateFormFields();
+        if(item.jenis === 'SURAU') document.getElementById('newNamaTempatInput').value = item.tempat;
+        else document.getElementById('newNamaTempatSelect').value = item.tempat;
+        document.getElementById('newParlimen').value = item.parlimen;
+        window.updateDunList();
+        document.getElementById('newDun').value = item.dun;
+        document.getElementById('newNotel').value = item.notel;
+        document.getElementById('newJantina').value = item.jantina;
+        document.getElementById('newUmur').value = item.umur;
+        document.getElementById('newPekerjaan').value = item.pekerjaan;
+        document.getElementById('newAlamat').value = item.alamat;
+        document.getElementById('newTarikhLantikan').value = item.tarikhLantikan;
+        document.getElementById('newTarikhTamat').value = item.tarikhTamat;
+        document.getElementById('saveBtn').innerText = "KEMASKINI";
+    };
+
+    window.addNewMasjidInfo = async (e) => {
+        e.preventDefault();
+        const id = document.getElementById('editMasjidId').value;
+        const data = {
+            namaMasjid: document.getElementById('inputNamaMasjid').value,
+            noPendaftaran: document.getElementById('inputNoPendaftaran').value.toUpperCase(),
+            noAkaun: document.getElementById('inputNoAkaun').value.toUpperCase()
+        };
+        try {
+            if(id) await updateDoc(doc(masjidInfoCollection, id), data);
+            else await addDoc(masjidInfoCollection, data);
+            alert("MAKLUMAT MASJID BERJAYA DISIMPAN");
+            e.target.reset();
+            document.getElementById('editMasjidId').value = "";
+            document.getElementById('saveMasjidBtn').innerText = "SIMPAN MAKLUMAT";
+        } catch(err) { alert(err.message); }
+    };
+
+    window.deleteMasjidInfo = async (id) => {
+        if(confirm("PADAM MAKLUMAT MASJID?")) await deleteDoc(doc(masjidInfoCollection, id));
+    };
+
+    window.editMasjidInfo = (id) => {
+        const item = window.masjidInfoData.find(d => d.id === id);
+        if(!item) return;
+        document.getElementById('editMasjidId').value = id;
+        document.getElementById('inputNamaMasjid').value = item.namaMasjid;
+        document.getElementById('inputNoPendaftaran').value = item.noPendaftaran;
+        document.getElementById('inputNoAkaun').value = item.noAkaun;
+        document.getElementById('saveMasjidBtn').innerText = "KEMASKINI";
+    };
+
+    window.renderMasjidInfoTable = () => {
+        const tbody = document.getElementById('masjidInfoTable');
+        const isSuper = window.currentUser && window.currentUser.role === 'superadmin';
+        tbody.innerHTML = window.masjidInfoData.map(d => `
+            <tr class="border-b hover:bg-gray-50">
+                <td>${d.namaMasjid}</td><td>${d.noPendaftaran}</td><td>${d.noAkaun}</td>
+                <td class="text-center">
+                    <button class="text-blue-600 font-bold" onclick="window.editMasjidInfo('${d.id}')">EDIT</button>
+                    ${isSuper ? `<button class="text-red-500 font-bold ml-2" onclick="window.deleteMasjidInfo('${d.id}')">PADAM</button>` : ''}
+                </td>
+            </tr>
+        `).join('');
+    };
+
+    window.performSearch = () => {
+        const cat = document.getElementById('publicKategori').value;
+        const place = document.getElementById('publicTempat').value;
+        const txt = document.getElementById('publicSearchText').value.toUpperCase();
+        const jaw = document.getElementById('publicJawatan').value; 
+        const par = document.getElementById('publicParlimen').value; // Added for new logic
+        const dun = document.getElementById('publicDun').value; // Added for new logic
+        
+        let showBulkPrint = false;
+        let printType = "";
+        let btnLabel = "";
+
+        // Logic for Bulk Print Button
+        if (place !== '') {
+            showBulkPrint = true;
+            printType = 'PLACE';
+            btnLabel = 'CETAK SENARAI AJK MASJID/SURAU';
+        } else if (jaw !== '') {
+            showBulkPrint = true;
+            printType = 'JAWATAN';
+            btnLabel = `CETAK SENARAI ${jaw}`;
+        } else if (par !== '') { // New Parlimen
+            showBulkPrint = true;
+            printType = 'PARLIMEN';
+            btnLabel = `CETAK SENARAI PARLIMEN ${par}`;
+        } else if (dun !== '') { // New DUN
+            showBulkPrint = true;
+            printType = 'DUN';
+            btnLabel = `CETAK SENARAI DUN ${dun}`;
+        }
+
+        if (cat === 'all' && !place && !txt && !jaw && !par && !dun) {
+            document.getElementById('publicResults').innerHTML = `
+                <div class="initial-state-msg">
+                    <svg class="h-16 w-16 mx-auto text-gray-300 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
+                    <p class="font-bold text-gray-600">Sila masukkan kata kunci atau pilih tapisan.</p>
+                </div>`;
+            return;
+        }
+
+        const filtered = window.appData.filter(x => {
+            if(cat !== 'all' && x.jenis !== cat) return false;
+            if(place && x.tempat !== place) return false;
+            if(jaw && x.jawatan !== jaw) return false;
+            if(par && x.parlimen !== par) return false;
+            if(dun && x.dun !== dun) return false;
+            if(txt && !x.nama.includes(txt) && !x.nokp.includes(txt)) return false;
+            return true;
         });
 
-        // Restore selection if still valid
-        if (places.includes(currentVal)) tSel.value = currentVal;
-    }
-
-    window.updateFormFields = function() {
-        const jenis = document.getElementById('newJenis').value;
-        const labelTempat = document.getElementById('label-nama-tempat');
-        const groupKariah = document.getElementById('group-nama-kariah');
-        const groupLantikan = document.getElementById('group-tahun-lantikan');
-        const groupTarikhPegawai = document.getElementById('group-tarikh-pegawai');
-        const selJawatan = document.getElementById('newJawatan');
-        
-        // Toggle Inputs for Tempat (Select vs Input)
-        const inputTempat = document.getElementById('newNamaTempatInput');
-        const selectTempat = document.getElementById('newNamaTempatSelect');
-        
-        // Toggle Kariah (Select vs Input)
-        const inputKariah = document.getElementById('newNamaKariah');
-        const selectKariah = document.getElementById('newNamaKariahSelect');
-
-        selJawatan.innerHTML = '';
-
-        if(jenis === 'MASJID') {
-            labelTempat.innerText = "NAMA MASJID";
-            inputTempat.style.display = 'none';
-            selectTempat.style.display = 'block';
-            inputTempat.required = false;
-            selectTempat.required = true;
-            
-            groupKariah.style.display = 'none'; 
-            groupLantikan.style.display = 'none';
-            groupTarikhPegawai.style.display = 'grid'; // MASJID uses dates
-            jawatanAJK.forEach(j => selJawatan.add(new Option(j, j)));
-        } 
-        else if(jenis === 'SURAU') {
-            labelTempat.innerText = "NAMA SURAU";
-            inputTempat.style.display = 'block';
-            selectTempat.style.display = 'none';
-            inputTempat.required = true;
-            selectTempat.required = false;
-            
-            // Show Kariah Dropdown for Surau
-            groupKariah.style.display = 'block'; 
-            inputKariah.style.display = 'none';
-            selectKariah.style.display = 'block';
-            
-            groupLantikan.style.display = 'none';
-            groupTarikhPegawai.style.display = 'grid'; 
-            jawatanAJK.forEach(j => selJawatan.add(new Option(j, j)));
-        } 
-        else if(jenis === 'PEGAWAI') {
-            labelTempat.innerText = "NAMA KARIAH / MASJID"; 
-            inputTempat.style.display = 'none';
-            selectTempat.style.display = 'block';
-            inputTempat.required = false;
-            selectTempat.required = true;
-            
-            groupKariah.style.display = 'none'; 
-            groupLantikan.style.display = 'none'; 
-            groupTarikhPegawai.style.display = 'grid'; 
-            jawatanPegawai.forEach(j => selJawatan.add(new Option(j, j)));
+        if(filtered.length === 0) {
+            document.getElementById('publicResults').innerHTML = `<div class="p-8 text-center text-gray-500">TIADA REKOD DIJUMPAI</div>`;
+            return;
         }
-    }
 
-    window.calculateICDetails = function(input) {
-        let val = input.value.replace(/\D/g, '');
-        if (val.length > 12) val = val.substring(0, 12);
-        if (val.length > 6) input.value = val.substring(0, 6) + '-' + val.substring(6, 8) + '-' + val.substring(8);
-        else if (val.length > 6) input.value = val.substring(0, 6) + '-' + val.substring(6);
-        else input.value = val;
-
-        if (val.length === 12) {
-            const lastDigit = parseInt(val.slice(-1));
-            const gender = lastDigit % 2 !== 0 ? 'LELAKI' : 'PEREMPUAN';
-            document.getElementById('newJantina').value = gender;
-            const yearPrefix = parseInt(val.substring(0, 2));
-            const currentYear = new Date().getFullYear();
-            const currentCentury = Math.floor(currentYear / 100) * 100;
-            const birthYear = (yearPrefix > (currentYear % 100)) ? (currentCentury - 100 + yearPrefix) : (currentCentury + yearPrefix);
-            const age = currentYear - birthYear;
-            document.getElementById('newUmur').value = age + ' TAHUN';
+        let html = ``;
+        if (showBulkPrint) {
+             // Pass params correctly
+             const param = place || jaw || par || dun;
+             html += `
+            <div class="mb-4 text-center">
+                <button onclick="window.printList('${printType}', '${param}')" class="btn-bulk-pdf">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
+                    ${btnLabel}
+                </button>
+            </div>`;
         }
-    }
 
-    window.formatPhone = function(input) {
-        let val = input.value.replace(/\D/g, '');
-        if (val.length > 3) input.value = val.substring(0, 3) + '-' + val.substring(3);
-        else input.value = val;
-    }
+        html += `<div class="results-wrapper"><table class="custom-table">
+            <thead><tr>
+                <th style="width: 25%">NAMA</th>
+                <th style="width: 20%">JAWATAN</th>
+                <th style="width: 25%">TEMPAT BERTUGAS</th>
+                <th style="width: 10%">KATEGORI</th>
+                <th style="width: 10%">NO. TEL</th>
+                <th class="text-center" style="width: 10%">TINDAKAN</th>
+            </tr></thead><tbody>`;
+        
+        html += filtered.map(x => `
+            <tr>
+                <td class="font-bold text-blue-900">${x.nama}</td>
+                <td>${x.jawatan}</td>
+                <td>
+                    ${x.tempat}
+                    ${x.kariah ? `<br><small class="text-gray-500">KARIAH: ${x.kariah}</small>` : ''}
+                </td>
+                <td><span class="tbl-badge bg-${x.jenis.toLowerCase()}">${x.jenis}</span></td>
+                <td>${x.notel}</td>
+                <td class="text-center">
+                    <button class="btn-pdf-sm" onclick='window.generatePDF(${JSON.stringify(x).replace(/'/g, "&apos;")})'>
+                        PDF
+                    </button>
+                </td>
+            </tr>
+        `).join('');
+        
+        document.getElementById('publicResults').innerHTML = html + `</tbody></table></div>`;
+    };
 
-    window.showAdminLogin = function() { window.currentUser ? switchMode('admin') : document.getElementById('loginOverlay').classList.add('active'); }
+    window.printList = async (type, param) => {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        
+        const cat = document.getElementById('publicKategori').value;
+        const place = document.getElementById('publicTempat').value;
+        const jaw = document.getElementById('publicJawatan').value;
+        const par = document.getElementById('publicParlimen').value;
+        const dun = document.getElementById('publicDun').value;
+
+        // Filter Data
+        let items = window.appData.filter(x => {
+            if(cat !== 'all' && x.jenis !== cat) return false;
+            if(place && x.tempat !== place) return false;
+            if(jaw && x.jawatan !== jaw) return false;
+            if(par && x.parlimen !== par) return false;
+            if(dun && x.dun !== dun) return false;
+            return true;
+        });
+
+        // Sorting
+        if (type === 'PLACE') {
+            items.sort((a, b) => (positionRank[a.jawatan] || 99) - (positionRank[b.jawatan] || 99));
+        } else {
+            items.sort((a, b) => a.tempat.localeCompare(b.tempat)); 
+        }
+        
+        // Logo
+        try {
+            const img = await new Promise((resolve) => {
+                const i = new Image(); i.crossOrigin="Anonymous";
+                i.onload = () => {
+                    const c = document.createElement('canvas'); c.width=i.width; c.height=i.height;
+                    c.getContext('2d').drawImage(i,0,0); resolve(c.toDataURL('image/png'));
+                };
+                i.src = "https://i.postimg.cc/7frn73HY/image.png";
+            });
+            doc.addImage(img, 'PNG', 95, 10, 20, 20);
+        } catch(e) {}
+
+        doc.setFont("helvetica", "bold"); doc.setFontSize(12);
+        doc.text("JABATAN HAL EHWAL AGAMA ISLAM PULAU PINANG", 105, 38, {align:'center'});
+        doc.setFont("helvetica", "normal"); doc.setFontSize(10);
+
+        let title = "";
+        let subTitle = "";
+        let headers = [];
+        let body = [];
+
+        if (type === 'PLACE') {
+            const mInfo = window.masjidInfoData.find(m => m.namaMasjid === param) || { noPendaftaran: '-', noAkaun: '-' };
+            title = "SENARAI AHLI JAWATANKUASA";
+            subTitle = `${param}\nNo. Pendaftaran: ${mInfo.noPendaftaran} | No. Akaun: ${mInfo.noAkaun}`;
+            headers = [['BIL', 'NAMA PENUH', 'JAWATAN', 'NO. TELEFON']];
+            body = items.map((x, i) => [i+1, x.nama, x.jawatan, x.notel]);
+        } 
+        else if (type === 'JAWATAN') {
+            title = `SENARAI ${param}`;
+            subTitle = cat !== 'all' ? `KATEGORI: ${cat}` : "SEMUA KATEGORI";
+            headers = [['BIL', 'NAMA PENUH', 'TEMPAT BERTUGAS', 'NO. TELEFON']];
+            body = items.map((x, i) => [i+1, x.nama, x.tempat, x.notel]);
+        }
+        else if (type === 'PARLIMEN') {
+            title = `SENARAI JAWATANKUASA PARLIMEN ${param}`;
+            subTitle = cat !== 'all' ? `KATEGORI: ${cat}` : "SEMUA KATEGORI";
+            headers = [['BIL', 'NAMA PENUH', 'JAWATAN', 'TEMPAT BERTUGAS']];
+            body = items.map((x, i) => [i+1, x.nama, x.jawatan, x.tempat]);
+        }
+        else if (type === 'DUN') {
+            title = `SENARAI JAWATANKUASA DUN ${param}`;
+            subTitle = cat !== 'all' ? `KATEGORI: ${cat}` : "SEMUA KATEGORI";
+            headers = [['BIL', 'NAMA PENUH', 'JAWATAN', 'TEMPAT BERTUGAS']];
+            body = items.map((x, i) => [i+1, x.nama, x.jawatan, x.tempat]);
+        }
+
+        doc.text(title, 105, 45, {align:'center'});
+        doc.setFontSize(11); doc.setFont("helvetica", "bold");
+        doc.text(subTitle, 105, 55, {align:'center'}); // Adjusted Y
+        doc.line(14, 62, 196, 62);
+
+        doc.autoTable({
+            startY: 65,
+            head: headers,
+            body: body,
+            theme: 'grid',
+            headStyles: { fillColor: [30, 58, 138], halign: 'center' },
+            styles: { fontSize: 9, cellPadding: 3 },
+            columnStyles: { 0: { halign: 'center', cellWidth: 15 } }
+        });
+
+        window.open(URL.createObjectURL(doc.output('blob')), '_blank');
+    };
+
+    window.switchMode = (mode) => {
+        if (mode === 'admin') {
+            document.getElementById('publicMode').classList.remove('active');
+            document.getElementById('adminMode').classList.add('active');
+            document.getElementById('adminMode').classList.remove('hidden'); 
+        } else {
+            document.getElementById('adminMode').classList.remove('active');
+            document.getElementById('adminMode').classList.add('hidden');
+            document.getElementById('publicMode').classList.add('active');
+        }
+    };
+
+    window.switchAdminTab = (tab, btn) => {
+        document.querySelectorAll('.admin-tab-pane').forEach(p => p.classList.add('hidden'));
+        document.getElementById(`admin${tab.charAt(0).toUpperCase() + tab.slice(1)}Tab`).classList.remove('hidden');
+        document.querySelectorAll('.active-tab').forEach(b => b.classList.remove('active-tab'));
+        btn.classList.add('active-tab');
+    };
+
+    window.setAdminFilter = (f, b) => {
+        window.adminDataFilter = f;
+        document.querySelectorAll('.admin-filter-btn').forEach(x => { x.classList.remove('bg-blue-600','text-white'); x.classList.add('bg-white','text-blue-600'); });
+        b.classList.remove('bg-white','text-blue-600'); b.classList.add('bg-blue-600','text-white');
+        window.renderAdminDataTable();
+    };
+
+    // User/Admin logic...
+    window.checkIC = () => {
+        const kp = document.getElementById('checkKpInput').value;
+        if(kp.length < 12) return alert("NO KP TIDAK SAH");
+        const found = window.appData.find(x => x.nokp.replace(/[^0-9]/g, '') === kp);
+        if(found && confirm(`DATA WUJUD: ${found.nama}. KEMASKINI?`)) return window.editData(found.id, true);
+        
+        document.getElementById('checkICSection').classList.add('hidden');
+        document.getElementById('formSection').classList.remove('hidden');
+        document.getElementById('addDataForm').reset();
+        document.getElementById('newNokp').value = kp;
+        window.calculateICDetails(document.getElementById('newNokp'));
+        window.updateFormFields();
+    };
+    
+    window.logout = () => { window.location.reload(); };
+    window.showAdminLogin = function() { window.currentUser ? window.switchMode('admin') : document.getElementById('loginOverlay').classList.add('active'); }
     window.closeLogin = function() { document.getElementById('loginOverlay').classList.remove('active'); }
     
     window.handleLogin = function(e) {
@@ -1283,280 +924,68 @@
         const found = window.appUsers.find(user => user.username === u && user.password === p);
         if (found) {
             window.currentUser = found;
-            closeLogin();
-            setupAdminUI();
-            switchMode('admin');
+            window.closeLogin();
+            window.switchMode('admin');
+            
+            setTimeout(() => {
+                window.renderAdminDataTable();
+                window.renderUserTable();
+                window.renderMasjidInfoTable(); 
+            }, 100);
+
+            document.getElementById('currentUserBadge').innerText = `${window.currentUser.username.toUpperCase()} | ${window.currentUser.role.toUpperCase()}`;
+            document.getElementById('logoutBtn').style.display = 'block';
+            
+            const importTabBtn = document.getElementById('importTabBtn');
+            const usersTabBtn = document.getElementById('usersTabBtn');
+            if (window.currentUser.role === 'superadmin') {
+                importTabBtn.style.display = 'block';
+                usersTabBtn.style.display = 'block';
+            } else {
+                importTabBtn.style.display = 'none';
+                usersTabBtn.style.display = 'none';
+            }
             document.getElementById('loginUser').value = '';
             document.getElementById('loginPass').value = '';
         } else { alert("Nama pengguna atau kata laluan salah."); }
     }
-
-    window.logout = function() { window.currentUser = null; document.getElementById('logoutBtn').style.display='none'; switchMode('public'); }
-
-    function setupAdminUI() {
-        let r = window.currentUser.role === 'superadmin' ? 'SUPER ADMIN' : 'STAF BIASA';
-        document.getElementById('currentUserBadge').innerText = `${window.currentUser.username.toUpperCase()} | ${r}`;
-        document.getElementById('logoutBtn').style.display = 'block';
-        document.getElementById('usersTabBtn').style.display = window.currentUser.role === 'superadmin' ? 'block' : 'none';
-        
-        // Hide Import/Export Tab Button for Non-Superadmin
-        const importTabBtn = document.getElementById('importTabBtn');
-        if (window.currentUser.role === 'superadmin') {
-            importTabBtn.style.display = 'block';
-        } else {
-            importTabBtn.style.display = 'none';
-        }
-
-        window.renderAdminDataTable();
-        window.renderUserTable();
-    }
-
-    window.switchMode = function(m) {
-        document.querySelectorAll('.admin-content').forEach(e=>e.classList.remove('active'));
-        document.querySelectorAll('.nav-btn').forEach(e=>e.classList.remove('active'));
-        if(m==='public') { 
-            document.getElementById('publicMode').classList.add('active'); 
-        } else { 
-            document.getElementById('adminMode').classList.add('active'); 
-        }
-    }
-
-    window.switchAdminTab = function(t, btn) {
-        document.querySelectorAll('.admin-tab-pane').forEach(e=>e.classList.add('hidden'));
-        document.querySelectorAll('.admin-tab-pane').forEach(e=>e.classList.remove('block')); 
-        const allBtns = btn.parentElement.querySelectorAll('button');
-        allBtns.forEach(b => { b.classList.remove('bg-blue-50', 'active-tab'); b.classList.add('bg-white'); });
-        btn.classList.remove('bg-white'); btn.classList.add('bg-blue-50', 'active-tab');
-
-        if(t==='data') document.getElementById('adminDataTab').classList.remove('hidden');
-        if(t==='users') document.getElementById('adminUsersTab').classList.remove('hidden');
-        if(t==='import') document.getElementById('adminImportTab').classList.remove('hidden');
-    }
-
-    window.renderAdminDataTable = function() {
-        const tbody = document.getElementById('adminDataTable');
-        const isSuperAdmin = window.currentUser && window.currentUser.role === 'superadmin';
-        
-        // Apply Filter if set
-        let filteredData = window.appData;
-        if (window.adminDataFilter !== 'all') {
-            filteredData = window.appData.filter(item => item.jenis === window.adminDataFilter);
-        }
-
-        tbody.innerHTML = filteredData.map((item) => {
-            const id = item.id;
-            const delBtn = isSuperAdmin ? 
-                `<button class="text-red-500 hover:text-red-700 font-bold ml-3" onclick="deleteData('${id}')">PADAM</button>` : '';
-            return `<tr class="border-b hover:bg-gray-50">
-                <td><span class="text-xs font-bold px-2 py-1 rounded bg-blue-100 text-blue-800 uppercase">${item.jenis}</span></td>
-                <td class="font-medium">${item.nama}</td>
-                <td>${item.tempat} <span class="text-gray-500 text-xs block">${item.kariah || ''}</span></td>
-                <td>${item.jawatan}</td>
-                <td class="font-mono text-sm">${item.nokp}</td>
-                <td class="text-center"><button class="text-blue-600 hover:text-blue-800 font-bold" onclick="editData('${id}')">EDIT</button>${delBtn}</td>
-            </tr>`;
-        }).join('');
-    }
-
-    window.renderUserTable = function() {
-        document.getElementById('userListTable').innerHTML = window.appUsers.map((u) => `
-            <tr>
-                <td class="font-bold">${u.username.toUpperCase()}</td>
-                <td><span class="px-2 py-1 rounded text-xs ${u.role==='superadmin'?'bg-purple-100 text-purple-800':'bg-gray-100 text-gray-800'}">${u.role.toUpperCase()}</span></td>
-                <td class="text-center">${u.username!=='admin' ? `<button class="text-red-500 hover:text-red-700" onclick="delUser('${u.id}')">PADAM</button>` : ''}</td>
-            </tr>
-        `).join('');
-    }
-
-    window.exportToCSV = function() {
-        if(!window.appData.length) return alert("TIADA DATA!");
-        const headers = ["jenis","nama","tempat","kariah","jawatan","parlimen","dun","nokp","jantina","umur","notel","alamat","pekerjaan","lantikan","tarikhLantikan","tarikhTamat"];
-        const rows = [headers.join(',')];
-        window.appData.forEach(item => {
-            rows.push(headers.map(h => `"${(item[h]||'').toString().replace(/"/g,'""')}"`).join(','));
-        });
-        const blob = new Blob([rows.join('\n')], {type:'text/csv'});
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a'); a.href=url; a.download='data_masjid_server.csv'; a.click();
-    }
-
-    window.performSearch = function() {
-        const cat = document.getElementById('publicKategori').value;
-        const par = document.getElementById('publicParlimen').value;
-        const dun = document.getElementById('publicDun').value;
-        const jaw = document.getElementById('publicJawatan').value; 
-        const tempat = document.getElementById('publicTempat').value; // Ambil nilai tempat
-        const txt = document.getElementById('publicSearchText').value.toUpperCase();
-
-        // 1. Initial State Check: If all fields are default/empty, show nothing
-        if (cat === 'all' && par === '' && dun === '' && jaw === '' && txt === '' && tempat === '') {
-            const con = document.getElementById('publicResults');
-            // Show Initial State Message
-            con.innerHTML = `
-                <div class="initial-state-msg col-span-full text-center py-10">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto text-gray-300 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                    </svg>
-                    <p class="font-semibold text-lg text-gray-600">Mulakan Carian Anda</p>
-                    <p class="text-sm text-gray-400">Sila masukkan kata kunci atau pilih tapisan di atas untuk melihat data.</p>
-                </div>
-            `;
-            return;
-        }
-
-        const res = window.appData.filter(d => {
-            if (cat !== 'all' && d.jenis !== cat) return false;
-            if (par && d.parlimen !== par) return false;
-            if (dun && d.dun !== dun) return false;
-            if (jaw && d.jawatan !== jaw) return false; 
-            if (tempat && d.tempat !== tempat) return false; // Fixed: Now filters by place correctly
-
-            if (txt && !(
-                (d.nama && d.nama.includes(txt)) ||
-                (d.tempat && d.tempat.includes(txt)) ||
-                (d.nokp && d.nokp.includes(txt))
-            )) return false;
-            return true;
-        });
-
-        const con = document.getElementById('publicResults');
-        if(!res.length) return con.innerHTML = '<div class="col-span-full text-center py-8 text-gray-500">TIADA REKOD DIJUMPAI.</div>';
-        
-        con.innerHTML = `
-        <div class="overflow-x-auto shadow-md sm:rounded-lg">
-            <table class="public-table">
-                <thead>
-                    <tr>
-                        <th>NAMA</th>
-                        <th>JAWATAN</th>
-                        <th>TEMPAT BERTUGAS</th>
-                        <th>KATEGORI</th>
-                        <th>NO. TEL</th>
-                        <th class="text-center">TINDAKAN</th>
-                    </tr>
-                </thead>
-                <tbody>
-        `;
-        
-        con.innerHTML += res.map(d => `
-            <tr>
-                <td class="font-medium text-gray-900 whitespace-nowrap">${d.nama}</td>
-                <td>${d.jawatan}</td>
-                <td>${d.tempat}</td>
-                <td><span class="bg-blue-100 text-blue-800 text-xs font-medium mr-2 px-2.5 py-0.5 rounded">${d.jenis}</span></td>
-                <td>${d.notel}</td>
-                <td class="text-center">
-                    <button class="font-medium text-blue-600 dark:text-blue-500 hover:underline" onclick='generatePDF(${JSON.stringify(d).replace(/'/g, "&apos;")})'>PAPAR PDF</button>
-                </td>
-            </tr>
-        `).join('');
-
-        con.innerHTML += `</tbody></table></div>`;
-    }
-
-    window.generatePDF = async function(d) {
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF();
-        
-        // --- 1. SETUP LOGO & HEADER ---
-        const logoUrl = "https://i.postimg.cc/7frn73HY/image.png"; 
-
-        const getBase64ImageFromURL = (url) => {
-            return new Promise((resolve, reject) => {
-                const img = new Image();
-                img.setAttribute("crossOrigin", "anonymous");
-                img.onload = () => {
-                    const canvas = document.createElement("canvas");
-                    canvas.width = img.width;
-                    canvas.height = img.height;
-                    const ctx = canvas.getContext("2d");
-                    ctx.drawImage(img, 0, 0);
-                    const dataURL = canvas.toDataURL("image/png");
-                    resolve(dataURL);
-                };
-                img.onerror = error => reject(error);
-                img.src = url;
-            });
-        };
-
+    
+    // --- Init Function Defined Last ---
+    async function init() {
         try {
-            const logoData = await getBase64ImageFromURL(logoUrl);
-            doc.addImage(logoData, 'PNG', 95, 10, 20, 20); 
-        } catch (e) {
-            console.warn("Gagal memuatkan logo untuk PDF", e);
-        }
+            await signInAnonymously(auth);
+            document.getElementById('loadingOverlay').style.display = 'none';
 
-        // Header Teks
-        doc.setTextColor(0, 0, 0);
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(14);
-        doc.text("JABATAN HAL EHWAL AGAMA ISLAM PULAU PINANG", 105, 38, {align:'center'});
-        
-        doc.setFontSize(10);
-        doc.setFont("helvetica", "normal");
-        doc.text("Lebuh Pantai, 10300 Pulau Pinang", 105, 44, {align:'center'});
-        doc.text("Tel: 04-684 7000 | Faks: 04-684 7777 | E-mel: jheaipp@penang.gov.my", 105, 49, {align:'center'});
+            onSnapshot(query(masjidCollection), (snap) => {
+                window.appData = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                // Call functions that are ALREADY defined above
+                if(typeof window.renderAdminDataTable === 'function') window.renderAdminDataTable();
+                if(typeof window.updatePublicTempatList === 'function') window.updatePublicTempatList();
+                if(typeof window.performSearch === 'function') window.performSearch();
+            });
 
-        doc.setLineWidth(0.5);
-        doc.line(20, 55, 190, 55);
+            onSnapshot(query(masjidInfoCollection), (snap) => {
+                window.masjidInfoData = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                if(typeof window.updateMasjidDropdowns === 'function') window.updateMasjidDropdowns();
+                if(typeof window.renderMasjidInfoTable === 'function') window.renderMasjidInfoTable();
+            });
 
-        doc.setFontSize(12);
-        doc.setFont("helvetica", "bold");
-        doc.text("REKOD MAKLUMAT " + d.jenis.toUpperCase(), 105, 65, {align:'center'});
-
-        // --- 2. TABLE CONTENT (AutoTable) ---
-        // Prepare Data Array
-        const tableBody = [
-            ['NAMA PENUH', d.nama],
-            // ['NO. KAD PENGENALAN', d.nokp], // Hidden per request
-            ['JANTINA / UMUR', `${d.jantina} / ${d.umur}`],
-            ['JAWATAN', d.jawatan],
-            ['TEMPAT BERTUGAS', d.tempat]
-        ];
-
-        // Fetch No Pendaftaran logic
-        let noPendaftaran = "-";
-        if (d.jenis === 'MASJID' || d.jenis === 'PEGAWAI') {
-             const masjidInfo = window.masjidInfoData.find(m => m.namaMasjid === d.tempat);
-             if(masjidInfo) noPendaftaran = masjidInfo.noPendaftaran;
-        }
-        if(noPendaftaran !== "-") tableBody.push(['NO. PENDAFTARAN MASJID', noPendaftaran]);
-
-        if(d.kariah) tableBody.push(['KARIAH', d.kariah]);
-        
-        if(d.tarikhLantikan) tableBody.push(['TARIKH LANTIKAN', d.tarikhLantikan]);
-        if(d.tarikhTamat) tableBody.push(['TARIKH TAMAT', d.tarikhTamat]);
-        
-        tableBody.push(['NO. TELEFON', d.notel]);
-        // tableBody.push(['ALAMAT', d.alamat]); // Hidden
-        tableBody.push(['PARLIMEN', d.parlimen]);
-        tableBody.push(['DUN', d.dun]);
-        tableBody.push(['PEKERJAAN', d.pekerjaan]);
-
-        doc.autoTable({
-            startY: 80,
-            head: [['PERKARA', 'BUTIRAN']],
-            body: tableBody,
-            theme: 'grid',
-            headStyles: { fillColor: [30, 58, 138], halign: 'center' },
-            columnStyles: { 
-                0: { fontStyle: 'bold', cellWidth: 70, valign: 'middle' },
-                1: { valign: 'middle' }
-            },
-            styles: { fontSize: 10, cellPadding: 3 }
-        });
-
-        // Footer
-        const pageHeight = doc.internal.pageSize.height;
-        doc.setFontSize(8);
-        doc.setTextColor(100, 100, 100);
-        doc.text("Cetakan Komputer dari Portal Data Jawatankuasa Masjid JHEAIPP", 105, pageHeight - 15, {align:'center'});
-        doc.text("Tarikh Cetakan: " + new Date().toLocaleDateString() + " " + new Date().toLocaleTimeString(), 105, pageHeight - 10, {align:'center'});
-
-        const pdfBlob = doc.output('blob');
-        const pdfUrl = URL.createObjectURL(pdfBlob);
-        window.open(pdfUrl, '_blank');
+            onSnapshot(query(usersCollection), (snap) => {
+                window.appUsers = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                if(window.appUsers.length === 0) createDefaultAdmin();
+                if(typeof window.renderUserTable === 'function') window.renderUserTable();
+            });
+            
+            window.populateParlimen('newParlimen');
+            window.populateParlimen('publicParlimen');
+            window.updateFormFields();
+            window.updatePublicJawatanList();
+            window.updateMasjidDropdowns();
+        } catch (e) { console.error(e); }
     }
+
+    init();
+
 </script>
 </body>
 </html>
