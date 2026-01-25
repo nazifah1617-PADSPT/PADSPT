@@ -12,58 +12,61 @@
     <script src="https://cdn.tailwindcss.com"></script>
 
     <!-- Google Fonts: Inter -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
     <style>
         @view-transition { navigation: auto; }
         
         body {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
             font-family: 'Inter', sans-serif;
-            background-color: #f1f5f9;
+            background-color: #f3f4f6;
+            background-image: radial-gradient(#e5e7eb 1px, transparent 1px);
+            background-size: 20px 20px;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
+            color: #1f2937;
         }
 
+        /* FORCE UPPERCASE INPUTS */
         input[type="text"], textarea, select {
             text-transform: uppercase;
         }
 
+        /* Loading Overlay */
         #loadingOverlay {
             display: flex; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(255,255,255,0.95); z-index: 3000; align-items: center; justify-content: center;
             flex-direction: column;
+            backdrop-filter: blur(5px);
         }
 
+        /* MAIN CONTAINER */
         .main-container { 
-            max-width: 1280px; 
-            margin: 2rem auto; 
-            padding: 0 1.5rem; 
+            max-width: 1200px; 
+            margin: 0 auto; 
+            padding: 2rem 1rem; 
             position: relative; 
             z-index: 10; 
-            width: 100%; 
             flex: 1; 
         }
 
+        /* CARD STYLE */
         .content-card { 
             background: white; 
             border-radius: 1rem; 
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); 
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); 
             overflow: hidden; 
             min-height: 600px; 
-            border-top: 6px solid #fbbf24; 
-            position: relative;
+            border-top: 6px solid #fbbf24; /* Yellow top border */
         }
 
+        /* HEADER */
         .form-header {
             text-align: center;
-            padding: 2.5rem 2rem 1.5rem;
+            padding: 3rem 2rem 2rem;
+            background: linear-gradient(to bottom, #ffffff, #f8fafc);
             border-bottom: 1px solid #e2e8f0;
-            margin-bottom: 1rem;
-            background: #fff;
         }
 
         .gov-logo {
@@ -71,83 +74,143 @@
             width: auto;
             margin: 0 auto 1.5rem;
             filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));
+            transition: transform 0.3s ease;
         }
+        .gov-logo:hover { transform: scale(1.05); }
 
         .header-title {
-            font-size: 1.5rem; font-weight: 800; color: #1e3a8a; text-transform: uppercase;
+            font-size: 1.75rem;
+            font-weight: 800;
+            color: #1e3a8a;
+            letter-spacing: -0.025em;
+            text-transform: uppercase;
+            line-height: 1.2;
+            margin-bottom: 0.5rem;
         }
 
         .header-subtitle {
-            font-size: 1rem;
+            font-size: 0.95rem;
             font-weight: 600;
-            color: #4b5563;
-            letter-spacing: 0.05em;
+            color: #64748b;
+            letter-spacing: 0.1em;
             text-transform: uppercase;
         }
 
-        .content-padding { padding: 0 2rem 2rem; }
+        .content-padding { padding: 2rem; }
         
+        /* ADMIN vs PUBLIC Visibility */
         .admin-content { display: none; }
-        .admin-content.active { display: block; }
+        .admin-content.active { display: block; animation: fadeIn 0.3s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* SEARCH PANEL */
+        /* --- PUBLIC SEARCH STYLES --- */
         .search-panel { 
-            background-color: #f8fafc; border: 1px solid #cbd5e1; border-radius: 0.75rem; padding: 1.5rem; margin-bottom: 2rem; 
+            background-color: #fff; 
+            border: 1px solid #e2e8f0; 
+            border-radius: 1rem; 
+            padding: 2rem; 
+            margin-bottom: 2rem; 
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
         }
 
+        .panel-title { 
+            font-size: 1.1rem; 
+            font-weight: 700; 
+            color: #1e40af; 
+            margin-bottom: 1.5rem; 
+            display: flex; 
+            align-items: center; 
+            gap: 0.75rem; 
+            padding-bottom: 1rem;
+            border-bottom: 2px solid #f1f5f9;
+        }
+        
+        /* --- ADMIN STYLES (COMPACT) --- */
+        .admin-label { 
+            display: block; 
+            font-size: 0.7rem; /* Kecil sikit */
+            font-weight: 700; 
+            color: #4b5563; 
+            margin-bottom: 0.25rem; 
+            letter-spacing: 0.025em;
+        }
+        
+        .admin-input { 
+            width: 100%; 
+            padding: 0.5rem 0.75rem; /* Padding kecil */
+            font-size: 0.85rem; /* Font kecil */
+            border: 1px solid #cbd5e1; 
+            border-radius: 0.375rem; 
+            background-color: #f8fafc;
+            color: #1e293b;
+            transition: all 0.15s;
+        }
+        .admin-input:focus { 
+            outline: none; border-color: #2563eb; background-color: #fff; box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1); 
+        }
+
+        /* --- TABLE STYLES --- */
         .results-wrapper {
-            border: 1px solid #e2e8f0; border-radius: 0.5rem; overflow-x: auto; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            border: 1px solid #e2e8f0;
+            border-radius: 0.75rem;
+            overflow: hidden;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            background: white;
         }
 
         .custom-table {
-            width: 100%; border-collapse: collapse; font-size: 0.85rem; background-color: white; min-width: 900px;
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+            background-color: white;
+            min-width: 800px;
         }
 
         .custom-table thead { background-color: #1e3a8a; color: white; }
-        .custom-table th { padding: 12px 16px; text-align: left; border-bottom: 3px solid #fbbf24; }
-        .custom-table td { padding: 12px 16px; border-bottom: 1px solid #f1f5f9; color: #334155; }
+        .custom-table th { padding: 12px 16px; text-align: left; font-weight: 600; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em; border-bottom: 4px solid #fbbf24; }
+        .custom-table td { padding: 10px 16px; border-bottom: 1px solid #f1f5f9; color: #334155; vertical-align: middle; }
         .custom-table tbody tr:nth-child(even) { background-color: #f8fafc; }
         .custom-table tbody tr:hover { background-color: #eff6ff; }
 
-        .tbl-badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 10px; font-weight: 700; text-transform: uppercase; }
-        .bg-masjid { background-color: #dbeafe; color: #1e40af; border: 1px solid #93c5fd; }
-        .bg-surau { background-color: #dcfce7; color: #166534; border: 1px solid #86efac; }
-        .bg-pegawai { background-color: #ffedd5; color: #9a3412; border: 1px solid #fdba74; }
+        /* Admin Table (More Compact) */
+        .admin-table { width: 100%; border-collapse: collapse; font-size: 0.75rem; } /* Font extra kecil */
+        .admin-table th { background: #f1f5f9; color: #475569; font-weight: 700; text-align: left; padding: 0.5rem 0.75rem; border-bottom: 2px solid #e2e8f0; text-transform: uppercase; white-space: nowrap; }
+        .admin-table td { padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; color: #334155; }
+        .admin-table tr:hover { background: #f0f9ff; }
 
-        .btn-pdf-sm { background-color: #dc2626; color: white; padding: 6px 12px; border-radius: 6px; font-size: 11px; font-weight: 700; border: none; cursor: pointer; }
+        /* BADGES & BUTTONS */
+        .tbl-badge { display: inline-block; padding: 2px 8px; border-radius: 99px; font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.025em; }
+        .bg-masjid { background-color: #dbeafe; color: #1e40af; border: 1px solid #bfdbfe; }
+        .bg-surau { background-color: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+        .bg-pegawai { background-color: #ffedd5; color: #9a3412; border: 1px solid #fed7aa; }
 
-        .btn-bulk-pdf {
-            background-color: #059669;
-            color: white;
-            padding: 10px 20px;
-            border-radius: 6px;
-            font-size: 14px;
-            font-weight: 700;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            margin-bottom: 1rem;
-            transition: all 0.2s;
-            border: none;
-            cursor: pointer;
-            box-shadow: 0 4px 6px -1px rgba(5, 150, 105, 0.3);
-        }
+        .btn { display: inline-flex; align-items: center; justify-content: center; padding: 0.5rem 1.25rem; border-radius: 0.375rem; font-weight: 600; font-size: 0.85rem; cursor: pointer; transition: all 0.2s; border: none; letter-spacing: 0.025em; }
+        .btn-sm { padding: 0.35rem 0.8rem; font-size: 0.75rem; }
+        .btn-primary { background: #2563eb; color: white; box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2); }
+        .btn-primary:hover { background: #1d4ed8; transform: translateY(-1px); }
+        .btn-success { background: #059669; color: white; box-shadow: 0 2px 4px rgba(5, 150, 105, 0.2); }
+        .btn-success:hover { background: #047857; transform: translateY(-1px); }
+        .btn-pdf-sm { background-color: #dc2626; color: white; padding: 4px 10px; border-radius: 4px; font-size: 0.7rem; font-weight: 700; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; }
+        .btn-pdf-sm:hover { background-color: #b91c1c; }
+
+        .btn-bulk-pdf { background-color: #059669; color: white; padding: 8px 16px; border-radius: 6px; font-size: 0.8rem; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; margin-bottom: 1rem; border: none; cursor: pointer; box-shadow: 0 4px 6px -1px rgba(5, 150, 105, 0.2); }
         .btn-bulk-pdf:hover { background-color: #047857; transform: translateY(-1px); }
 
-        .form-label { display: block; font-size: 0.75rem; font-weight: 700; color: #64748b; margin-bottom: 0.4rem; }
-        .form-input, .form-select { width: 100%; padding: 0.6rem; font-size: 0.9rem; border: 1px solid #cbd5e1; border-radius: 0.375rem; }
+        .active-tab { background: #eff6ff; color: #1d4ed8; border-color: #bfdbfe; box-shadow: inset 0 2px 4px 0 rgba(0,0,0,0.05); }
 
-        .btn { display: inline-flex; align-items: center; justify-content: center; padding: 0.75rem 1.5rem; border-radius: 0.5rem; font-weight: 600; cursor: pointer; border: none; }
-        .btn-primary { background: #2563eb; color: white; }
-        .btn-success { background: #059669; color: white; }
+        /* FOOTER */
+        .gov-footer { background-color: #1e3a8a; color: white; padding: 2rem 0; border-top: 5px solid #fbbf24; margin-top: auto; position: relative; z-index: 20; }
         
-        .gov-footer { background-color: #1e3a8a; color: white; padding: 2rem 0; border-top: 5px solid #fbbf24; margin-top: auto; }
-        .login-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.8); z-index: 2000; align-items: center; justify-content: center; }
-        .login-overlay.active { display: flex; }
-        .login-box { background: white; padding: 2.5rem; border-radius: 1rem; width: 90%; max-width: 400px; text-align: center; }
-        .logout-btn { position: absolute; top: 1rem; right: 1rem; background: #fee2e2; color: #991b1b; padding: 0.4rem 1rem; border-radius: 0.375rem; font-size: 0.8rem; font-weight: 600; cursor: pointer; display: none; }
+        /* LOGIN MODAL */
+        .login-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.6); z-index: 2000; align-items: center; justify-content: center; backdrop-filter: blur(8px); }
+        .login-overlay.active { display: flex; animation: fadeIn 0.2s ease-out; }
+        .login-box { background: white; padding: 3rem; border-radius: 1rem; width: 90%; max-width: 420px; text-align: center; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); border: 1px solid #e2e8f0; }
+
+        .logout-btn { position: absolute; top: 1.5rem; right: 1.5rem; background: #fee2e2; color: #991b1b; padding: 0.5rem 1rem; border-radius: 0.5rem; font-size: 0.75rem; font-weight: 700; cursor: pointer; display: none; border: 1px solid #fecaca; transition: all 0.2s; }
+        .logout-btn:hover { background: #fecaca; }
+
         .check-kp-box { background-color: #eff6ff; border: 1px solid #bfdbfe; border-radius: 0.75rem; padding: 2rem; text-align: center; }
-        .active-tab { background: #eff6ff; color: #1d4ed8; border-color: #bfdbfe; }
+        .initial-state-msg { text-align: center; padding: 4rem 2rem; color: #94a3b8; background: #f8fafc; border-radius: 0.75rem; border: 2px dashed #cbd5e1; }
     </style>
 </head>
 <body>
@@ -155,7 +218,6 @@
 <div id="loadingOverlay">
     <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-600 mb-3"></div>
     <p class="text-blue-800 font-semibold text-lg">Menghubungkan ke Pangkalan Data...</p>
-    <p id="configStatus" class="text-sm text-gray-500 mt-2">Menunggu konfigurasi...</p>
 </div>
 
 <div class="main-container">
@@ -168,14 +230,20 @@
             <p class="header-subtitle">JABATAN HAL EHWAL AGAMA ISLAM PULAU PINANG</p>
         </div>
         
-        <!-- CARIAN AWAM -->
+        <!-- CARIAN AWAM (PUBLIC) -->
         <div id="publicMode" class="admin-content active">
             <div class="content-padding">
                 <div class="search-panel">
-                    <div class="form-grid">
+                    <div class="panel-title">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                        CARIAN & PENAPISAN DATA
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                         <div>
-                            <label class="form-label">KATEGORI</label>
-                            <select id="publicKategori" class="form-select" onchange="window.updatePublicJawatanList(); window.updatePublicTempatList(); window.performSearch()">
+                            <label class="admin-label">KATEGORI</label>
+                            <select id="publicKategori" class="admin-input" onchange="window.updatePublicJawatanList(); window.updatePublicTempatList(); window.performSearch()">
                                 <option value="all">SEMUA KATEGORI</option>
                                 <option value="MASJID">MASJID</option>
                                 <option value="SURAU">SURAU</option>
@@ -183,32 +251,32 @@
                             </select>
                         </div>
                         <div>
-                            <label class="form-label" id="publicTempatLabel">NAMA MASJID / SURAU</label>
-                            <select id="publicTempat" class="form-select" onchange="window.performSearch()">
+                            <label class="admin-label" id="publicTempatLabel">NAMA TEMPAT</label>
+                            <select id="publicTempat" class="admin-input" onchange="window.performSearch()">
                                 <option value="">SEMUA</option>
                             </select>
                         </div>
                         <div>
-                            <label class="form-label">PARLIMEN</label>
-                            <select id="publicParlimen" class="form-select" onchange="window.updatePublicDunList(); window.performSearch()">
+                            <label class="admin-label">PARLIMEN</label>
+                            <select id="publicParlimen" class="admin-input" onchange="window.updatePublicDunList(); window.performSearch()">
                                 <option value="">SEMUA PARLIMEN</option>
                             </select>
                         </div>
                         <div>
-                            <label class="form-label">DUN</label>
-                            <select id="publicDun" class="form-select" onchange="window.performSearch()">
+                            <label class="admin-label">DUN</label>
+                            <select id="publicDun" class="admin-input" onchange="window.performSearch()">
                                 <option value="">SEMUA DUN</option>
                             </select>
                         </div>
-                        <div>
-                            <label class="form-label">JAWATAN</label>
-                            <select id="publicJawatan" class="form-select" onchange="window.performSearch()">
+                        <div class="md:col-span-2">
+                            <label class="admin-label">JAWATAN</label>
+                            <select id="publicJawatan" class="admin-input" onchange="window.performSearch()">
                                 <option value="">SEMUA JAWATAN</option>
                             </select>
                         </div>
-                        <div class="md:col-span-3">
-                            <label class="form-label">CARIAN TEKS</label>
-                            <input type="text" id="publicSearchText" class="form-input" placeholder="NAMA / NO KP..." oninput="window.performSearch()">
+                        <div class="md:col-span-2">
+                            <label class="admin-label">CARIAN TEKS</label>
+                            <input type="text" id="publicSearchText" class="admin-input" placeholder="NAMA / NO KP..." oninput="window.performSearch()">
                         </div>
                     </div>
                 </div>
@@ -216,10 +284,16 @@
             </div>
         </div>
 
-        <!-- PANEL PENTADBIR -->
+        <!-- PANEL PENTADBIR (ADMIN) -->
         <div id="adminMode" class="admin-content">
-            <div class="bg-blue-50 border-y border-blue-100 p-4 mb-6 flex justify-between items-center mx-8 rounded-lg">
-                <div id="currentUserBadge" class="font-bold text-blue-900">PANEL PENGURUSAN</div>
+            <div class="bg-blue-50 border-y border-blue-100 p-4 mb-6 flex justify-between items-center px-8">
+                <div class="flex items-center gap-2">
+                    <span class="bg-blue-600 text-white p-1 rounded"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg></span>
+                    <div>
+                        <h2 class="font-bold text-blue-900 text-sm">PANEL PENGURUSAN</h2>
+                        <div id="currentUserBadge" class="text-[10px] text-blue-600 font-medium uppercase"></div>
+                    </div>
+                </div>
                 <div class="flex gap-2">
                     <button class="px-4 py-2 bg-white border border-blue-200 text-blue-600 rounded-md text-xs font-bold active-tab" onclick="window.switchAdminTab('data', this)">DATA</button>
                     <button id="usersTabBtn" class="px-4 py-2 bg-white border border-blue-200 text-blue-600 rounded-md text-xs font-bold" onclick="window.switchAdminTab('users', this)">PENGGUNA</button>
@@ -227,136 +301,143 @@
                 </div>
             </div>
 
-            <div class="content-padding">
+            <div class="content-padding pt-0">
                 <div id="adminDataTab" class="admin-tab-pane">
-                    <!-- Section 1: Masjid Info -->
-                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-8 shadow-sm relative overflow-hidden">
-                         <div class="absolute top-0 left-0 w-1.5 h-full bg-blue-600"></div>
-                         <h3 class="text-lg font-bold text-blue-900 mb-6 flex items-center gap-2">
-                            PENGURUSAN MAKLUMAT MASJID (RASMI)
-                        </h3>
-                        <form id="addMasjidForm" onsubmit="window.addNewMasjidInfo(event)">
+                    
+                    <!-- 1. Maklumat Masjid (Compact) -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-4 mb-6 shadow-sm">
+                        <h3 class="text-sm font-bold text-gray-700 mb-3 uppercase tracking-wider border-b pb-2">Pengurusan Maklumat Masjid (Rasmi)</h3>
+                        <form id="addMasjidForm" onsubmit="window.addNewMasjidInfo(event)" class="flex flex-wrap gap-3 items-end mb-4">
                             <input type="hidden" id="editMasjidId">
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div class="md:col-span-2">
-                                    <label class="form-label">NAMA MASJID</label>
-                                    <select id="inputNamaMasjid" class="form-select bg-white" required></select>
-                                </div>
-                                <div><label class="form-label">NO. PENDAFTARAN</label><input id="inputNoPendaftaran" class="form-input bg-white" required></div>
-                                <div><label class="form-label">NO. AKAUN</label><input id="inputNoAkaun" class="form-input bg-white" required></div>
+                            <div class="flex-1 min-w-[200px]">
+                                <label class="admin-label">NAMA MASJID</label>
+                                <select id="inputNamaMasjid" class="admin-input bg-gray-50" required></select>
                             </div>
-                            <div class="mt-6 text-right">
-                                <button type="submit" id="saveMasjidBtn" class="btn btn-success px-8">SIMPAN MAKLUMAT</button>
+                            <div class="w-40">
+                                <label class="admin-label">NO. PENDAFTARAN</label>
+                                <input id="inputNoPendaftaran" class="admin-input" required>
                             </div>
+                            <div class="w-40">
+                                <label class="admin-label">NO. AKAUN</label>
+                                <input id="inputNoAkaun" class="admin-input" required>
+                            </div>
+                            <button type="submit" id="saveMasjidBtn" class="btn btn-sm btn-success h-[34px]">SIMPAN</button>
                         </form>
-                        <div class="mt-8 bg-white border border-gray-200 rounded-lg overflow-hidden">
-                             <div class="p-3 bg-gray-100 border-b border-gray-200 flex justify-between items-center">
-                                <h4 class="font-bold text-xs text-gray-500 uppercase">Senarai Masjid Berdaftar</h4>
-                                <input id="searchMasjidInfo" type="text" class="px-3 py-1 text-sm border rounded" placeholder="Cari dalam senarai..." oninput="window.renderMasjidInfoTable()">
+                        
+                        <div class="border rounded-md overflow-hidden bg-gray-50">
+                             <div class="p-2 border-b flex justify-between items-center">
+                                <span class="text-xs font-bold text-gray-500">SENARAI MASJID BERDAFTAR</span>
+                                <input id="searchMasjidInfo" type="text" class="px-2 py-1 text-xs border rounded w-48" placeholder="Cari dalam senarai..." oninput="window.renderMasjidInfoTable()">
                             </div>
-                            <div class="overflow-y-auto max-h-64">
-                                <table class="data-table w-full">
-                                    <thead class="sticky top-0 bg-gray-50 z-10 shadow-sm">
+                            <div class="overflow-y-auto max-h-48">
+                                <table class="admin-table w-full">
+                                    <thead class="sticky top-0 bg-gray-100 shadow-sm">
                                         <tr>
-                                            <th class="pl-4">NAMA MASJID</th>
-                                            <th>NO. PENDAFTARAN</th>
-                                            <th>NO. AKAUN</th>
-                                            <th class="text-center pr-4">TINDAKAN</th>
+                                            <th>NAMA MASJID</th>
+                                            <th class="w-32">NO. PENDAFTARAN</th>
+                                            <th class="w-32">NO. AKAUN</th>
+                                            <th class="w-24 text-center">TINDAKAN</th>
                                         </tr>
                                     </thead>
-                                    <tbody id="masjidInfoTable" class="bg-white divide-y divide-gray-100"></tbody>
+                                    <tbody id="masjidInfoTable" class="bg-white"></tbody>
                                 </table>
                             </div>
                         </div>
                     </div>
 
-                    <hr class="border-t-2 border-gray-200 my-8">
-
-                    <!-- Section 2: Jawatankuasa -->
+                    <!-- 2. Jawatankuasa (Compact) -->
                     <div id="checkICSection" class="check-kp-box mb-6">
-                        <h3 class="text-xl font-bold text-blue-900 mb-4">TAMBAH ATAU KEMASKINI DATA</h3>
-                        <div class="max-w-md mx-auto flex gap-2">
-                            <input id="checkKpInput" class="form-input text-center text-lg tracking-wider" placeholder="NO KP 12 DIGIT" maxlength="12">
-                            <button onclick="window.checkIC()" class="btn btn-primary px-6">SEMAK DATA</button>
+                        <h3 class="text-sm font-bold text-blue-900 mb-2 uppercase">Tambah / Kemaskini Data AJK</h3>
+                        <div class="flex justify-center gap-2">
+                            <input id="checkKpInput" class="admin-input text-center w-64" placeholder="NO KP (12 DIGIT)" maxlength="12">
+                            <button onclick="window.checkIC()" class="btn btn-sm btn-primary">SEMAK</button>
                         </div>
                     </div>
 
-                    <div id="formSection" class="hidden bg-gray-50 p-6 rounded-lg border mb-8">
-                        <div class="flex justify-between items-center mb-4">
-                            <h3 class="font-bold text-gray-800">BORANG DATA JAWATANKUASA</h3>
-                            <button onclick="window.cancelAdd()" class="text-red-500 font-bold underline">BATAL</button>
+                    <div id="formSection" class="hidden bg-white border border-gray-200 rounded-lg p-5 mb-6 shadow-sm">
+                        <div class="flex justify-between items-center mb-4 border-b pb-2">
+                            <h3 class="text-sm font-bold text-gray-700 uppercase">Borang Data Jawatankuasa</h3>
+                            <button onclick="window.cancelAdd()" class="text-xs text-red-500 font-bold hover:underline">BATAL</button>
                         </div>
                         <form id="addDataForm" onsubmit="window.addNewData(event)">
                             <input type="hidden" id="editId">
-                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                <div><label class="form-label">NO KP</label><input id="newNokp" class="form-input bg-gray-200" readonly></div>
-                                <div><label class="form-label">NAMA PENUH</label><input id="newNama" class="form-input" required></div>
-                                <div><label class="form-label">KATEGORI</label>
-                                    <select id="newJenis" class="form-select" onchange="window.updateFormFields()" required>
+                            <div class="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4">
+                                <div><label class="admin-label">NO KP</label><input id="newNokp" class="admin-input bg-gray-100" readonly></div>
+                                <div class="md:col-span-2"><label class="admin-label">NAMA PENUH</label><input id="newNama" class="admin-input" required></div>
+                                <div><label class="admin-label">KATEGORI</label>
+                                    <select id="newJenis" class="admin-input" onchange="window.updateFormFields()" required>
                                         <option value="MASJID">MASJID</option>
                                         <option value="SURAU">SURAU</option>
                                         <option value="PEGAWAI">PEGAWAI MASJID</option>
                                     </select>
                                 </div>
-                                <div id="group-nama-tempat">
-                                    <label class="form-label" id="label-nama-tempat">NAMA MASJID</label>
-                                    <select id="newNamaTempatSelect" class="form-select"></select>
-                                    <input id="newNamaTempatInput" class="form-input hidden">
+                                
+                                <div id="group-nama-tempat" class="md:col-span-2">
+                                    <label class="admin-label" id="label-nama-tempat">NAMA MASJID</label>
+                                    <select id="newNamaTempatSelect" class="admin-input"></select>
+                                    <input id="newNamaTempatInput" class="admin-input hidden">
                                 </div>
-                                <div id="group-nama-kariah" class="hidden">
-                                    <label class="form-label">KARIAH / MASJID</label>
-                                    <select id="newNamaKariahSelect" class="form-select"></select>
-                                    <input id="newNamaKariah" class="form-input hidden">
+                                <div id="group-nama-kariah" class="md:col-span-2 hidden">
+                                    <label class="admin-label">KARIAH / MASJID</label>
+                                    <select id="newNamaKariahSelect" class="admin-input"></select>
+                                    <input id="newNamaKariah" class="admin-input hidden">
                                 </div>
-                                <div><label class="form-label">JAWATAN</label><select id="newJawatan" class="form-select" required></select></div>
-                                <div><label class="form-label">PARLIMEN</label><select id="newParlimen" class="form-select" onchange="window.updateDunList()" required></select></div>
-                                <div><label class="form-label">DUN</label><select id="newDun" class="form-select" required></select></div>
-                                <div><label class="form-label">NO TEL</label><input id="newNotel" class="form-input" required></div>
-                                <div><label class="form-label">PEKERJAAN</label><input id="newPekerjaan" class="form-input"></div>
-                                <div id="group-tarikh-pegawai" class="md:col-span-2 grid grid-cols-2 gap-4">
-                                    <div><label class="form-label">TARIKH LANTIKAN</label><input id="newTarikhLantikan" type="date" class="form-input"></div>
-                                    <div><label class="form-label">TARIKH TAMAT</label><input id="newTarikhTamat" type="date" class="form-input"></div>
+
+                                <div class="md:col-span-2"><label class="admin-label">JAWATAN</label><select id="newJawatan" class="admin-input" required></select></div>
+                                <div><label class="admin-label">PARLIMEN</label><select id="newParlimen" class="admin-input" onchange="window.updateDunList()" required></select></div>
+                                <div><label class="admin-label">DUN</label><select id="newDun" class="admin-input" required></select></div>
+                                
+                                <div><label class="admin-label">JANTINA</label><input id="newJantina" class="admin-input bg-gray-100" readonly></div>
+                                <div><label class="admin-label">UMUR</label><input id="newUmur" class="admin-input bg-gray-100" readonly></div>
+                                <div><label class="admin-label">NO TEL</label><input id="newNotel" class="admin-input" required></div>
+                                <div><label class="admin-label">PEKERJAAN</label><input id="newPekerjaan" class="admin-input"></div>
+                                
+                                <div id="group-tarikh-pegawai" class="md:col-span-2 grid grid-cols-2 gap-3">
+                                    <div><label class="admin-label">TARIKH LANTIKAN</label><input id="newTarikhLantikan" type="date" class="admin-input"></div>
+                                    <div><label class="admin-label">TARIKH TAMAT</label><input id="newTarikhTamat" type="date" class="admin-input"></div>
                                 </div>
-                                <div class="md:col-span-3"><label class="form-label">ALAMAT</label><textarea id="newAlamat" class="form-input" rows="2"></textarea></div>
-                                <div class="hidden"><input id="newTahunLantikan"><input id="newJantina"><input id="newUmur"></div>
+                                <div class="md:col-span-2"><label class="admin-label">ALAMAT LENGKAP</label><input id="newAlamat" class="admin-input" required></div>
+                                <div class="hidden"><input id="newTahunLantikan"></div>
                             </div>
-                            <div class="mt-6 text-right">
-                                <button type="submit" id="saveBtn" class="btn btn-success px-12">SIMPAN DATA</button>
+                            <div class="text-right">
+                                <button type="submit" id="saveBtn" class="btn btn-sm btn-success px-6">SIMPAN DATA</button>
                             </div>
                         </form>
                     </div>
 
-                    <div class="bg-white border rounded-lg overflow-hidden">
-                        <div class="p-4 bg-gray-50 flex justify-between items-center">
-                            <h3 class="font-bold text-gray-800">SENARAI JAWATANKUASA</h3>
-                            <div class="flex gap-2">
-                                <button class="px-3 py-1 bg-blue-600 text-white text-xs rounded font-bold admin-filter-btn" onclick="window.setAdminFilter('all', this)">SEMUA</button>
-                                <button class="px-3 py-1 bg-white border text-blue-600 text-xs rounded font-bold admin-filter-btn" onclick="window.setAdminFilter('MASJID', this)">MASJID</button>
-                                <button class="px-3 py-1 bg-white border text-blue-600 text-xs rounded font-bold admin-filter-btn" onclick="window.setAdminFilter('SURAU', this)">SURAU</button>
-                                <button class="px-3 py-1 bg-white border text-blue-600 text-xs rounded font-bold admin-filter-btn" onclick="window.setAdminFilter('PEGAWAI', this)">PEGAWAI</button>
+                    <div class="bg-white border rounded-lg overflow-hidden shadow-sm">
+                        <div class="p-3 bg-gray-50 flex justify-between items-center border-b">
+                            <h3 class="text-xs font-bold text-gray-600 uppercase">Senarai Data Induk</h3>
+                            <div class="flex gap-1">
+                                <button class="px-2 py-1 bg-blue-600 text-white text-[10px] rounded font-bold admin-filter-btn" onclick="window.setAdminFilter('all', this)">SEMUA</button>
+                                <button class="px-2 py-1 bg-white border text-[10px] rounded font-bold admin-filter-btn" onclick="window.setAdminFilter('MASJID', this)">MASJID</button>
+                                <button class="px-2 py-1 bg-white border text-[10px] rounded font-bold admin-filter-btn" onclick="window.setAdminFilter('SURAU', this)">SURAU</button>
+                                <button class="px-2 py-1 bg-white border text-[10px] rounded font-bold admin-filter-btn" onclick="window.setAdminFilter('PEGAWAI', this)">PEGAWAI</button>
                             </div>
                         </div>
-                        <table class="data-table">
-                            <thead><tr><th>KATEGORI</th><th>NAMA</th><th>TEMPAT</th><th>JAWATAN</th><th>KP</th><th>TINDAKAN</th></tr></thead>
-                            <tbody id="adminDataTable"></tbody>
-                        </table>
+                        <div class="overflow-x-auto">
+                            <table class="admin-table">
+                                <thead class="bg-gray-100"><tr><th>KATEGORI</th><th>NAMA</th><th>TEMPAT</th><th>JAWATAN</th><th>KP</th><th>TINDAKAN</th></tr></thead>
+                                <tbody id="adminDataTable"></tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
                 
                 <!-- Users Tab -->
                 <div id="adminUsersTab" class="admin-tab-pane hidden">
                      <div class="bg-orange-50 border border-orange-100 rounded-lg p-6 mb-6">
-                        <h3 class="text-lg font-bold text-orange-800 mb-4">PENGURUSAN AKSES PENGGUNA</h3>
-                        <form onsubmit="window.createNewUser(event)" class="flex flex-wrap gap-4 items-end">
-                            <div class="flex-1 min-w-[200px]"><label class="form-label">NAMA PENGGUNA</label><input id="createUsername" class="form-input" required oninput="this.value = this.value.toLowerCase()"></div>
-                            <div class="flex-1 min-w-[200px]"><label class="form-label">KATA LALUAN</label><input id="createPassword" class="form-input" required></div>
-                            <div class="flex-1 min-w-[200px]"><label class="form-label">PERANAN</label><select id="createRole" class="form-select"><option value="user">USER BIASA</option><option value="superadmin">SUPER ADMIN</option></select></div>
-                            <button type="submit" class="btn btn-primary w-auto">CIPTA PENGGUNA</button>
+                        <h3 class="text-sm font-bold text-orange-800 mb-4 uppercase">Pengurusan Akses Pengguna</h3>
+                        <form onsubmit="window.createNewUser(event)" class="flex gap-3 items-end">
+                            <div class="flex-1"><label class="admin-label">USERNAME</label><input id="createUsername" class="admin-input" required oninput="this.value = this.value.toLowerCase()"></div>
+                            <div class="flex-1"><label class="admin-label">PASSWORD</label><input id="createPassword" class="admin-input" required></div>
+                            <div class="w-32"><label class="admin-label">ROLE</label><select id="createRole" class="admin-input"><option value="user">USER</option><option value="superadmin">ADMIN</option></select></div>
+                            <button type="submit" class="btn btn-sm btn-primary">TAMBAH</button>
                         </form>
                     </div>
-                    <div class="table-container bg-white">
-                        <table class="data-table">
-                            <thead><tr><th>NAMA PENGGUNA</th><th>PERANAN</th><th class="text-center">TINDAKAN</th></tr></thead>
+                    <div class="bg-white border rounded-lg overflow-hidden">
+                        <table class="admin-table">
+                            <thead><tr><th>USERNAME</th><th>ROLE</th><th class="text-center">TINDAKAN</th></tr></thead>
                             <tbody id="userListTable"></tbody>
                         </table>
                     </div>
@@ -365,16 +446,16 @@
                 <!-- Import Tab -->
                 <div id="adminImportTab" class="admin-tab-pane hidden">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div class="bg-blue-50 p-6 rounded-lg border border-blue-100">
-                            <h4 class="font-bold text-blue-900 text-lg mb-2">SIMPAN DATA (EKSPORT)</h4>
-                            <p class="text-sm text-blue-700 mb-4">Muat turun pangkalan data semasa sebagai fail CSV.</p>
-                            <button onclick="window.exportToCSV()" class="btn btn-primary">MUAT TURUN CSV</button>
+                        <div class="bg-white p-6 rounded-lg border shadow-sm text-center">
+                            <h4 class="font-bold text-blue-900 text-sm mb-2">EKSPORT DATA</h4>
+                            <p class="text-xs text-gray-500 mb-4">Muat turun semua data ke fail CSV.</p>
+                            <button onclick="window.exportToCSV()" class="btn btn-sm btn-primary">DOWNLOAD CSV</button>
                         </div>
-                        <div class="bg-green-50 p-6 rounded-lg border border-green-100">
-                            <h4 class="font-bold text-green-900 text-lg mb-2">MUAT NAIK DATA (IMPORT)</h4>
-                            <p class="text-sm text-green-700 mb-4">Muat naik fail CSV untuk menambah data ke pangkalan data.</p>
-                            <input type="file" id="csvFileInput" accept=".csv" class="form-input mb-2 bg-white">
-                            <button onclick="window.importFromCSV()" class="btn btn-success">PROSES FAIL</button>
+                        <div class="bg-white p-6 rounded-lg border shadow-sm text-center">
+                            <h4 class="font-bold text-green-900 text-sm mb-2">IMPORT DATA</h4>
+                            <p class="text-xs text-gray-500 mb-2">Muat naik fail CSV untuk tambah data pukal.</p>
+                            <input type="file" id="csvFileInput" accept=".csv" class="admin-input mb-3 text-xs">
+                            <button onclick="window.importFromCSV()" class="btn btn-sm btn-success">PROSES IMPORT</button>
                         </div>
                     </div>
                 </div>
@@ -385,19 +466,19 @@
 
 <div id="loginOverlay" class="login-overlay">
     <div class="login-box">
-        <h2 class="text-xl font-bold mb-4">AKSES PENTADBIR</h2>
+        <h2 class="text-lg font-bold mb-4 text-blue-900">AKSES PENTADBIR</h2>
         <form onsubmit="window.handleLogin(event)">
-            <input type="text" id="loginUser" class="form-input mb-2" placeholder="NAMA PENGGUNA" required>
-            <input type="password" id="loginPass" class="form-input mb-4" placeholder="KATA LALUAN" required>
-            <button type="submit" class="btn btn-primary w-full mb-2">LOG MASUK</button>
-            <button type="button" onclick="window.closeLogin()" class="text-gray-500 underline">BATAL</button>
+            <input type="text" id="loginUser" class="form-input mb-3" placeholder="Nama Pengguna" required>
+            <input type="password" id="loginPass" class="form-input mb-4" placeholder="Kata Laluan" required>
+            <button type="submit" class="btn btn-primary w-full mb-3">LOG MASUK</button>
+            <button type="button" onclick="window.closeLogin()" class="text-xs text-gray-500 hover:text-gray-700 underline">Batalkan</button>
         </form>
     </div>
 </div>
 
 <footer class="gov-footer text-center">
-    <p class="mb-2">© 2026 Jabatan Hal Ehwal Agama Islam Negeri Pulau Pinang</p>
-    <button onclick="window.showAdminLogin()" class="text-xs text-blue-200 hover:text-white underline">Portal Pentadbir</button>
+    <p class="mb-2 text-xs opacity-80">© 2026 Jabatan Hal Ehwal Agama Islam Negeri Pulau Pinang</p>
+    <button onclick="window.showAdminLogin()" class="text-[10px] text-blue-200 hover:text-white underline">Portal Pentadbir</button>
 </footer>
 
 <script type="module">
@@ -715,7 +796,6 @@
         let printType = "";
         let btnLabel = "";
 
-        // Logic for Bulk Print Button
         if (place !== '') {
             showBulkPrint = true;
             printType = 'PLACE';
@@ -808,23 +888,21 @@
         const cat = document.getElementById('publicKategori').value;
         const place = document.getElementById('publicTempat').value;
         const jaw = document.getElementById('publicJawatan').value;
+        const par = document.getElementById('publicParlimen').value;
+        const dun = document.getElementById('publicDun').value;
 
         let items = window.appData.filter(x => {
             if(cat !== 'all' && x.jenis !== cat) return false;
             if(place && x.tempat !== place) return false;
             if(jaw && x.jawatan !== jaw) return false;
-            // For PARLIMEN/DUN types, the param is passed directly
-            if (type === 'PARLIMEN' && x.parlimen !== param) return false;
-            if (type === 'DUN' && x.dun !== param) return false;
+            if(type === 'PARLIMEN' && x.parlimen !== param) return false;
+            if(type === 'DUN' && x.dun !== param) return false;
             return true;
         });
 
-        // Sorting Logic
         if (type === 'PLACE') {
-             // By Rank
             items.sort((a, b) => (positionRank[a.jawatan] || 99) - (positionRank[b.jawatan] || 99));
         } else {
-             // By Place Name, then Rank
              items.sort((a, b) => {
                  if (a.tempat === b.tempat) {
                      return (positionRank[a.jawatan] || 99) - (positionRank[b.jawatan] || 99);
@@ -833,7 +911,6 @@
              });
         }
         
-        // Logo
         try {
             const img = await new Promise((resolve) => {
                 const i = new Image(); i.crossOrigin="Anonymous";
@@ -1084,7 +1161,7 @@
             window.updatePublicJawatanList();
             window.updateMasjidDropdowns();
         } catch (e) { console.error(e); }
-    };
+    }
 
     init();
 
