@@ -11,34 +11,37 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
 
-    <!-- Google Fonts: Inter -->
+    <!-- Google Fonts: Inter (Professional Font) -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
     <style>
         @view-transition { navigation: auto; }
         
         body {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
             font-family: 'Inter', sans-serif;
             background-color: #f3f4f6;
-            background-image: radial-gradient(#e5e7eb 1px, transparent 1px);
-            background-size: 20px 20px;
+            /* Subtle dot pattern background for professional look */
+            background-image: radial-gradient(#d1d5db 1px, transparent 1px);
+            background-size: 24px 24px;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
             color: #1f2937;
         }
 
-        /* FORCE UPPERCASE INPUTS */
         input[type="text"], textarea, select {
             text-transform: uppercase;
         }
 
-        /* Loading Overlay */
+        /* Modern Loading Overlay */
         #loadingOverlay {
             display: flex; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(255,255,255,0.95); z-index: 3000; align-items: center; justify-content: center;
+            background: rgba(255,255,255,0.8); z-index: 3000; align-items: center; justify-content: center;
             flex-direction: column;
-            backdrop-filter: blur(5px);
+            backdrop-filter: blur(8px);
         }
 
         /* MAIN CONTAINER */
@@ -48,20 +51,24 @@
             padding: 2rem 1rem; 
             position: relative; 
             z-index: 10; 
+            width: 100%; 
             flex: 1; 
         }
 
-        /* CARD STYLE */
+        /* PREMIUM CARD STYLE */
         .content-card { 
             background: white; 
             border-radius: 1rem; 
+            /* Soft, deep shadow */
             box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); 
             overflow: hidden; 
             min-height: 600px; 
-            border-top: 6px solid #fbbf24; /* Yellow top border */
+            border-top: 6px solid #fbbf24; /* Corporate Yellow Accent */
+            display: flex;
+            flex-direction: column;
         }
 
-        /* HEADER */
+        /* HEADER DESIGN */
         .form-header {
             text-align: center;
             padding: 3rem 2rem 2rem;
@@ -70,18 +77,18 @@
         }
 
         .gov-logo {
-            height: 110px;
+            height: 100px;
             width: auto;
             margin: 0 auto 1.5rem;
-            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.05));
             transition: transform 0.3s ease;
         }
         .gov-logo:hover { transform: scale(1.05); }
 
         .header-title {
-            font-size: 1.75rem;
+            font-size: 1.5rem;
             font-weight: 800;
-            color: #1e3a8a;
+            color: #1e3a8a; /* Corporate Blue */
             letter-spacing: -0.025em;
             text-transform: uppercase;
             line-height: 1.2;
@@ -89,28 +96,28 @@
         }
 
         .header-subtitle {
-            font-size: 0.95rem;
+            font-size: 0.85rem;
             font-weight: 600;
             color: #64748b;
             letter-spacing: 0.1em;
             text-transform: uppercase;
         }
 
-        .content-padding { padding: 2rem; }
+        .content-padding { padding: 2rem; flex: 1; }
         
-        /* ADMIN vs PUBLIC Visibility */
+        /* Visibility Control */
         .admin-content { display: none; }
-        .admin-content.active { display: block; animation: fadeIn 0.3s ease-out; }
+        .admin-content.active { display: block; animation: fadeIn 0.4s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
         /* --- PUBLIC SEARCH STYLES --- */
         .search-panel { 
             background-color: #fff; 
             border: 1px solid #e2e8f0; 
-            border-radius: 1rem; 
+            border-radius: 0.75rem; 
             padding: 2rem; 
             margin-bottom: 2rem; 
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02);
         }
 
         .panel-title { 
@@ -125,25 +132,29 @@
             border-bottom: 2px solid #f1f5f9;
         }
         
-        /* --- ADMIN STYLES (COMPACT) --- */
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.25rem; }
+        
+        /* --- ADMIN STYLES (COMPACT & CLEAN) --- */
         .admin-label { 
             display: block; 
-            font-size: 0.7rem; /* Kecil sikit */
+            font-size: 0.7rem; /* Kecil dan tajam */
             font-weight: 700; 
-            color: #4b5563; 
+            color: #475569; 
             margin-bottom: 0.25rem; 
             letter-spacing: 0.025em;
+            text-transform: uppercase;
         }
         
         .admin-input { 
             width: 100%; 
-            padding: 0.5rem 0.75rem; /* Padding kecil */
-            font-size: 0.85rem; /* Font kecil */
+            padding: 0.4rem 0.6rem; /* Padding kompak */
+            font-size: 0.8rem; /* Font kecil */
             border: 1px solid #cbd5e1; 
             border-radius: 0.375rem; 
             background-color: #f8fafc;
             color: #1e293b;
             transition: all 0.15s;
+            font-weight: 500;
         }
         .admin-input:focus { 
             outline: none; border-color: #2563eb; background-color: #fff; box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1); 
@@ -153,17 +164,18 @@
         .results-wrapper {
             border: 1px solid #e2e8f0;
             border-radius: 0.75rem;
-            overflow: hidden;
+            overflow-x: auto;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
             background: white;
         }
 
+        /* Public Table */
         .custom-table {
             width: 100%;
             border-collapse: collapse;
             font-size: 0.85rem;
             background-color: white;
-            min-width: 800px;
+            min-width: 900px;
         }
 
         .custom-table thead { background-color: #1e3a8a; color: white; }
@@ -172,24 +184,22 @@
         .custom-table tbody tr:nth-child(even) { background-color: #f8fafc; }
         .custom-table tbody tr:hover { background-color: #eff6ff; }
 
-        /* Admin Table (More Compact) */
-        .admin-table { width: 100%; border-collapse: collapse; font-size: 0.75rem; } /* Font extra kecil */
+        /* Admin Table (Compact) */
+        .admin-table { width: 100%; border-collapse: collapse; font-size: 0.75rem; } 
         .admin-table th { background: #f1f5f9; color: #475569; font-weight: 700; text-align: left; padding: 0.5rem 0.75rem; border-bottom: 2px solid #e2e8f0; text-transform: uppercase; white-space: nowrap; }
-        .admin-table td { padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; color: #334155; }
+        .admin-table td { padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; color: #334155; vertical-align: middle; }
         .admin-table tr:hover { background: #f0f9ff; }
 
-        /* BADGES & BUTTONS */
-        .tbl-badge { display: inline-block; padding: 2px 8px; border-radius: 99px; font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.025em; }
-        .bg-masjid { background-color: #dbeafe; color: #1e40af; border: 1px solid #bfdbfe; }
-        .bg-surau { background-color: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
-        .bg-pegawai { background-color: #ffedd5; color: #9a3412; border: 1px solid #fed7aa; }
-
-        .btn { display: inline-flex; align-items: center; justify-content: center; padding: 0.5rem 1.25rem; border-radius: 0.375rem; font-weight: 600; font-size: 0.85rem; cursor: pointer; transition: all 0.2s; border: none; letter-spacing: 0.025em; }
-        .btn-sm { padding: 0.35rem 0.8rem; font-size: 0.75rem; }
+        /* BUTTONS */
+        .btn { display: inline-flex; align-items: center; justify-content: center; border-radius: 0.375rem; font-weight: 600; cursor: pointer; transition: all 0.2s; border: none; letter-spacing: 0.025em; }
+        .btn-sm { padding: 0.4rem 1rem; font-size: 0.75rem; }
+        
         .btn-primary { background: #2563eb; color: white; box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2); }
         .btn-primary:hover { background: #1d4ed8; transform: translateY(-1px); }
+        
         .btn-success { background: #059669; color: white; box-shadow: 0 2px 4px rgba(5, 150, 105, 0.2); }
         .btn-success:hover { background: #047857; transform: translateY(-1px); }
+        
         .btn-pdf-sm { background-color: #dc2626; color: white; padding: 4px 10px; border-radius: 4px; font-size: 0.7rem; font-weight: 700; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; }
         .btn-pdf-sm:hover { background-color: #b91c1c; }
 
@@ -204,13 +214,18 @@
         /* LOGIN MODAL */
         .login-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.6); z-index: 2000; align-items: center; justify-content: center; backdrop-filter: blur(8px); }
         .login-overlay.active { display: flex; animation: fadeIn 0.2s ease-out; }
-        .login-box { background: white; padding: 3rem; border-radius: 1rem; width: 90%; max-width: 420px; text-align: center; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); border: 1px solid #e2e8f0; }
+        .login-box { background: white; padding: 3rem; border-radius: 1rem; width: 90%; max-width: 400px; text-align: center; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); border: 1px solid #e2e8f0; }
 
-        .logout-btn { position: absolute; top: 1.5rem; right: 1.5rem; background: #fee2e2; color: #991b1b; padding: 0.5rem 1rem; border-radius: 0.5rem; font-size: 0.75rem; font-weight: 700; cursor: pointer; display: none; border: 1px solid #fecaca; transition: all 0.2s; }
+        .logout-btn { position: absolute; top: 1.5rem; right: 1.5rem; background: #fee2e2; color: #991b1b; padding: 0.5rem 1rem; border-radius: 0.5rem; font-size: 0.75rem; font-weight: 700; cursor: pointer; display: none; border: 1px solid #fecaca; transition: all 0.2s; z-index: 50; }
         .logout-btn:hover { background: #fecaca; }
 
-        .check-kp-box { background-color: #eff6ff; border: 1px solid #bfdbfe; border-radius: 0.75rem; padding: 2rem; text-align: center; }
+        .check-kp-box { background-color: #eff6ff; border: 1px solid #bfdbfe; border-radius: 0.75rem; padding: 1.5rem; text-align: center; }
         .initial-state-msg { text-align: center; padding: 4rem 2rem; color: #94a3b8; background: #f8fafc; border-radius: 0.75rem; border: 2px dashed #cbd5e1; }
+        
+        .tbl-badge { display: inline-block; padding: 2px 8px; border-radius: 99px; font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.025em; }
+        .bg-masjid { background-color: #dbeafe; color: #1e40af; border: 1px solid #bfdbfe; }
+        .bg-surau { background-color: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+        .bg-pegawai { background-color: #ffedd5; color: #9a3412; border: 1px solid #fed7aa; }
     </style>
 </head>
 <body>
@@ -315,11 +330,11 @@
                             </div>
                             <div class="w-40">
                                 <label class="admin-label">NO. PENDAFTARAN</label>
-                                <input id="inputNoPendaftaran" class="admin-input" required>
+                                <input id="inputNoPendaftaran" class="admin-input" required placeholder="Contoh: JM/PP/...">
                             </div>
                             <div class="w-40">
                                 <label class="admin-label">NO. AKAUN</label>
-                                <input id="inputNoAkaun" class="admin-input" required>
+                                <input id="inputNoAkaun" class="admin-input" required placeholder="Nombor Akaun Bank">
                             </div>
                             <button type="submit" id="saveMasjidBtn" class="btn btn-sm btn-success h-[34px]">SIMPAN</button>
                         </form>
@@ -333,7 +348,7 @@
                                 <table class="admin-table w-full">
                                     <thead class="sticky top-0 bg-gray-100 shadow-sm">
                                         <tr>
-                                            <th>NAMA MASJID</th>
+                                            <th class="pl-4">NAMA MASJID</th>
                                             <th class="w-32">NO. PENDAFTARAN</th>
                                             <th class="w-32">NO. AKAUN</th>
                                             <th class="w-24 text-center">TINDAKAN</th>
@@ -967,56 +982,6 @@
         window.open(URL.createObjectURL(doc.output('blob')), '_blank');
     };
 
-    window.generatePDF = async (d) => {
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF();
-        
-        try {
-            const img = await new Promise((resolve) => {
-                const i = new Image(); i.crossOrigin="Anonymous";
-                i.onload = () => {
-                    const c = document.createElement('canvas'); c.width=i.width; c.height=i.height;
-                    c.getContext('2d').drawImage(i,0,0); resolve(c.toDataURL('image/png'));
-                };
-                i.src = "https://i.postimg.cc/7frn73HY/image.png";
-            });
-            doc.addImage(img, 'PNG', 95, 10, 20, 20);
-        } catch(e) {}
-
-        doc.setFont("helvetica", "bold"); doc.setFontSize(12);
-        doc.text("JABATAN HAL EHWAL AGAMA ISLAM PULAU PINANG", 105, 38, {align:'center'});
-        doc.setFont("helvetica", "normal"); doc.setFontSize(9);
-        doc.text("Lebuh Pantai, 10300 Pulau Pinang | Tel: 04-684 7000", 105, 44, {align:'center'});
-        doc.line(20, 50, 190, 50);
-
-        doc.setFontSize(11); doc.setFont("helvetica", "bold");
-        doc.text(`REKOD MAKLUMAT ${d.jenis}`, 105, 60, {align:'center'});
-
-        const body = [
-            ['NAMA PENUH', d.nama],
-            ['JAWATAN', d.jawatan],
-            ['TEMPAT BERTUGAS', d.tempat],
-            ['NO. PENDAFTARAN', d.noPendaftaran || '-'],
-            ['TEMPOH LANTIKAN', `${d.tarikhLantikan || '-'} HINGGA ${d.tarikhTamat || '-'}`],
-            ['NO. TELEFON', d.notel],
-            ['PARLIMEN / DUN', `${d.parlimen}\n${d.dun}`]
-        ];
-
-        doc.autoTable({
-            startY: 70,
-            body: body,
-            theme: 'grid',
-            styles: { fontSize: 10, cellPadding: 3, valign: 'middle' },
-            columnStyles: { 0: { fontStyle: 'bold', cellWidth: 60, fillColor: [240, 240, 240] } }
-        });
-
-        const finalY = doc.lastAutoTable.finalY + 20;
-        doc.setFontSize(8); doc.setTextColor(100);
-        doc.text("Dicetak pada: " + new Date().toLocaleString(), 105, finalY, {align:'center'});
-        
-        window.open(URL.createObjectURL(doc.output('blob')), '_blank');
-    };
-
     window.switchMode = (mode) => {
         if (mode === 'admin') {
             document.getElementById('publicMode').classList.remove('active');
@@ -1120,14 +1085,44 @@
     };
 
     window.renderUserTable = () => {
-        document.getElementById('userListTable').innerHTML = window.appUsers.map((u) => `
+        const currentUserId = window.currentUser ? window.currentUser.id : null;
+        document.getElementById('userListTable').innerHTML = window.appUsers.map((u) => {
+            const isProtected = u.username === 'admin' || u.id === currentUserId;
+            return `
             <tr>
                 <td class="font-bold">${u.username.toUpperCase()}</td>
                 <td><span class="px-2 py-1 rounded text-xs ${u.role==='superadmin'?'bg-purple-100 text-purple-800':'bg-gray-100 text-gray-800'}">${u.role.toUpperCase()}</span></td>
-                <td class="text-center">${u.username!=='admin' ? `<button class="text-red-500 hover:text-red-700" onclick="window.delUser('${u.id}')">PADAM</button>` : ''}</td>
+                <td class="text-center">
+                    ${!isProtected ? `<button class="text-red-500 hover:text-red-700" onclick="window.delUser('${u.id}')">PADAM</button>` : '<span class="text-gray-400 text-xs">LOCKED</span>'}
+                </td>
             </tr>
-        `).join('');
+        `}).join('');
     }
+
+    window.createNewUser = async function(e) {
+        e.preventDefault();
+        const u = document.getElementById('createUsername').value.toLowerCase();
+        if(window.appUsers.find(x => x.username === u)) return alert("USERNAME WUJUD!");
+
+        const newUser = {
+            username: u,
+            password: document.getElementById('createPassword').value,
+            role: document.getElementById('createRole').value
+        };
+
+        try {
+            await addDoc(usersCollection, newUser);
+            alert("USER DICIPTA!");
+            e.target.reset();
+        } catch(err) { alert("Ralat mencipta user."); }
+    };
+
+    window.delUser = async function(id) {
+        if(confirm("PADAM USER?")) {
+            try { await deleteDoc(doc(db, 'app_users', id)); } 
+            catch(e) { alert("Ralat memadam user."); }
+        }
+    };
     
     // --- Init Function Defined Last ---
     const init = async () => {
