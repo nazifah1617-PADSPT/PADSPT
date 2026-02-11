@@ -34,7 +34,7 @@ export interface CommitteeMember {
 
 export interface User {
   id: string;
-  username: string;
+  email: string;
   password?: string;
   role: 'user' | 'superadmin';
 }

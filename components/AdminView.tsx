@@ -13,9 +13,9 @@ import {
   deleteMemberFromDb, 
   saveMosqueToDb, 
   deleteMosqueFromDb,
-  saveUserToDb,
+  subscribeUsers,
   deleteUserFromDb,
-  subscribeUsers
+  saveUserToDb
 } from '../services/firebase';
 import { parseImportedData } from '../services/gemini';
 
@@ -25,10 +25,13 @@ interface Props {
   currentUser: User | null;
 }
 
+type AdminTab = 'JK_MASJID' | 'JK_SURAU' | 'PEGAWAI' | 'MOSQUE' | 'USERS';
+
 const AdminView: React.FC<Props> = ({ members, mosqueInfo, currentUser }) => {
-  const [activeTab, setActiveTab] = useState<'DATA' | 'MOSQUE' | 'USERS'>('DATA');
+  const [activeTab, setActiveTab] = useState<AdminTab>('JK_MASJID');
   const [editingMember, setEditingMember] = useState<Partial<CommitteeMember> | null>(null);
   const [editingMosque, setEditingMosque] = useState<Partial<MosqueInfo> | null>(null);
+  const [editingUser, setEditingUser] = useState<Partial<User> | null>(null);
   const [users, setUsers] = useState<User[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
@@ -43,6 +46,19 @@ const AdminView: React.FC<Props> = ({ members, mosqueInfo, currentUser }) => {
       return unsub;
     }
   }, [activeTab]);
+
+  const filteredMembers = members.filter(m => {
+    if (activeTab === 'JK_MASJID') return m.jenis === Category.MASJID;
+    if (activeTab === 'JK_SURAU') return m.jenis === Category.SURAU;
+    if (activeTab === 'PEGAWAI') return m.jenis === Category.PEGAWAI;
+    return false;
+  });
+
+  const getActiveCategory = (): Category => {
+    if (activeTab === 'JK_SURAU') return Category.SURAU;
+    if (activeTab === 'PEGAWAI') return Category.PEGAWAI;
+    return Category.MASJID;
+  };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -66,34 +82,28 @@ const AdminView: React.FC<Props> = ({ members, mosqueInfo, currentUser }) => {
       }
 
       const extracted = await parseImportedData(text);
-      setImportedData(extracted);
+      const contextualData = extracted.map((item: any) => ({
+        ...item,
+        jenis: getActiveCategory()
+      }));
+      setImportedData(contextualData);
       setImportStatus('preview');
     } catch (err) {
-      alert("Gagal membaca fail. Sila pastikan format betul atau gunakan fungsi salin/tampal teks.");
+      alert("Gagal membaca fail.");
       setImportStatus('idle');
     }
   };
 
   const confirmImport = async () => {
+    if (!isSuperAdmin) return;
     setIsSaving(true);
     try {
       for (const item of importedData) {
-        let jantina: 'LELAKI' | 'PEREMPUAN' = 'LELAKI';
-        let umur = 'N/A';
-        if (item.nokp && item.nokp.length === 12) {
-          const last = parseInt(item.nokp.slice(-1));
-          jantina = (last % 2 !== 0) ? 'LELAKI' : 'PEREMPUAN';
-          const yearPrefix = parseInt(item.nokp.substring(0, 2));
-          const currentYear = new Date().getFullYear();
-          const birthYear = (yearPrefix > (currentYear % 100)) ? (1900 + yearPrefix) : (2000 + yearPrefix);
-          umur = `${currentYear - birthYear} TAHUN`;
-        }
-
         const finalMember = {
           ...item,
           id: Math.random().toString(36).substr(2, 9),
-          jantina,
-          umur,
+          jantina: 'LELAKI',
+          umur: 'N/A',
           nama: item.nama?.toUpperCase() || '',
           tempat: item.tempat?.toUpperCase() || '',
           notel: item.notel || '',
@@ -101,10 +111,8 @@ const AdminView: React.FC<Props> = ({ members, mosqueInfo, currentUser }) => {
           pekerjaan: item.pekerjaan?.toUpperCase() || '',
           tarikhLantikan: new Date().toISOString().split('T')[0],
           tarikhTamat: '',
-          parlimen: item.parlimen || '',
-          dun: item.dun || '',
-          jawatan: item.jawatan || 'AHLI JAWATANKUASA',
-          jenis: item.jenis || Category.MASJID
+          jawatan: item.jawatan || (activeTab === 'PEGAWAI' ? JAWATAN_PEGAWAI[0] : JAWATAN_AJK[0]),
+          jenis: getActiveCategory()
         } as CommitteeMember;
         await saveMemberToDb(finalMember);
       }
@@ -118,26 +126,6 @@ const AdminView: React.FC<Props> = ({ members, mosqueInfo, currentUser }) => {
     }
   };
 
-  const calculateAgeAndGender = (ic: string) => {
-    if (ic.length < 12) {
-      setEditingMember(prev => ({ ...prev, nokp: ic }));
-      return;
-    }
-    const last = parseInt(ic.slice(-1));
-    const jantina = (last % 2 !== 0) ? 'LELAKI' : 'PEREMPUAN';
-    const yearPrefix = parseInt(ic.substring(0, 2));
-    const currentYear = new Date().getFullYear();
-    const birthYear = (yearPrefix > (currentYear % 100)) ? (1900 + yearPrefix) : (2000 + yearPrefix);
-    const age = currentYear - birthYear;
-    
-    setEditingMember(prev => ({ 
-      ...prev, 
-      jantina: jantina as any, 
-      umur: `${age} TAHUN`,
-      nokp: ic
-    }));
-  };
-
   const saveMember = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingMember) return;
@@ -145,11 +133,7 @@ const AdminView: React.FC<Props> = ({ members, mosqueInfo, currentUser }) => {
     try {
       const finalMember = {
         ...editingMember,
-        id: editingMember.id || Math.random().toString(36).substr(2, 9),
-        nama: editingMember.nama?.toUpperCase(),
-        tempat: editingMember.tempat?.toUpperCase(),
-        alamat: editingMember.alamat?.toUpperCase(),
-        pekerjaan: editingMember.pekerjaan?.toUpperCase(),
+        id: editingMember.id && !editingMember.id.includes('temp-') ? editingMember.id : Math.random().toString(36).substr(2, 9),
       } as CommitteeMember;
       await saveMemberToDb(finalMember);
       setEditingMember(null);
@@ -160,282 +144,199 @@ const AdminView: React.FC<Props> = ({ members, mosqueInfo, currentUser }) => {
     }
   };
 
+  const handleSaveUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingUser || !editingUser.email || !editingUser.password) return;
+    setIsSaving(true);
+    try {
+      const newUser = {
+        ...editingUser,
+        id: editingUser.id || Math.random().toString(36).substr(2, 9),
+        role: editingUser.role || 'user'
+      } as User;
+      await saveUserToDb(newUser);
+      setEditingUser(null);
+      alert("Pengguna berjaya disimpan.");
+    } catch (err) {
+      alert("Gagal menyimpan maklumat pengguna.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleCloneMember = (member: CommitteeMember) => {
+    if (!isSuperAdmin) return;
+    const { id, nama, nokp, notel, ...rest } = member;
+    setEditingMember({
+      ...rest,
+      id: `temp-${Math.random().toString(36).substr(2, 5)}`,
+      nama: '',
+      nokp: '',
+      notel: ''
+    });
+  };
+
+  const tabStyle = (tab: AdminTab) => `px-6 py-3 rounded-xl text-[10px] font-black tracking-widest transition-all duration-300 flex items-center gap-2 ${activeTab === tab ? 'bg-blue-600 text-white shadow-xl shadow-blue-200 translate-y-[-2px]' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100'}`;
+
+  const renderDataTab = () => (
+    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-2xl overflow-hidden">
+        <div className="flex flex-wrap justify-between items-center mb-8 gap-4 border-b border-slate-100 pb-6">
+          <div>
+            <h3 className="text-2xl font-black text-slate-900 uppercase tracking-tighter">
+              {editingMember ? 'KEMASKINI DATA' : `SENARAI ${activeTab.replace('_', ' ')}`}
+            </h3>
+            <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">Pengurusan {activeTab.replace('JK_', '')}</p>
+          </div>
+          {!editingMember && isSuperAdmin && (
+            <div className="flex gap-2">
+              <button onClick={() => setIsImportModalOpen(true)} className="bg-blue-50 text-blue-600 px-5 py-2.5 rounded-xl text-[10px] font-black tracking-widest hover:bg-blue-600 hover:text-white transition-all shadow-sm flex items-center gap-2 uppercase">
+                Import AI
+              </button>
+              <button onClick={() => setEditingMember({ jenis: getActiveCategory(), jantina: 'LELAKI', parlimen: '', dun: '', jawatan: activeTab === 'PEGAWAI' ? JAWATAN_PEGAWAI[0] : JAWATAN_AJK[0], tempat: mosqueInfo[0]?.namaMasjid || '' })} className="bg-slate-900 text-white px-5 py-2.5 rounded-xl text-[10px] font-black tracking-widest shadow-xl hover:bg-blue-600 transition-all uppercase">
+                Tambah Rekod
+              </button>
+            </div>
+          )}
+        </div>
+
+        {editingMember ? (
+          <form onSubmit={saveMember} className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div className="md:col-span-2">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Nama Penuh</label>
+              <input required value={editingMember.nama || ''} onChange={e => setEditingMember({ ...editingMember, nama: e.target.value.toUpperCase() })} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm font-semibold uppercase outline-none focus:ring-2 focus:ring-blue-500" />
+            </div>
+            <div className="md:col-span-1">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">No. KP</label>
+              <input required maxLength={12} value={editingMember.nokp || ''} onChange={e => setEditingMember({...editingMember, nokp: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm font-semibold outline-none" />
+            </div>
+            <div className="md:col-span-1">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Jawatan</label>
+              <select required value={editingMember.jawatan} onChange={e => setEditingMember({ ...editingMember, jawatan: e.target.value })} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm font-semibold">
+                {(editingMember.jenis === Category.PEGAWAI ? JAWATAN_PEGAWAI : JAWATAN_AJK).map(j => <option key={j} value={j}>{j}</option>)}
+              </select>
+            </div>
+            <div className="md:col-span-2">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Tempat / Kariah</label>
+              <input required value={editingMember.tempat || ''} onChange={e => setEditingMember({ ...editingMember, tempat: e.target.value.toUpperCase() })} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm font-semibold uppercase outline-none focus:ring-2 focus:ring-blue-500" />
+            </div>
+            <div className="md:col-span-1">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">No. Telefon</label>
+              <input required value={editingMember.notel || ''} onChange={e => setEditingMember({ ...editingMember, notel: e.target.value })} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm font-semibold outline-none" />
+            </div>
+            <div className="md:col-span-1">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Pekerjaan</label>
+              <input value={editingMember.pekerjaan || ''} onChange={e => setEditingMember({ ...editingMember, pekerjaan: e.target.value.toUpperCase() })} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm font-semibold uppercase outline-none" />
+            </div>
+            <div className="md:col-span-4 flex justify-end gap-3 mt-6 pt-6 border-t border-slate-100">
+              <button type="button" onClick={() => setEditingMember(null)} className="px-6 py-3 text-slate-500 font-black text-[10px] uppercase tracking-widest">Batal</button>
+              <button type="submit" disabled={isSaving} className="px-8 py-3 bg-blue-600 text-white font-black text-[10px] uppercase tracking-widest rounded-xl shadow-lg">
+                {isSaving ? 'Menyimpan...' : 'Simpan Perubahan'}
+              </button>
+            </div>
+          </form>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left">
+              <thead>
+                <tr className="bg-slate-50 text-[10px] font-black uppercase text-slate-400 tracking-widest">
+                  <th className="p-5">Nama & Jawatan</th>
+                  <th className="p-5">Lokasi</th>
+                  <th className="p-5 text-center">Tindakan</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {filteredMembers.map(m => (
+                  <tr key={m.id} className="hover:bg-blue-50/30 group">
+                    <td className="p-5">
+                      <div className="text-sm font-extrabold uppercase text-slate-900 group-hover:text-blue-700">{m.nama}</div>
+                      <div className="text-[10px] text-blue-600 font-black uppercase">{m.jawatan}</div>
+                    </td>
+                    <td className="p-5">
+                      <div className="text-xs font-bold uppercase text-slate-700">{m.tempat}</div>
+                      <div className="text-[9px] text-slate-400 font-black uppercase">{m.notel}</div>
+                    </td>
+                    <td className="p-5 text-center">
+                      <div className="flex justify-center gap-4">
+                        <button onClick={() => setEditingMember(m)} className="text-blue-600 text-[10px] font-black uppercase hover:underline">Edit</button>
+                        {isSuperAdmin && (
+                          <>
+                            <button onClick={() => handleCloneMember(m)} className="text-emerald-600 text-[10px] font-black uppercase hover:underline">Salin</button>
+                            <button onClick={() => { if(confirm('Padam?')) deleteMemberFromDb(m.id) }} className="text-red-500 text-[10px] font-black uppercase hover:underline">Padam</button>
+                          </>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
   return (
-    <div className="space-y-8 animate-in slide-in-from-bottom-4 duration-500">
-      <div className="flex bg-white p-1 rounded-xl border border-slate-200 shadow-sm max-w-fit overflow-x-auto">
-        <button onClick={() => setActiveTab('DATA')} className={`px-6 py-2.5 rounded-lg text-xs font-black tracking-widest transition-all ${activeTab === 'DATA' ? 'bg-blue-600 text-white shadow-lg shadow-blue-200' : 'text-slate-500 hover:text-slate-900'}`}>DATA JAWATANKUASA</button>
-        <button onClick={() => setActiveTab('MOSQUE')} className={`px-6 py-2.5 rounded-lg text-xs font-black tracking-widest transition-all ${activeTab === 'MOSQUE' ? 'bg-blue-600 text-white shadow-lg shadow-blue-200' : 'text-slate-500 hover:text-slate-900'}`}>PENGURUSAN MASJID</button>
+    <div className="space-y-8">
+      <div className="flex bg-white p-2 rounded-2xl border border-slate-200 shadow-sm overflow-x-auto max-w-full lg:max-w-fit gap-1">
+        <button onClick={() => setActiveTab('JK_MASJID')} className={tabStyle('JK_MASJID')}>JK MASJID</button>
+        <button onClick={() => setActiveTab('JK_SURAU')} className={tabStyle('JK_SURAU')}>JK SURAU</button>
+        <button onClick={() => setActiveTab('PEGAWAI')} className={tabStyle('PEGAWAI')}>PEGAWAI</button>
+        <button onClick={() => setActiveTab('MOSQUE')} className={tabStyle('MOSQUE')}>URUS TEMPAT</button>
         {isSuperAdmin && (
-          <button onClick={() => setActiveTab('USERS')} className={`px-6 py-2.5 rounded-lg text-xs font-black tracking-widest transition-all ${activeTab === 'USERS' ? 'bg-blue-600 text-white shadow-lg shadow-blue-200' : 'text-slate-500 hover:text-slate-900'}`}>PENGGUNA</button>
+          <button onClick={() => setActiveTab('USERS')} className={tabStyle('USERS')}>PENGGUNA</button>
         )}
       </div>
 
-      {activeTab === 'DATA' && (
-        <div className="space-y-6">
-          <div className="bg-white p-6 md:p-8 rounded-2xl border border-slate-200 shadow-xl relative">
-            <div className="flex flex-wrap justify-between items-center mb-8 gap-4">
-              <h3 className="text-xl font-black text-slate-900 uppercase tracking-tighter">
-                {editingMember ? 'Borang Data Ahli' : 'Senarai Jawatankuasa'}
-              </h3>
-              {!editingMember && (
-                <div className="flex gap-2">
-                  <button onClick={() => setIsImportModalOpen(true)} className="bg-blue-100 text-blue-700 px-4 py-2 rounded-lg text-xs font-bold hover:bg-blue-200 transition-all flex items-center gap-2">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>
-                    IMPORT PINTAR (AI)
-                  </button>
-                  <button onClick={() => setEditingMember({ jenis: Category.MASJID, jantina: 'LELAKI' as any, parlimen: '', dun: '', jawatan: JAWATAN_AJK[0], tempat: mosqueInfo[0]?.namaMasjid || '' })} className="bg-emerald-600 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-emerald-700 transition-all shadow-md">+ TAMBAH DATA</button>
-                </div>
-              )}
-            </div>
+      {['JK_MASJID', 'JK_SURAU', 'PEGAWAI'].includes(activeTab) && renderDataTab()}
 
-            {editingMember ? (
-              <form onSubmit={saveMember} className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                <div className="md:col-span-1">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Kategori</label>
-                  <select required value={editingMember.jenis} onChange={e => setEditingMember({ ...editingMember, jenis: e.target.value as any })} className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-sm font-semibold outline-none focus:ring-2 focus:ring-blue-500">
-                    <option value={Category.MASJID}>MASJID</option>
-                    <option value={Category.SURAU}>SURAU</option>
-                    <option value={Category.PEGAWAI}>PEGAWAI MASJID</option>
-                  </select>
-                </div>
-                <div className="md:col-span-1">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">No. KP</label>
-                  <input required maxLength={12} placeholder="CONTOH: 800101071234" value={editingMember.nokp || ''} onChange={e => calculateAgeAndGender(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-sm font-semibold" />
-                </div>
-                <div className="md:col-span-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Nama Penuh</label>
-                  <input required value={editingMember.nama || ''} onChange={e => setEditingMember({ ...editingMember, nama: e.target.value.toUpperCase() })} className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-sm font-semibold uppercase" />
-                </div>
-
-                <div className="md:col-span-1">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Jawatan</label>
-                  <select required value={editingMember.jawatan} onChange={e => setEditingMember({ ...editingMember, jawatan: e.target.value })} className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-sm font-semibold">
-                    {[...JAWATAN_AJK, ...JAWATAN_PEGAWAI].map(j => <option key={j} value={j}>{j}</option>)}
-                  </select>
-                </div>
-                <div className="md:col-span-1">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">No. Telefon</label>
-                  <input required value={editingMember.notel || ''} onChange={e => setEditingMember({ ...editingMember, notel: e.target.value })} className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-sm font-semibold" />
-                </div>
-                <div className="md:col-span-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Pekerjaan</label>
-                  <input required value={editingMember.pekerjaan || ''} onChange={e => setEditingMember({ ...editingMember, pekerjaan: e.target.value.toUpperCase() })} className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-sm font-semibold uppercase" />
-                </div>
-
-                <div className="md:col-span-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Tempat Bertugas (Masjid/Surau)</label>
-                  <input required value={editingMember.tempat || ''} onChange={e => setEditingMember({ ...editingMember, tempat: e.target.value.toUpperCase() })} className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-sm font-semibold uppercase" />
-                </div>
-                <div className="md:col-span-1">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Parlimen</label>
-                  <select required value={editingMember.parlimen} onChange={e => setEditingMember({ ...editingMember, parlimen: e.target.value, dun: '' })} className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-sm font-semibold">
-                    <option value="">PILIH PARLIMEN</option>
-                    {Object.keys(PARLIMEN_DUN).map(p => <option key={p} value={p}>{p}</option>)}
-                  </select>
-                </div>
-                <div className="md:col-span-1">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">DUN</label>
-                  <select required value={editingMember.dun} onChange={e => setEditingMember({ ...editingMember, dun: e.target.value })} className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-sm font-semibold">
-                    <option value="">PILIH DUN</option>
-                    {editingMember.parlimen && PARLIMEN_DUN[editingMember.parlimen]?.map(d => <option key={d} value={d}>{d}</option>)}
-                  </select>
-                </div>
-
-                <div className="md:col-span-4">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Alamat Kediaman</label>
-                  <textarea required value={editingMember.alamat || ''} onChange={e => setEditingMember({ ...editingMember, alamat: e.target.value.toUpperCase() })} className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-sm font-semibold uppercase min-h-[80px]" />
-                </div>
-
-                <div className="md:col-span-4 flex justify-end gap-3 pt-4 border-t">
-                  <button type="button" onClick={() => setEditingMember(null)} className="px-6 py-2.5 text-slate-500 font-bold text-xs uppercase">Batal</button>
-                  <button type="submit" disabled={isSaving} className="px-8 py-2.5 bg-blue-600 text-white font-bold text-xs uppercase rounded-lg shadow-lg hover:bg-blue-700 disabled:opacity-50">{isSaving ? 'Menyimpan...' : 'Simpan Data'}</button>
-                </div>
-              </form>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="bg-slate-50 text-slate-500 text-[10px] font-black uppercase tracking-widest">
-                      <th className="py-4 px-6 border-b">Nama & Jawatan</th>
-                      <th className="py-4 px-6 border-b">No KP</th>
-                      <th className="py-4 px-6 border-b">No Tel</th>
-                      <th className="py-4 px-6 border-b">Alamat</th>
-                      <th className="py-4 px-6 border-b">Pekerjaan</th>
-                      <th className="py-4 px-6 border-b">Umur & Jantina</th>
-                      <th className="py-4 px-6 border-b text-center">Tindakan</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {members.map(m => (
-                      <tr key={m.id} className="hover:bg-slate-50">
-                        <td className="py-4 px-6">
-                          <div className="text-sm font-bold uppercase text-slate-900">{m.nama}</div>
-                          <div className="text-[10px] font-black text-blue-600 uppercase tracking-widest">{m.jawatan}</div>
-                          <div className="text-[9px] text-slate-400 uppercase">{m.tempat}</div>
-                        </td>
-                        <td className="py-4 px-6 text-xs font-mono font-bold text-slate-700">{m.nokp}</td>
-                        <td className="py-4 px-6 text-xs font-mono font-bold text-slate-700">{m.notel}</td>
-                        <td className="py-4 px-6 max-w-[200px]">
-                           <div className="text-[9px] text-slate-500 line-clamp-2 uppercase leading-tight font-semibold">{m.alamat || '-'}</div>
-                        </td>
-                        <td className="py-4 px-6 text-[10px] font-bold text-slate-600 uppercase">{m.pekerjaan || '-'}</td>
-                        <td className="py-4 px-6">
-                           <div className="text-[10px] font-bold text-slate-800">{m.umur}</div>
-                           <div className="text-[9px] font-black text-slate-400 uppercase">{m.jantina}</div>
-                        </td>
-                        <td className="py-4 px-6 text-center">
-                          <div className="flex justify-center gap-2">
-                            <button onClick={() => setEditingMember(m)} className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-md text-[10px] font-black uppercase border border-blue-100 transition-colors">Edit</button>
-                            {isSuperAdmin && (
-                              <button onClick={() => { if(confirm('Padam rekod ini?')) deleteMemberFromDb(m.id) }} className="p-1.5 text-red-500 hover:bg-red-50 rounded-md text-[10px] font-black uppercase border border-red-100 transition-colors">Padam</button>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Import Modal logic remains the same... */}
-      {isImportModalOpen && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => !isSaving && setIsImportModalOpen(false)} />
-          <div className="relative bg-white w-full max-w-5xl rounded-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden">
-            <div className="p-6 border-b bg-blue-600 text-white flex justify-between items-center">
-              <div>
-                <h3 className="text-lg font-black uppercase tracking-tighter">Import Data Pintar (AI)</h3>
-                <p className="text-xs text-blue-100 opacity-80">Muat naik PDF, Word atau Excel. AI akan mengekstrak data jawatankuasa untuk anda.</p>
-              </div>
-              <button onClick={() => setIsImportModalOpen(false)} className="text-blue-100 hover:text-white">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
-              </button>
-            </div>
-
-            <div className="p-8 overflow-y-auto flex-1 bg-slate-50">
-              {importStatus === 'idle' && (
-                <div className="border-4 border-dashed border-slate-200 rounded-3xl p-16 text-center flex flex-col items-center gap-4">
-                  <div className="p-4 bg-blue-50 text-blue-600 rounded-full mb-2">
-                    <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-                  </div>
-                  <h4 className="font-black text-slate-800 uppercase tracking-widest">Pilih Fail Anda</h4>
-                  <p className="text-sm text-slate-500 max-w-xs">Sokongan format: .xlsx, .docx, .txt</p>
-                  <label className="mt-4 px-8 py-3 bg-blue-600 text-white font-black text-xs uppercase rounded-xl cursor-pointer hover:bg-blue-700 shadow-xl shadow-blue-200 transition-all">
-                    PILIH FAIL DARI PERANTI
-                    <input type="file" accept=".xlsx,.xls,.docx,.txt" className="hidden" onChange={handleFileUpload} />
-                  </label>
-                </div>
-              )}
-
-              {importStatus === 'loading' && (
-                <div className="p-16 text-center flex flex-col items-center gap-6">
-                  <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-                  <div className="space-y-2">
-                    <h4 className="font-black text-slate-800 uppercase animate-pulse">AI Sedang Menganalisis...</h4>
-                    <p className="text-xs text-slate-500 uppercase tracking-widest font-bold">Mengekstrak data jawatankuasa daripada dokumen</p>
-                  </div>
-                </div>
-              )}
-
-              {importStatus === 'preview' && (
-                <div className="space-y-6">
-                  <div className="flex justify-between items-center">
-                    <h4 className="font-black text-slate-900 uppercase">Pratinjau Data Ekstrak ({importedData.length} Rekod)</h4>
-                    <button onClick={() => setImportStatus('idle')} className="text-[10px] font-black text-blue-600 uppercase underline">Pilih Fail Lain</button>
-                  </div>
-                  <div className="border rounded-xl overflow-hidden bg-white shadow-sm">
-                    <table className="w-full text-left text-[10px]">
-                      <thead className="bg-slate-900 text-white font-black uppercase tracking-tighter">
-                        <tr>
-                          <th className="p-3">Nama & Jawatan</th>
-                          <th className="p-3">No KP</th>
-                          <th className="p-3">Alamat</th>
-                          <th className="p-3">Pekerjaan</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100">
-                        {importedData.map((d, i) => (
-                          <tr key={i} className="hover:bg-blue-50">
-                            <td className="p-3">
-                               <div className="font-bold uppercase text-slate-900">{d.nama}</div>
-                               <div className="font-semibold text-blue-600 uppercase">{d.jawatan}</div>
-                            </td>
-                            <td className="p-3 font-mono">{d.nokp}</td>
-                            <td className="p-3 uppercase max-w-[200px] truncate">{d.alamat || '-'}</td>
-                            <td className="p-3 uppercase font-semibold text-slate-500">{d.pekerjaan || '-'}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                  <div className="bg-amber-50 border border-amber-200 p-4 rounded-xl flex gap-3">
-                    <svg className="w-5 h-5 text-amber-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                    <p className="text-[10px] font-bold text-amber-800 uppercase leading-relaxed">Sila semak data di atas. AI telah mengekstrak Alamat dan Pekerjaan yang dijumpai. Jika maklumat tidak lengkap, anda boleh mengedit secara manual selepas mengesahkan import.</p>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div className="p-6 border-t bg-slate-50 flex justify-end gap-3">
-              <button onClick={() => setIsImportModalOpen(false)} className="px-6 py-2.5 text-slate-500 font-bold text-xs uppercase">Batal</button>
-              {importStatus === 'preview' && (
-                <button onClick={confirmImport} disabled={isSaving} className="px-8 py-2.5 bg-blue-600 text-white font-black text-xs uppercase rounded-xl shadow-lg shadow-blue-100 hover:bg-blue-700">
-                  {isSaving ? 'MEMPROSES...' : 'SAHKAN & IMPORT SEKARANG'}
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Tab Pengurusan Masjid logic remains the same... */}
       {activeTab === 'MOSQUE' && (
-        <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-xl">
-           <div className="flex justify-between items-center mb-8">
-              <h3 className="text-xl font-black text-slate-900 uppercase">Maklumat Masjid</h3>
-              <button onClick={() => setEditingMosque({ id: Math.random().toString(36).substr(2, 9) })} className="bg-emerald-600 text-white px-4 py-2 rounded-lg text-xs font-bold shadow-md hover:bg-emerald-700 transition-all">+ TAMBAH MASJID</button>
+        <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-2xl animate-in fade-in duration-500">
+           <div className="flex justify-between items-center mb-8 border-b border-slate-100 pb-6">
+              <div>
+                <h3 className="text-2xl font-black text-slate-900 uppercase tracking-tighter">Pengurusan Tempat Ibadah</h3>
+                <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">Senarai Masjid dan Surau Berdaftar</p>
+              </div>
+              {isSuperAdmin && (
+                <button onClick={() => setEditingMosque({ id: Math.random().toString(36).substr(2, 9) })} className="bg-emerald-600 text-white px-5 py-2.5 rounded-xl text-[10px] font-black tracking-widest">+ TAMBAH TEMPAT</button>
+              )}
            </div>
            
            {editingMosque && (
-             <div className="mb-8 p-6 bg-slate-50 rounded-xl border border-slate-200">
-               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+             <form onSubmit={async (e) => {
+               e.preventDefault();
+               await saveMosqueToDb(editingMosque as MosqueInfo);
+               setEditingMosque(null);
+             }} className="mb-8 p-8 bg-slate-50 rounded-2xl border border-slate-200 grid grid-cols-1 md:grid-cols-2 gap-6">
                  <div>
-                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Nama Masjid</label>
-                   <input required value={editingMosque.namaMasjid || ''} onChange={e => setEditingMosque({ ...editingMosque, namaMasjid: e.target.value.toUpperCase() })} className="w-full bg-white border border-slate-200 rounded-lg p-2.5 text-sm font-semibold uppercase" />
+                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Nama Masjid / Surau</label>
+                   <input required value={editingMosque.namaMasjid || ''} onChange={e => setEditingMosque({ ...editingMosque, namaMasjid: e.target.value.toUpperCase() })} className="w-full bg-white border border-slate-200 rounded-xl p-3 text-sm font-semibold uppercase outline-none focus:ring-2 focus:ring-blue-500" />
                  </div>
                  <div>
                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">No. Pendaftaran</label>
-                   <input required value={editingMosque.noPendaftaran || ''} onChange={e => setEditingMosque({ ...editingMosque, noPendaftaran: e.target.value })} className="w-full bg-white border border-slate-200 rounded-lg p-2.5 text-sm font-semibold" />
+                   <input required value={editingMosque.noPendaftaran || ''} onChange={e => setEditingMosque({ ...editingMosque, noPendaftaran: e.target.value })} className="w-full bg-white border border-slate-200 rounded-xl p-3 text-sm font-semibold outline-none focus:ring-2 focus:ring-blue-500" />
                  </div>
-                 <div className="md:col-span-2 flex justify-end gap-2 mt-4">
-                    <button onClick={() => setEditingMosque(null)} className="px-4 py-2 text-xs font-bold text-slate-500 uppercase">Batal</button>
-                    <button onClick={async () => {
-                      if (!editingMosque.namaMasjid) return;
-                      await saveMosqueToDb(editingMosque as MosqueInfo);
-                      setEditingMosque(null);
-                    }} className="px-6 py-2 bg-blue-600 text-white text-xs font-bold uppercase rounded-lg shadow-md">Simpan Masjid</button>
+                 <div className="md:col-span-2 flex justify-end gap-3 mt-4">
+                    <button type="button" onClick={() => setEditingMosque(null)} className="px-5 py-2 text-[10px] font-black uppercase text-slate-500">Batal</button>
+                    <button type="submit" className="px-8 py-2 bg-blue-600 text-white text-[10px] font-black uppercase tracking-widest rounded-xl shadow-lg">Simpan Lokasi</button>
                  </div>
-               </div>
-             </div>
+             </form>
            )}
 
            <div className="overflow-x-auto">
              <table className="w-full text-left">
                <tbody className="divide-y divide-slate-100">
                  {mosqueInfo.map(i => (
-                   <tr key={i.id} className="hover:bg-slate-50 transition-colors">
-                     <td className="p-4">
-                        <div className="text-sm font-bold uppercase text-slate-900">{i.namaMasjid}</div>
-                        <div className="text-[10px] text-slate-400 font-bold uppercase">NO PENDAFTARAN: {i.noPendaftaran}</div>
+                   <tr key={i.id} className="hover:bg-blue-50/30 transition-colors">
+                     <td className="p-5">
+                        <div className="text-sm font-extrabold uppercase text-slate-900">{i.namaMasjid}</div>
+                        <div className="text-[10px] text-slate-400 font-black uppercase tracking-widest">PENDAFTARAN: {i.noPendaftaran}</div>
                      </td>
-                     <td className="p-4 text-right">
-                       <button onClick={() => setEditingMosque(i)} className="text-blue-600 text-[10px] font-black uppercase hover:bg-blue-50 px-3 py-1.5 rounded-md mr-2 transition-all">Edit</button>
+                     <td className="p-5 text-right">
+                       <button onClick={() => setEditingMosque(i)} className="text-blue-600 text-[10px] font-black uppercase hover:underline mr-4">Edit</button>
                        {isSuperAdmin && (
-                         <button onClick={() => { if(confirm('Padam masjid ini?')) deleteMosqueFromDb(i.id) }} className="text-red-500 text-[10px] font-black uppercase hover:bg-red-50 px-3 py-1.5 rounded-md transition-all">Padam</button>
+                         <button onClick={() => { if(confirm('Padam?')) deleteMosqueFromDb(i.id) }} className="text-red-500 text-[10px] font-black uppercase hover:underline">Padam</button>
                        )}
                      </td>
                    </tr>
@@ -443,6 +344,142 @@ const AdminView: React.FC<Props> = ({ members, mosqueInfo, currentUser }) => {
                </tbody>
              </table>
            </div>
+        </div>
+      )}
+
+      {activeTab === 'USERS' && isSuperAdmin && (
+        <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-2xl animate-in fade-in duration-500">
+           <div className="flex justify-between items-center mb-8 border-b border-slate-100 pb-6">
+              <div>
+                <h3 className="text-2xl font-black text-slate-900 uppercase tracking-tighter">Pengurusan Pengguna</h3>
+                <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">Daftar e-mel dan tetapkan kata laluan petugas</p>
+              </div>
+              <button onClick={() => setEditingUser({ role: 'user', email: '', password: '' })} className="bg-blue-600 text-white px-5 py-2.5 rounded-xl text-[10px] font-black tracking-widest">+ PENGGUNA BARU</button>
+           </div>
+
+           {editingUser && (
+             <form onSubmit={handleSaveUser} className="mb-8 p-6 bg-slate-50 rounded-2xl border border-slate-200 grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="md:col-span-1">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Alamat E-mel</label>
+                  <input required type="email" value={editingUser.email || ''} onChange={e => setEditingUser({...editingUser, email: e.target.value})} className="w-full bg-white border border-slate-200 rounded-xl p-3 text-sm font-semibold outline-none" placeholder="petugas@email.com" />
+                </div>
+                <div className="md:col-span-1">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Kata Laluan</label>
+                  <input required type="text" value={editingUser.password || ''} onChange={e => setEditingUser({...editingUser, password: e.target.value})} className="w-full bg-white border border-slate-200 rounded-xl p-3 text-sm font-semibold outline-none" placeholder="Tetapkan kata laluan" />
+                </div>
+                <div className="md:col-span-1">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Peranan</label>
+                  <select value={editingUser.role} onChange={e => setEditingUser({...editingUser, role: e.target.value as any})} className="w-full bg-white border border-slate-200 rounded-xl p-3 text-sm font-semibold">
+                    <option value="user">Petugas (Edit Sahaja)</option>
+                    <option value="superadmin">Super Admin (Kawalan Penuh)</option>
+                  </select>
+                </div>
+                <div className="md:col-span-3 flex justify-end gap-3 pt-2">
+                  <button type="button" onClick={() => setEditingUser(null)} className="px-5 py-2 text-[10px] font-black uppercase text-slate-500">Batal</button>
+                  <button type="submit" disabled={isSaving} className="px-8 py-2 bg-blue-600 text-white text-[10px] font-black uppercase tracking-widest rounded-xl shadow-lg">Simpan Pengguna</button>
+                </div>
+             </form>
+           )}
+
+           <div className="overflow-x-auto">
+             <table className="w-full text-left">
+               <thead>
+                 <tr className="bg-slate-50 text-[10px] font-black uppercase text-slate-400 tracking-widest">
+                   <th className="p-5 border-b border-slate-100">Alamat E-mel</th>
+                   <th className="p-5 border-b border-slate-100">Tahap Akses</th>
+                   <th className="p-5 border-b border-slate-100 text-center">Tindakan</th>
+                 </tr>
+               </thead>
+               <tbody className="divide-y divide-slate-100">
+                 {users.map(u => (
+                   <tr key={u.id} className="hover:bg-blue-50/30 transition-colors">
+                     <td className="p-5 font-bold text-slate-800 lowercase">{u.email}</td>
+                     <td className="p-5">
+                        <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${u.role === 'superadmin' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'}`}>
+                          {u.role}
+                        </span>
+                     </td>
+                     <td className="p-5 text-center">
+                        {/* Halang pemadaman admin utama */}
+                        {u.email !== 'ahmadhafizan@penang.gov.my' && (
+                          <div className="flex justify-center gap-3">
+                            <button onClick={() => setEditingUser(u)} className="text-blue-600 text-[10px] font-black uppercase hover:underline">Edit</button>
+                            <button onClick={() => { if(confirm('Padam akses pengguna ini?')) deleteUserFromDb(u.id) }} className="text-red-500 text-[10px] font-black uppercase hover:underline">Padam</button>
+                          </div>
+                        )}
+                     </td>
+                   </tr>
+                 ))}
+               </tbody>
+             </table>
+           </div>
+        </div>
+      )}
+
+      {isImportModalOpen && isSuperAdmin && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-md" onClick={() => !isSaving && setIsImportModalOpen(false)} />
+          <div className="relative bg-white w-full max-w-2xl rounded-3xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden animate-in zoom-in-95 duration-300">
+            <div className="p-8 border-b bg-blue-600 text-white flex justify-between items-center">
+              <div>
+                <h3 className="text-xl font-black uppercase tracking-tighter">Import Pintar AI</h3>
+                <p className="text-[10px] text-blue-100 uppercase font-black tracking-widest opacity-80 mt-1">Hanya Super Admin dibenarkan menambah data baru</p>
+              </div>
+              <button onClick={() => setIsImportModalOpen(false)} className="bg-white/10 p-2 rounded-full hover:bg-white/20 transition-all">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
+
+            <div className="p-8 overflow-y-auto flex-1 bg-slate-50">
+              {importStatus === 'idle' && (
+                <div className="border-4 border-dashed border-slate-200 rounded-3xl p-12 text-center flex flex-col items-center gap-6">
+                  <div className="p-5 bg-blue-100 text-blue-600 rounded-full">
+                    <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>
+                  </div>
+                  <label className="px-8 py-3 bg-slate-900 text-white font-black text-[10px] uppercase tracking-widest rounded-xl cursor-pointer hover:bg-blue-600 shadow-xl transition-all">
+                    MUAT NAIK FAIL
+                    <input type="file" accept=".xlsx,.xls,.docx,.txt" className="hidden" onChange={handleFileUpload} />
+                  </label>
+                </div>
+              )}
+
+              {importStatus === 'loading' && (
+                <div className="p-16 text-center flex flex-col items-center gap-6">
+                  <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                  <h4 className="font-black text-slate-800 uppercase animate-pulse tracking-widest">AI Sedang Mengekstrak...</h4>
+                </div>
+              )}
+
+              {importStatus === 'preview' && (
+                <div className="space-y-6">
+                  <div className="flex justify-between items-center border-b border-slate-200 pb-3">
+                    <h4 className="font-black text-slate-900 uppercase text-xs tracking-widest">Pratinjau {importedData.length} Rekod</h4>
+                  </div>
+                  <div className="border border-slate-200 rounded-2xl overflow-hidden bg-white">
+                    <table className="w-full text-left text-[9px]">
+                      <thead className="bg-slate-900 text-white font-black uppercase">
+                        <tr><th className="p-4">Nama</th><th className="p-4">Jawatan</th><th className="p-4">No KP</th></tr>
+                      </thead>
+                      <tbody>
+                        {importedData.map((d, i) => (
+                          <tr key={i} className="border-b"><td className="p-4 uppercase">{d.nama}</td><td className="p-4 uppercase">{d.jawatan}</td><td className="p-4">{d.nokp}</td></tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="p-8 border-t bg-slate-100 flex justify-end gap-3">
+              <button onClick={() => setIsImportModalOpen(false)} className="px-6 py-3 text-slate-500 font-black text-[10px] uppercase tracking-widest">Batal</button>
+              {importStatus === 'preview' && (
+                <button onClick={confirmImport} disabled={isSaving} className="px-10 py-3 bg-blue-600 text-white font-black text-[10px] uppercase tracking-widest rounded-xl shadow-xl hover:bg-blue-700 transition-all">
+                  IMPORT SEKARANG
+                </button>
+              )}
+            </div>
+          </div>
         </div>
       )}
     </div>

@@ -1,84 +1,121 @@
 
+import { initializeApp } from "firebase/app";
+import { 
+  getFirestore, 
+  collection, 
+  onSnapshot, 
+  setDoc, 
+  doc, 
+  deleteDoc, 
+  getDocs,
+  query,
+  limit
+} from "firebase/firestore";
 import { CommitteeMember, MosqueInfo, User } from "../types";
 
-const MEMBERS_KEY = "mymasjid_members_v1";
-const MOSQUES_KEY = "mymasjid_mosques_v1";
-const USERS_KEY = "mymasjid_users_v1";
-
-const getLocalData = <T>(key: string): T[] => {
-  const data = localStorage.getItem(key);
-  return data ? JSON.parse(data) : [];
+const firebaseConfig = {
+  apiKey: "AIzaSyD2gJmtlROsWbVH9Wu5vj1dFk_yikb-i0M",
+  authDomain: "data-kariah-spt.firebaseapp.com",
+  projectId: "data-kariah-spt",
+  storageBucket: "data-kariah-spt.firebasestorage.app",
+  messagingSenderId: "722689795539",
+  appId: "1:722689795539:web:34a96856b152426cb0fb26",
+  measurementId: "G-FQ3B3VYCX4"
 };
 
-const setLocalData = <T>(key: string, data: T[]) => {
-  localStorage.setItem(key, JSON.stringify(data));
-  window.dispatchEvent(new CustomEvent('mymasjid_data_changed', { detail: { key } }));
-};
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
 
-// Seeding default admin if no users exist
-if (getLocalData(USERS_KEY).length === 0) {
-  setLocalData(USERS_KEY, [{
-    id: 'admin-default',
-    username: 'admin',
-    password: 'admin123',
-    role: 'superadmin'
-  }]);
-}
+const MEMBERS_COLL = "members";
+const MOSQUES_COLL = "mosques";
+const USERS_COLL = "users";
 
 export const subscribeMembers = (callback: (data: CommitteeMember[]) => void) => {
-  callback(getLocalData<CommitteeMember>(MEMBERS_KEY));
-  const handler = (e: any) => e.detail.key === MEMBERS_KEY && callback(getLocalData<CommitteeMember>(MEMBERS_KEY));
-  window.addEventListener('mymasjid_data_changed', handler);
-  return () => window.removeEventListener('mymasjid_data_changed', handler);
+  return onSnapshot(collection(db, MEMBERS_COLL), (snapshot) => {
+    const data = snapshot.docs.map(doc => doc.data() as CommitteeMember);
+    callback(data);
+  }, (err) => {
+    console.error("Firestore Error:", err);
+  });
 };
 
 export const subscribeMosques = (callback: (data: MosqueInfo[]) => void) => {
-  callback(getLocalData<MosqueInfo>(MOSQUES_KEY));
-  const handler = (e: any) => e.detail.key === MOSQUES_KEY && callback(getLocalData<MosqueInfo>(MOSQUES_KEY));
-  window.addEventListener('mymasjid_data_changed', handler);
-  return () => window.removeEventListener('mymasjid_data_changed', handler);
+  return onSnapshot(collection(db, MOSQUES_COLL), (snapshot) => {
+    const data = snapshot.docs.map(doc => doc.data() as MosqueInfo);
+    callback(data);
+  }, (err) => {
+    console.error("Firestore Error (Mosques):", err);
+  });
 };
 
 export const subscribeUsers = (callback: (data: User[]) => void) => {
-  callback(getLocalData<User>(USERS_KEY));
-  const handler = (e: any) => e.detail.key === USERS_KEY && callback(getLocalData<User>(USERS_KEY));
-  window.addEventListener('mymasjid_data_changed', handler);
-  return () => window.removeEventListener('mymasjid_data_changed', handler);
+  return onSnapshot(collection(db, USERS_COLL), (snapshot) => {
+    const data = snapshot.docs.map(doc => doc.data() as User);
+    callback(data);
+  }, (err) => {
+    console.error("Firestore Error (Users):", err);
+  });
 };
 
 export const saveMemberToDb = async (member: CommitteeMember) => {
-  const members = getLocalData<CommitteeMember>(MEMBERS_KEY);
-  const index = members.findIndex(m => m.id === member.id);
-  index >= 0 ? (members[index] = member) : members.push(member);
-  setLocalData(MEMBERS_KEY, members);
+  try {
+    await setDoc(doc(db, MEMBERS_COLL, member.id), member);
+  } catch (err) {
+    console.error("Gagal simpan ke Cloud Firestore:", err);
+    throw err;
+  }
 };
 
 export const deleteMemberFromDb = async (id: string) => {
-  setLocalData(MEMBERS_KEY, getLocalData<CommitteeMember>(MEMBERS_KEY).filter(m => m.id !== id));
+  try {
+    await deleteDoc(doc(db, MEMBERS_COLL, id));
+  } catch (err) {
+    console.error("Gagal padam dari Firestore:", err);
+    throw err;
+  }
 };
 
 export const saveMosqueToDb = async (mosque: MosqueInfo) => {
-  const mosques = getLocalData<MosqueInfo>(MOSQUES_KEY);
-  const index = mosques.findIndex(m => m.id === mosque.id);
-  index >= 0 ? (mosques[index] = mosque) : mosques.push(mosque);
-  setLocalData(MOSQUES_KEY, mosques);
+  try {
+    await setDoc(doc(db, MOSQUES_COLL, mosque.id), mosque);
+  } catch (err) {
+    console.error("Gagal simpan lokasi:", err);
+    throw err;
+  }
 };
 
 export const deleteMosqueFromDb = async (id: string) => {
-  setLocalData(MOSQUES_KEY, getLocalData<MosqueInfo>(MOSQUES_KEY).filter(m => m.id !== id));
+  await deleteDoc(doc(db, MOSQUES_COLL, id));
 };
 
 export const saveUserToDb = async (user: User) => {
-  const users = getLocalData<User>(USERS_KEY);
-  const index = users.findIndex(u => u.id === user.id);
-  index >= 0 ? (users[index] = user) : users.push(user);
-  setLocalData(USERS_KEY, users);
+  await setDoc(doc(db, USERS_COLL, user.id), user);
 };
 
 export const deleteUserFromDb = async (id: string) => {
-  const users = getLocalData<User>(USERS_KEY);
-  if (users.length <= 1) throw new Error("Tidak boleh memadam pengguna terakhir.");
-  setLocalData(USERS_KEY, users.filter(u => u.id !== id));
+  await deleteDoc(doc(db, USERS_COLL, id));
 };
 
-export const getAllUsers = (): User[] => getLocalData<User>(USERS_KEY);
+export const getAllUsers = async (): Promise<User[]> => {
+  try {
+    const snapshot = await getDocs(collection(db, USERS_COLL));
+    const users = snapshot.docs.map(doc => doc.data() as User);
+    if (users.length === 0) {
+      // Maklumat log masuk lalai yang baru
+      return [{ 
+        id: 'admin-primary', 
+        email: 'ahmadhafizan@penang.gov.my', 
+        password: 'uItm2008254962', 
+        role: 'superadmin' 
+      }];
+    }
+    return users;
+  } catch (err) {
+    return [{ 
+      id: 'admin-primary', 
+      email: 'ahmadhafizan@penang.gov.my', 
+      password: 'uItm2008254962', 
+      role: 'superadmin' 
+    }];
+  }
+};
