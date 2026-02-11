@@ -1,6 +1,6 @@
 
 import { GoogleGenAI, Type } from "@google/genai";
-import { CommitteeMember, Category } from "../types";
+import { CommitteeMember } from "../types";
 
 export const analyzeData = async (data: CommitteeMember[], query: string): Promise<string> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
@@ -9,10 +9,11 @@ export const analyzeData = async (data: CommitteeMember[], query: string): Promi
   try {
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
-      contents: `Sistem: Pejabat Agama Daerah Seberang Perai Tengah. Konteks Data:\n${context}\n\nSoalan: ${query}`,
+      contents: [{ parts: [{ text: `Sistem: Pejabat Agama Daerah Seberang Perai Tengah. Konteks Data:\n${context}\n\nSoalan: ${query}` }] }],
     });
     return response.text || "Maaf, tiada jawapan.";
   } catch (error) {
+    console.error("Gemini Error:", error);
     return "Ralat teknikal AI.";
   }
 };
@@ -23,7 +24,7 @@ export const parseImportedData = async (rawText: string): Promise<any> => {
   try {
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
-      contents: `Ekstrak maklumat ahli jawatankuasa masjid daripada teks berikut ke dalam format JSON bagi Pejabat Agama Daerah Seberang Perai Tengah. 
+      contents: [{ parts: [{ text: `Ekstrak maklumat ahli jawatankuasa masjid daripada teks berikut ke dalam format JSON bagi Pejabat Agama Daerah Seberang Perai Tengah. 
 
 PENTING: Pastikan anda mengekstrak maklumat ALAMAT KEDIAMAN dan PEKERJAAN jika ada dalam teks tersebut.
 
@@ -41,7 +42,7 @@ Format JSON mestilah array objek dengan property:
 
 Pastikan output HANYA JSON array yang valid tanpa sebarang teks penjelasan tambahan.
 Teks Dokumen:
-${rawText}`,
+${rawText}` }] }],
       config: {
         responseMimeType: "application/json"
       }

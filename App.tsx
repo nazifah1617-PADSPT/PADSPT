@@ -10,7 +10,7 @@ import PublicView from './components/PublicView';
 import AdminView from './components/AdminView';
 import LoginModal from './components/LoginModal';
 import AiAssistant from './components/AiAssistant';
-import { subscribeMembers, subscribeMosques } from './services/firebase';
+import { subscribeMembers, subscribeMosques, resetConnection } from './services/firebase';
 
 const App: React.FC = () => {
   const [viewMode, setViewMode] = useState<ViewMode>('PUBLIC');
@@ -23,26 +23,30 @@ const App: React.FC = () => {
   const [dbError, setDbError] = useState(false);
 
   useEffect(() => {
-    // Firebase Listeners
-    const unsubM = subscribeMembers((data) => {
-      setMembers(data);
-      setIsLoading(false);
-      setDbError(false);
-    });
-    
-    const unsubQ = subscribeMosques((data) => {
-      setMosqueInfo(data);
-      setIsLoading(false);
-      setDbError(false);
-    });
+    let unsubM = () => {};
+    let unsubQ = () => {};
 
-    // Timeout safety - if still loading after 8s, show potential error
+    try {
+      unsubM = subscribeMembers((data) => {
+        setMembers(data);
+        setIsLoading(false);
+        setDbError(false);
+      });
+      
+      unsubQ = subscribeMosques((data) => {
+        setMosqueInfo(data);
+      });
+    } catch (e) {
+      console.error("Connection initiation failed:", e);
+      setDbError(true);
+    }
+
     const timer = setTimeout(() => {
       if (isLoading && members.length === 0) {
         setDbError(true);
         setIsLoading(false);
       }
-    }, 8000);
+    }, 6000);
 
     return () => { 
       unsubM(); 
@@ -51,21 +55,25 @@ const App: React.FC = () => {
     };
   }, [isLoading, members.length]);
 
-  const handleLogout = () => {
-    setCurrentUser(null);
-    setViewMode('PUBLIC');
+  const handleHardReset = () => {
+    localStorage.clear();
+    sessionStorage.clear();
+    window.location.reload();
   };
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 flex-col">
-        <div className="relative">
-          <div className="animate-spin rounded-full h-24 w-24 border-t-4 border-b-4 border-blue-600"></div>
-          <img src="https://i.postimg.cc/HsVZqzF5/JATAPenang.png" alt="Logo" className="h-12 w-auto absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 flex-col p-6">
+        <div className="relative mb-8">
+          <div className="animate-spin rounded-full h-32 w-32 border-t-4 border-blue-600 border-r-transparent shadow-lg"></div>
+          <img src="https://i.postimg.cc/HsVZqzF5/JATAPenang.png" alt="Logo" className="h-14 w-auto absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
         </div>
-        <div className="mt-8 text-center space-y-2">
-           <p className="text-blue-900 font-black tracking-widest animate-pulse uppercase text-xs">Menghubungkan ke Pangkalan Data Firebase...</p>
-           <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">Production Mode: data-kariah-spt</p>
+        <div className="text-center space-y-4 max-w-xs">
+           <h2 className="text-blue-900 font-black tracking-widest animate-pulse uppercase text-sm">Menghubungkan ke Pangkalan Data...</h2>
+           <div className="h-1.5 w-full bg-slate-200 rounded-full overflow-hidden">
+             <div className="h-full bg-blue-600 animate-shimmer" style={{ width: '100%' }}></div>
+           </div>
+           <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">Firebase Cluster: data-kariah-spt</p>
         </div>
       </div>
     );
@@ -73,13 +81,19 @@ const App: React.FC = () => {
 
   if (dbError && members.length === 0) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white flex-col p-8 text-center animate-in fade-in duration-700">
-        <div className="bg-red-50 p-8 rounded-full mb-6 border-2 border-red-100">
-          <svg className="w-16 h-16 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+      <div className="min-h-screen flex items-center justify-center bg-white flex-col p-8 text-center animate-in fade-in zoom-in-95 duration-700">
+        <div className="bg-orange-50 p-10 rounded-full mb-8 border-4 border-orange-100">
+          <svg className="w-20 h-20 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
         </div>
-        <h2 className="text-2xl font-black text-slate-900 uppercase mb-3 tracking-tighter">Pangkalan Data Belum Aktif</h2>
-        <p className="text-sm text-slate-500 max-w-md mb-8 leading-relaxed">Sistem tidak dapat menghubungi Cloud Firestore. Sila pastikan anda telah mengaktifkan <strong>Firestore Database</strong> di Firebase Console bagi projek <strong>data-kariah-spt</strong> dan menetapkan <strong>Rules</strong> yang betul.</p>
-        <button onClick={() => window.location.reload()} className="px-10 py-4 bg-blue-600 text-white rounded-2xl font-black uppercase tracking-widest text-xs shadow-2xl shadow-blue-100 hover:bg-blue-700 transition-all hover:scale-105 active:scale-95">Cuba Hubung Semula</button>
+        <h2 className="text-3xl font-black text-slate-900 uppercase mb-4 tracking-tighter">Sambungan Tergendala</h2>
+        <p className="text-sm text-slate-500 max-w-md mb-10 leading-relaxed font-medium">Sistem menghadapi masalah untuk menghubungi Firestore. Ini mungkin disebabkan oleh sekatan rangkaian, ketiadaan pangkalan data, atau ralat konfigurasi pada Firebase Console.</p>
+        
+        <div className="flex flex-col sm:flex-row gap-4">
+          <button onClick={() => window.location.reload()} className="px-10 py-4 bg-blue-600 text-white rounded-2xl font-black uppercase tracking-widest text-xs shadow-2xl shadow-blue-100 hover:bg-blue-700 transition-all active:scale-95">Cuba Lagi</button>
+          <button onClick={handleHardReset} className="px-10 py-4 bg-slate-900 text-white rounded-2xl font-black uppercase tracking-widest text-xs shadow-2xl shadow-slate-100 hover:bg-slate-800 transition-all active:scale-95">Reset Paksa (Hard Reset)</button>
+        </div>
+        
+        <p className="mt-12 text-[9px] font-black text-slate-300 uppercase tracking-widest">Pejabat Agama Daerah SPT • 2025</p>
       </div>
     );
   }
@@ -105,7 +119,7 @@ const App: React.FC = () => {
                   <p className="text-[9px] text-blue-600 font-black uppercase tracking-widest">{currentUser?.role}</p>
                 </div>
               </div>
-              <button onClick={handleLogout} className="px-5 py-2.5 bg-red-50 text-red-600 rounded-xl text-[10px] font-black tracking-widest hover:bg-red-600 hover:text-white transition-all border border-red-100 shadow-sm uppercase">LOG KELUAR</button>
+              <button onClick={() => { setCurrentUser(null); setViewMode('PUBLIC'); }} className="px-5 py-2.5 bg-red-50 text-red-600 rounded-xl text-[10px] font-black tracking-widest hover:bg-red-600 hover:text-white transition-all border border-red-100 shadow-sm uppercase">LOG KELUAR</button>
             </div>
           ) : (
             <div className="flex flex-col items-center gap-1.5">
@@ -150,7 +164,7 @@ const App: React.FC = () => {
             </div>
             <div>
               <p className="text-xs">&copy; 2025 JHEAINPP. Hak Cipta Terpelihara.</p>
-              <p className="text-[9px] mt-2 opacity-30 uppercase tracking-widest font-black">Sistem Maklumat Masjid SPT v3.5 (Build: 20250211)</p>
+              <p className="text-[9px] mt-2 opacity-30 uppercase tracking-widest font-black">Sistem Maklumat Masjid SPT v3.6 (Connection Reset Update)</p>
             </div>
           </div>
         </div>

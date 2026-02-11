@@ -1,5 +1,5 @@
 
-import { initializeApp } from "firebase/app";
+import { initializeApp, getApps, getApp } from "firebase/app";
 import { 
   getFirestore, 
   collection, 
@@ -8,8 +8,10 @@ import {
   doc, 
   deleteDoc, 
   getDocs,
-  query,
-  limit
+  enableNetwork,
+  disableNetwork,
+  initializeFirestore,
+  Firestore
 } from "firebase/firestore";
 import { CommitteeMember, MosqueInfo, User } from "../types";
 
@@ -23,65 +25,66 @@ const firebaseConfig = {
   measurementId: "G-FQ3B3VYCX4"
 };
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+// Inisialisasi Firebase App secara selamat
+const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+
+// Inisialisasi Firestore
+// Guna getFirestore() terus selalunya lebih stabil jika tiada version mismatch
+let db: Firestore;
+try {
+  db = getFirestore(app);
+} catch (e) {
+  // Fallback jika perlukan inisialisasi paksa
+  db = initializeFirestore(app, {
+    experimentalForceLongPolling: true,
+  });
+}
 
 const MEMBERS_COLL = "members";
 const MOSQUES_COLL = "mosques";
 const USERS_COLL = "users";
 
+const sanitizeData = <T>(d: any): T => ({ ...d.data(), id: d.id } as T);
+
+export const resetConnection = async () => {
+  try {
+    await disableNetwork(db);
+    await enableNetwork(db);
+  } catch (e) {
+    console.error("Network reset failed", e);
+  }
+};
+
 export const subscribeMembers = (callback: (data: CommitteeMember[]) => void) => {
   return onSnapshot(collection(db, MEMBERS_COLL), (snapshot) => {
-    const data = snapshot.docs.map(doc => doc.data() as CommitteeMember);
-    callback(data);
+    callback(snapshot.docs.map(doc => sanitizeData<CommitteeMember>(doc)));
   }, (err) => {
-    console.error("Firestore Error:", err);
+    console.error("Firestore Error (Members):", err);
   });
 };
 
 export const subscribeMosques = (callback: (data: MosqueInfo[]) => void) => {
   return onSnapshot(collection(db, MOSQUES_COLL), (snapshot) => {
-    const data = snapshot.docs.map(doc => doc.data() as MosqueInfo);
-    callback(data);
-  }, (err) => {
-    console.error("Firestore Error (Mosques):", err);
-  });
+    callback(snapshot.docs.map(doc => sanitizeData<MosqueInfo>(doc)));
+  }, (err) => console.error("Firestore Error (Mosques):", err));
 };
 
 export const subscribeUsers = (callback: (data: User[]) => void) => {
   return onSnapshot(collection(db, USERS_COLL), (snapshot) => {
-    const data = snapshot.docs.map(doc => doc.data() as User);
-    callback(data);
-  }, (err) => {
-    console.error("Firestore Error (Users):", err);
-  });
+    callback(snapshot.docs.map(doc => sanitizeData<User>(doc)));
+  }, (err) => console.error("Firestore Error (Users):", err));
 };
 
 export const saveMemberToDb = async (member: CommitteeMember) => {
-  try {
-    await setDoc(doc(db, MEMBERS_COLL, member.id), member);
-  } catch (err) {
-    console.error("Gagal simpan ke Cloud Firestore:", err);
-    throw err;
-  }
+  await setDoc(doc(db, MEMBERS_COLL, member.id), member);
 };
 
 export const deleteMemberFromDb = async (id: string) => {
-  try {
-    await deleteDoc(doc(db, MEMBERS_COLL, id));
-  } catch (err) {
-    console.error("Gagal padam dari Firestore:", err);
-    throw err;
-  }
+  await deleteDoc(doc(db, MEMBERS_COLL, id));
 };
 
 export const saveMosqueToDb = async (mosque: MosqueInfo) => {
-  try {
-    await setDoc(doc(db, MOSQUES_COLL, mosque.id), mosque);
-  } catch (err) {
-    console.error("Gagal simpan lokasi:", err);
-    throw err;
-  }
+  await setDoc(doc(db, MOSQUES_COLL, mosque.id), mosque);
 };
 
 export const deleteMosqueFromDb = async (id: string) => {
@@ -99,18 +102,14 @@ export const deleteUserFromDb = async (id: string) => {
 export const getAllUsers = async (): Promise<User[]> => {
   try {
     const snapshot = await getDocs(collection(db, USERS_COLL));
-    const users = snapshot.docs.map(doc => doc.data() as User);
-    if (users.length === 0) {
-      // Maklumat log masuk lalai yang baru
-      return [{ 
-        id: 'admin-primary', 
-        email: 'ahmadhafizan@penang.gov.my', 
-        password: 'uItm2008254962', 
-        role: 'superadmin' 
-      }];
-    }
-    return users;
-  } catch (err) {
+    const users = snapshot.docs.map(doc => sanitizeData<User>(doc));
+    return users.length > 0 ? users : [{ 
+      id: 'admin-primary', 
+      email: 'ahmadhafizan@penang.gov.my', 
+      password: 'uItm2008254962', 
+      role: 'superadmin' 
+    }];
+  } catch {
     return [{ 
       id: 'admin-primary', 
       email: 'ahmadhafizan@penang.gov.my', 
