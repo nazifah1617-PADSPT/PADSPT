@@ -7,27 +7,23 @@ import { motion } from 'motion/react';
 import { cn } from '../lib/utils';
 
 const getAi = () => {
-  // 1. Cuba dapatkan kunci daripada pelbagai sumber
-  const apiKey = process.env.GEMINI_API_KEY;
-  const viteKey = (import.meta as any).env?.VITE_GEMINI_API_KEY;
+  // 1. Cuba dapatkan kunci daripada pelbagai sumber (Vite standard & Fallbacks)
+  const apiKey = (import.meta as any).env?.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
   const windowKey = (window as any).process?.env?.GEMINI_API_KEY || (window as any).VITE_GEMINI_API_KEY;
 
-  // 2. Tentukan kunci mana yang hendak digunakan
-  // Kita utamakan kunci yang dimasukkan oleh pengguna (bermula dengan AIza)
-  const allKeys = [apiKey, viteKey, windowKey];
-  const userKey = allKeys.find(k => k && k.startsWith('AIza'));
-  
-  if (userKey) {
-    return new GoogleGenAI({ apiKey: userKey });
+  const finalKey = apiKey || windowKey;
+
+  if (finalKey && finalKey !== "AI Studio Free Tier" && finalKey !== "" && finalKey !== "undefined") {
+    return new GoogleGenAI({ apiKey: finalKey });
   }
 
-  // 3. Jika tiada kunci pengguna, cuba gunakan kunci lalai platform
-  const platformKey = allKeys.find(k => k && k !== "" && k !== "undefined");
-  if (platformKey) {
-    return new GoogleGenAI({ apiKey: platformKey });
+  // Mesej ralat mengikut persekitaran
+  const isVercel = window.location.hostname.includes('vercel.app');
+  if (isVercel) {
+    throw new Error("Kunci API tidak dikesan di Vercel. Sila tambah VITE_GEMINI_API_KEY di Vercel Project Settings > Environment Variables dan lakukan 'Redeploy'.");
   }
 
-  throw new Error("Kunci API tidak dikesan. Sila pastikan anda telah menambah VITE_GEMINI_API_KEY dalam Secrets dan klik 'Apply changes'. Kemudian muat semula (refresh) halaman ini.");
+  throw new Error("Kunci API tidak dikesan. Sila pastikan anda telah menambah VITE_GEMINI_API_KEY dalam tetapan Secrets dan klik 'Apply changes'.");
 };
 
 export default function ReportsAI() {
