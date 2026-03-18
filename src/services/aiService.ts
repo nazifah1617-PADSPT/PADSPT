@@ -23,7 +23,7 @@ const getAi = () => {
 export async function processKariahDocument(fileBase64: string, mimeType: string) {
   const ai = getAi();
   const response = await ai.models.generateContent({
-    model: "gemini-3.1-pro-preview",
+    model: "gemini-3-flash-preview",
     contents: [
       {
         parts: [

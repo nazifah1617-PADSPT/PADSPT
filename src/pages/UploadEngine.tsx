@@ -33,23 +33,33 @@ export default function UploadEngine() {
         reader.readAsDataURL(file);
       });
 
-      const result = await processKariahDocument(base64, file.type);
+      const result = await processKariahDocument(base64, file.type || 'application/pdf');
       
       // Add default status if missing
-      const members = result.members.map((m: any) => ({
+      const members = result.members?.map((m: any) => ({
         ...m,
         statusLantikan: m.statusLantikan || 'Aktif',
         masjidName: result.masjidInfo?.masjidName || '',
         parlimen: result.masjidInfo?.parlimen || '',
         dun: result.masjidInfo?.dun || '',
         daerah: result.masjidInfo?.daerah || '',
-      }));
+      })) || [];
       
+      if (members.length === 0) {
+        throw new Error("AI tidak menemui sebarang data ahli dalam dokumen ini. Sila pastikan dokumen mengandungi senarai nama.");
+      }
+
       setExtractedData({ ...result, members });
       await logActivity('UPLOAD', `Memproses fail: ${file.name}`);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Processing error:", error);
-      setMessage({ type: 'error', text: 'Gagal memproses fail. Sila pastikan Kunci API anda betul dan fail tidak terlalu besar.' });
+      const errorMsg = error.message || "Gagal memproses fail.";
+      setMessage({ 
+        type: 'error', 
+        text: errorMsg.includes('API_KEY_INVALID') 
+          ? 'Kunci API tidak sah. Sila semak tetapan Secrets.' 
+          : errorMsg 
+      });
     } finally {
       setLoading(false);
     }
