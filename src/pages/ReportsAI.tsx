@@ -6,7 +6,13 @@ import { GoogleGenAI } from "@google/genai";
 import { motion } from 'motion/react';
 import { cn } from '../lib/utils';
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' });
+const getAi = () => {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    throw new Error("Sila tetapkan GEMINI_API_KEY dalam tetapan persekitaran.");
+  }
+  return new GoogleGenAI({ apiKey });
+};
 
 export default function ReportsAI() {
   const [generating, setGenerating] = useState(false);
@@ -16,7 +22,8 @@ export default function ReportsAI() {
   const generateReport = async () => {
     setGenerating(true);
     try {
-      // In a real app, we'd fetch actual data from Firestore first
+      const ai = getAi();
+      // ... rest of the function ...
       const mockData = {
         totalJK: 12450,
         activeJK: 12000,
@@ -40,9 +47,9 @@ export default function ReportsAI() {
       });
 
       setAiAnalysis(response.text || 'Gagal menjana analisis.');
-    } catch (error) {
+    } catch (error: any) {
       console.error("AI Error:", error);
-      setAiAnalysis("Maaf, ralat berlaku semasa menjana analisis AI.");
+      setAiAnalysis(`Maaf, ralat berlaku: ${error.message || "Gagal menjana analisis AI."}`);
     } finally {
       setGenerating(false);
     }

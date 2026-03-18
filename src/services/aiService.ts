@@ -1,8 +1,15 @@
 import { GoogleGenAI, Type } from "@google/genai";
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' });
+const getAi = () => {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    throw new Error("Sila tetapkan GEMINI_API_KEY dalam tetapan persekitaran.");
+  }
+  return new GoogleGenAI({ apiKey });
+};
 
 export async function processKariahDocument(fileBase64: string, mimeType: string) {
+  const ai = getAi();
   const response = await ai.models.generateContent({
     model: "gemini-3.1-pro-preview",
     contents: [
