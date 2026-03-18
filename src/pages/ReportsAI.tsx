@@ -7,18 +7,27 @@ import { motion } from 'motion/react';
 import { cn } from '../lib/utils';
 
 const getAi = () => {
-  // Try multiple sources for the API key, including direct process.env and VITE_ prefixed env
-  const apiKey = process.env.GEMINI_API_KEY || (import.meta as any).env?.VITE_GEMINI_API_KEY;
+  // 1. Cuba dapatkan kunci daripada pelbagai sumber
+  const apiKey = process.env.GEMINI_API_KEY;
+  const viteKey = (import.meta as any).env?.VITE_GEMINI_API_KEY;
+  const windowKey = (window as any).process?.env?.GEMINI_API_KEY || (window as any).VITE_GEMINI_API_KEY;
+
+  // 2. Tentukan kunci mana yang hendak digunakan
+  // Kita utamakan kunci yang dimasukkan oleh pengguna (bermula dengan AIza)
+  const allKeys = [apiKey, viteKey, windowKey];
+  const userKey = allKeys.find(k => k && k.startsWith('AIza'));
   
-  if (!apiKey || apiKey === "AI Studio Free Tier") {
-    // If it's still not found, try to look in the window object where some environments inject it
-    const windowKey = (window as any).process?.env?.GEMINI_API_KEY || (window as any).VITE_GEMINI_API_KEY;
-    if (windowKey && windowKey !== "AI Studio Free Tier") {
-      return new GoogleGenAI({ apiKey: windowKey });
-    }
-    throw new Error("Sila tetapkan VITE_GEMINI_API_KEY dalam tetapan Secrets dan klik 'Apply changes'.");
+  if (userKey) {
+    return new GoogleGenAI({ apiKey: userKey });
   }
-  return new GoogleGenAI({ apiKey });
+
+  // 3. Jika tiada kunci pengguna, cuba gunakan kunci lalai platform
+  const platformKey = allKeys.find(k => k && k !== "" && k !== "undefined");
+  if (platformKey) {
+    return new GoogleGenAI({ apiKey: platformKey });
+  }
+
+  throw new Error("Kunci API tidak dikesan. Sila pastikan anda telah menambah VITE_GEMINI_API_KEY dalam Secrets dan klik 'Apply changes'. Kemudian muat semula (refresh) halaman ini.");
 };
 
 export default function ReportsAI() {
