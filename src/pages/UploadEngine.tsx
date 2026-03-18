@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Upload, FileText, CheckCircle2, AlertCircle, Loader2, Save, Trash2, Edit3, Download, Database, RefreshCw } from 'lucide-react';
+import { Upload, FileText, CheckCircle2, AlertCircle, Loader2, Save, Trash2, Edit3, Download, Database, RefreshCw, Sparkles } from 'lucide-react';
 import { processKariahDocument } from '../services/aiService';
 import { logActivity } from '../services/auditService';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
@@ -26,28 +26,30 @@ export default function UploadEngine() {
     setMessage(null);
     
     try {
-      const reader = new FileReader();
-      reader.onload = async () => {
-        const base64 = (reader.result as string).split(',')[1];
-        const result = await processKariahDocument(base64, file.type);
-        
-        // Add default status if missing
-        const members = result.members.map((m: any) => ({
-          ...m,
-          statusLantikan: m.statusLantikan || 'Aktif',
-          masjidName: result.masjidInfo?.masjidName || '',
-          parlimen: result.masjidInfo?.parlimen || '',
-          dun: result.masjidInfo?.dun || '',
-          daerah: result.masjidInfo?.daerah || '',
-        }));
-        
-        setExtractedData({ ...result, members });
-        await logActivity('UPLOAD', `Memproses fail: ${file.name}`);
-      };
-      reader.readAsDataURL(file);
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve((reader.result as string).split(',')[1]);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+
+      const result = await processKariahDocument(base64, file.type);
+      
+      // Add default status if missing
+      const members = result.members.map((m: any) => ({
+        ...m,
+        statusLantikan: m.statusLantikan || 'Aktif',
+        masjidName: result.masjidInfo?.masjidName || '',
+        parlimen: result.masjidInfo?.parlimen || '',
+        dun: result.masjidInfo?.dun || '',
+        daerah: result.masjidInfo?.daerah || '',
+      }));
+      
+      setExtractedData({ ...result, members });
+      await logActivity('UPLOAD', `Memproses fail: ${file.name}`);
     } catch (error) {
       console.error("Processing error:", error);
-      setMessage({ type: 'error', text: 'Gagal memproses fail. Sila cuba lagi.' });
+      setMessage({ type: 'error', text: 'Gagal memproses fail. Sila pastikan Kunci API anda betul dan fail tidak terlalu besar.' });
     } finally {
       setLoading(false);
     }
@@ -122,8 +124,23 @@ export default function UploadEngine() {
         <motion.div 
           initial={{ opacity: 0, scale: 0.98 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="bg-white border-2 border-dashed border-slate-200 rounded-3xl p-12 text-center"
+          className="bg-white border-2 border-dashed border-slate-200 rounded-3xl p-12 text-center relative overflow-hidden"
         >
+          {loading && (
+            <div className="absolute inset-0 bg-white/80 backdrop-blur-sm z-50 flex flex-col items-center justify-center">
+              <div className="bg-white p-8 rounded-3xl shadow-2xl border border-slate-100 flex flex-col items-center gap-4">
+                <div className="relative">
+                  <Loader2 size={48} className="text-gov-blue animate-spin" />
+                  <Sparkles size={20} className="text-amber-400 absolute -top-2 -right-2 animate-pulse" />
+                </div>
+                <div className="text-center">
+                  <p className="font-bold text-slate-900">AI Sedang Memproses Dokumen...</p>
+                  <p className="text-xs text-slate-500 mt-1">Ini mungkin mengambil masa 10-20 saat.</p>
+                </div>
+              </div>
+            </div>
+          )}
+          
           <div className="bg-gov-blue/5 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6">
             <Upload size={40} className="text-gov-blue" />
           </div>
