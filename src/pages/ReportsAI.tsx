@@ -8,8 +8,13 @@ import { cn } from '../lib/utils';
 
 const getAi = () => {
   const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    throw new Error("Sila tetapkan GEMINI_API_KEY dalam tetapan persekitaran.");
+  if (!apiKey || apiKey === "AI Studio Free Tier") {
+    // If the default key is missing or is the placeholder, try to find it elsewhere
+    const fallbackKey = (window as any).process?.env?.GEMINI_API_KEY || (import.meta as any).env?.VITE_GEMINI_API_KEY;
+    if (fallbackKey && fallbackKey !== "AI Studio Free Tier") {
+      return new GoogleGenAI({ apiKey: fallbackKey });
+    }
+    throw new Error("Sila tetapkan VITE_GEMINI_API_KEY dalam tetapan Secrets.");
   }
   return new GoogleGenAI({ apiKey });
 };
