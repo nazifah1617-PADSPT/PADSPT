@@ -1,13 +1,16 @@
 import { GoogleGenAI, Type } from "@google/genai";
 
 const getAi = () => {
-  const apiKey = process.env.GEMINI_API_KEY;
+  // Try multiple sources for the API key, including direct process.env and VITE_ prefixed env
+  const apiKey = process.env.GEMINI_API_KEY || (import.meta as any).env?.VITE_GEMINI_API_KEY;
+  
   if (!apiKey || apiKey === "AI Studio Free Tier") {
-    const fallbackKey = (window as any).process?.env?.GEMINI_API_KEY || (import.meta as any).env?.VITE_GEMINI_API_KEY;
-    if (fallbackKey && fallbackKey !== "AI Studio Free Tier") {
-      return new GoogleGenAI({ apiKey: fallbackKey });
+    // If it's still not found, try to look in the window object where some environments inject it
+    const windowKey = (window as any).process?.env?.GEMINI_API_KEY || (window as any).VITE_GEMINI_API_KEY;
+    if (windowKey && windowKey !== "AI Studio Free Tier") {
+      return new GoogleGenAI({ apiKey: windowKey });
     }
-    throw new Error("Sila tetapkan VITE_GEMINI_API_KEY dalam tetapan Secrets.");
+    throw new Error("Sila tetapkan VITE_GEMINI_API_KEY dalam tetapan Secrets dan klik 'Apply changes'.");
   }
   return new GoogleGenAI({ apiKey });
 };

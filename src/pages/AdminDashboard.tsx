@@ -109,7 +109,7 @@ export default function AdminDashboard() {
               <option>Tahun 2025</option>
             </select>
           </div>
-          <div className="h-80 w-full">
+          <div className="h-[320px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={chartData}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />

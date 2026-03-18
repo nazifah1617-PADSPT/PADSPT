@@ -1,20 +1,22 @@
 import React, { useState } from 'react';
 import { FileBarChart, Download, Loader2, Sparkles, CheckCircle2 } from 'lucide-react';
 import { jsPDF } from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 import { GoogleGenAI } from "@google/genai";
 import { motion } from 'motion/react';
 import { cn } from '../lib/utils';
 
 const getAi = () => {
-  const apiKey = process.env.GEMINI_API_KEY;
+  // Try multiple sources for the API key, including direct process.env and VITE_ prefixed env
+  const apiKey = process.env.GEMINI_API_KEY || (import.meta as any).env?.VITE_GEMINI_API_KEY;
+  
   if (!apiKey || apiKey === "AI Studio Free Tier") {
-    // If the default key is missing or is the placeholder, try to find it elsewhere
-    const fallbackKey = (window as any).process?.env?.GEMINI_API_KEY || (import.meta as any).env?.VITE_GEMINI_API_KEY;
-    if (fallbackKey && fallbackKey !== "AI Studio Free Tier") {
-      return new GoogleGenAI({ apiKey: fallbackKey });
+    // If it's still not found, try to look in the window object where some environments inject it
+    const windowKey = (window as any).process?.env?.GEMINI_API_KEY || (window as any).VITE_GEMINI_API_KEY;
+    if (windowKey && windowKey !== "AI Studio Free Tier") {
+      return new GoogleGenAI({ apiKey: windowKey });
     }
-    throw new Error("Sila tetapkan VITE_GEMINI_API_KEY dalam tetapan Secrets.");
+    throw new Error("Sila tetapkan VITE_GEMINI_API_KEY dalam tetapan Secrets dan klik 'Apply changes'.");
   }
   return new GoogleGenAI({ apiKey });
 };
@@ -86,7 +88,7 @@ export default function ReportsAI() {
     doc.text(splitText, 10, 55);
 
     // Table
-    doc.autoTable({
+    autoTable(doc, {
       startY: 120,
       head: [['Daerah', 'Jumlah JK']],
       body: [
@@ -97,7 +99,7 @@ export default function ReportsAI() {
         ['Seberang Perai Selatan', '2150'],
       ],
       theme: 'grid',
-      headStyles: { fillStyle: '#003366' }
+      headStyles: { fillColor: '#003366' }
     });
 
     // Footer
