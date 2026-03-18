@@ -1,5 +1,7 @@
 {
-  "name": "Pejabat Agama Daerah Seberang Perai Tengah",
-  "description": "Sistem Maklumat Masjid dan Jawatankuasa bagi Pejabat Agama Daerah Seberang Perai Tengah, Pulau Pinang.",
-  "requestFramePermissions": []
+  "name": "e-Kariah Pulau Pinang",
+  "description": "Sistem Pengurusan Jawatankuasa Kariah, Surau dan Pegawai Masjid Rasmi Jabatan Hal Ehwal Agama Islam Pulau Pinang.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
 }
