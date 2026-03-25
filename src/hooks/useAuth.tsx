@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { onAuthStateChanged, User } from 'firebase/auth';
-import { doc, onSnapshot } from 'firebase/firestore';
+import { doc, onSnapshot, collection, query, where, getDocs, setDoc } from 'firebase/firestore';
 import { auth, db } from '../firebase';
 
 interface AuthContextType {
@@ -37,18 +37,39 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     if (user) {
-      const unsubscribe = onSnapshot(doc(db, 'users', user.uid), (snap) => {
+      const unsubscribe = onSnapshot(doc(db, 'users', user.uid), async (snap) => {
         if (snap.exists()) {
           setProfile(snap.data());
+          setLoading(false);
         } else {
-          // Default admin for the provided email
-          if (user.email === "photonazifah1617@gmail.com") {
-            setProfile({ role: 'SUPER_ADMIN', name: 'Super Admin' });
-          } else {
+          // Check if email is in admin_users
+          try {
+            const q = query(collection(db, 'admin_users'), where('email', '==', user.email));
+            const adminSnap = await getDocs(q);
+            
+            if (!adminSnap.empty) {
+              const adminData = adminSnap.docs[0].data();
+              const newProfile = { 
+                role: adminData.role || 'ADMIN', 
+                name: adminData.name || user.displayName || 'Admin',
+                email: user.email
+              };
+              // Auto-create user profile
+              await setDoc(doc(db, 'users', user.uid), newProfile);
+              setProfile(newProfile);
+            } else if (user.email === "photonazifah1617@gmail.com") {
+              const superAdminProfile = { role: 'SUPER_ADMIN', name: 'Super Admin', email: user.email };
+              await setDoc(doc(db, 'users', user.uid), superAdminProfile);
+              setProfile(superAdminProfile);
+            } else {
+              setProfile(null);
+            }
+          } catch (error) {
+            console.error("Admin check error:", error);
             setProfile(null);
           }
+          setLoading(false);
         }
-        setLoading(false);
       }, (err) => {
         console.error("Profile fetch error:", err);
         setLoading(false);

@@ -76,7 +76,7 @@ export default function App() {
           } />
 
           <Route path="/admin/audit" element={
-            <ProtectedRoute requireSuperAdmin>
+            <ProtectedRoute requireAdmin>
               <AuditLogs />
             </ProtectedRoute>
           } />

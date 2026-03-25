@@ -1,29 +1,56 @@
 import React, { useState, useEffect } from 'react';
-import { collection, query, getDocs, orderBy, limit } from 'firebase/firestore';
+import { collection, query, onSnapshot, orderBy, limit, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '../firebase';
-import { UserCheck, Search, Plus, MapPin, Phone, Edit3, Trash2, Loader2, Filter } from 'lucide-react';
+import { UserCheck, Search, Plus, Building2, Phone, Edit3, Trash2, Loader2, Filter } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
+import { useAuth } from '../hooks/useAuth';
+import { PegawaiModal } from '../components/ui/PegawaiModal';
+import { logActivity } from '../services/auditService';
 
 export default function PegawaiManagement() {
+  const { isSuperAdmin } = useAuth();
   const [pegawai, setPegawai] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedPegawai, setSelectedPegawai] = useState<any>(null);
 
   useEffect(() => {
-    const fetchPegawai = async () => {
-      try {
-        const q = query(collection(db, 'pegawai_records'), orderBy('nama', 'asc'), limit(50));
-        const snap = await getDocs(q);
-        setPegawai(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-      } catch (error) {
-        console.error("Fetch error:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchPegawai();
+    const q = query(collection(db, 'pegawai_records'), orderBy('nama', 'asc'), limit(50));
+    const unsubscribe = onSnapshot(q, (snap) => {
+      setPegawai(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      setLoading(false);
+    });
+    return unsubscribe;
   }, []);
+
+  const handleEdit = (p: any) => {
+    setSelectedPegawai(p);
+    setIsModalOpen(true);
+  };
+
+  const handleAdd = () => {
+    setSelectedPegawai(null);
+    setIsModalOpen(true);
+  };
+
+  const handleDelete = async (id: string, name: string) => {
+    if (confirm(`Adakah anda pasti untuk memadam rekod pegawai ${name}?`)) {
+      try {
+        await deleteDoc(doc(db, 'pegawai_records', id));
+        await logActivity('DELETE_PEGAWAI', `Memadam rekod pegawai: ${name}`);
+      } catch (error) {
+        console.error("Delete error:", error);
+      }
+    }
+  };
+
+  const filteredPegawai = pegawai.filter(p => 
+    p.nama?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    p.noKP?.includes(searchTerm) ||
+    p.masjidName?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <div className="space-y-8">
@@ -32,7 +59,10 @@ export default function PegawaiManagement() {
           <h1 className="text-3xl font-bold text-slate-900">Pengurusan Pegawai Masjid</h1>
           <p className="text-slate-500">Senarai Imam, Bilal, dan Noja berdaftar di seluruh Pulau Pinang.</p>
         </div>
-        <button className="bg-gov-blue hover:bg-gov-blue/90 text-white px-8 py-4 rounded-xl font-bold flex items-center gap-2 shadow-lg shadow-gov-blue/20 transition-all">
+        <button 
+          onClick={handleAdd}
+          className="bg-gov-blue hover:bg-gov-blue/90 text-white px-8 py-4 rounded-xl font-bold flex items-center gap-2 shadow-lg shadow-gov-blue/20 transition-all"
+        >
           <Plus size={20} /> TAMBAH PEGAWAI BARU
         </button>
       </div>
@@ -48,9 +78,6 @@ export default function PegawaiManagement() {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        <button className="px-6 py-4 bg-slate-100 text-slate-600 rounded-xl font-bold flex items-center gap-2 hover:bg-slate-200 transition-all">
-          <Filter size={20} /> FILTER JAWATAN
-        </button>
       </div>
 
       <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
@@ -72,8 +99,8 @@ export default function PegawaiManagement() {
                   <p className="mt-4 text-slate-400 font-medium">Memuatkan data pegawai...</p>
                 </td>
               </tr>
-            ) : pegawai.length > 0 ? (
-              pegawai.map((p) => (
+            ) : filteredPegawai.length > 0 ? (
+              filteredPegawai.map((p) => (
                 <tr key={p.id} className="hover:bg-slate-50/50 transition-colors group">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
@@ -95,12 +122,20 @@ export default function PegawaiManagement() {
                   </td>
                   <td className="px-6 py-4 text-right">
                     <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button className="p-2 text-slate-400 hover:text-gov-blue hover:bg-slate-100 rounded-lg transition-all">
+                      <button 
+                        onClick={() => handleEdit(p)}
+                        className="p-2 text-slate-400 hover:text-gov-blue hover:bg-slate-100 rounded-lg transition-all"
+                      >
                         <Edit3 size={18} />
                       </button>
-                      <button className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all">
-                        <Trash2 size={18} />
-                      </button>
+                      {isSuperAdmin && (
+                        <button 
+                          onClick={() => handleDelete(p.id, p.nama)}
+                          className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -115,6 +150,12 @@ export default function PegawaiManagement() {
           </tbody>
         </table>
       </div>
+
+      <PegawaiModal 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)} 
+        initialData={selectedPegawai} 
+      />
     </div>
   );
 }
