@@ -1,7 +1,0 @@
-{
-  "name": "e-Kariah Pulau Pinang",
-  "description": "Sistem Pengurusan Jawatankuasa Kariah, Surau dan Pegawai Masjid Rasmi Jabatan Hal Ehwal Agama Islam Pulau Pinang.",
-  "requestFramePermissions": [
-    "geolocation"
-  ]
-}
