@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { collection, query, onSnapshot, orderBy, limit, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, where, getDocs } from 'firebase/firestore';
 import { db } from '../firebase';
-import { Settings, Search, Plus, User, Shield, Edit3, Trash2, Loader2, Mail, X, Save } from 'lucide-react';
+import { Settings, Search, Plus, User, Shield, Edit3, Trash2, Loader2, Mail, X, Save, AlertCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
 import { logActivity } from '../services/auditService';
@@ -35,9 +35,14 @@ export default function UserManagement() {
     setIsModalOpen(true);
   };
 
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<{id: string, email: string} | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
+    setErrorMessage(null);
     const normalizedEmail = formData.email.toLowerCase().trim();
     const updatedFormData = { ...formData, email: normalizedEmail };
 
@@ -99,28 +104,38 @@ export default function UserManagement() {
       setIsModalOpen(false);
     } catch (error) {
       console.error("Save error:", error);
-      alert("Gagal menyimpan data pengguna.");
+      setErrorMessage("Gagal menyimpan data pengguna. Sila cuba lagi.");
     } finally {
       setSaving(false);
     }
   };
 
-  const handleDelete = async (id: string, email: string) => {
-    if (confirm(`Adakah anda pasti untuk memadam akses ${email}?`)) {
-      try {
-        await deleteDoc(doc(db, 'users', id));
-        
-        // Also remove from admin_users
-        const adminQuery = query(collection(db, 'admin_users'), where('email', '==', email.toLowerCase()));
-        const adminSnap = await getDocs(adminQuery);
-        if (!adminSnap.empty) {
-          await deleteDoc(doc(db, 'admin_users', adminSnap.docs[0].id));
-        }
-        
-        await logActivity('DELETE_USER', `Memadam akses: ${email}`);
-      } catch (error) {
-        console.error("Delete error:", error);
+  const confirmDelete = (id: string, email: string) => {
+    setUserToDelete({ id, email });
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleDelete = async () => {
+    if (!userToDelete) return;
+    setSaving(true);
+    try {
+      await deleteDoc(doc(db, 'users', userToDelete.id));
+      
+      // Also remove from admin_users
+      const adminQuery = query(collection(db, 'admin_users'), where('email', '==', userToDelete.email.toLowerCase()));
+      const adminSnap = await getDocs(adminQuery);
+      if (!adminSnap.empty) {
+        await deleteDoc(doc(db, 'admin_users', adminSnap.docs[0].id));
       }
+      
+      await logActivity('DELETE_USER', `Memadam akses: ${userToDelete.email}`);
+      setIsDeleteModalOpen(false);
+      setUserToDelete(null);
+    } catch (error) {
+      console.error("Delete error:", error);
+      setErrorMessage("Gagal memadam data pengguna.");
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -218,7 +233,7 @@ export default function UserManagement() {
                         <Edit3 size={18} />
                       </button>
                       <button 
-                        onClick={() => handleDelete(u.id, u.email)}
+                        onClick={() => confirmDelete(u.id, u.email)}
                         className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
                       >
                         <Trash2 size={18} />
@@ -258,6 +273,12 @@ export default function UserManagement() {
               </div>
 
               <form onSubmit={handleSave} className="p-6 space-y-4">
+                {errorMessage && (
+                  <div className="p-3 bg-red-50 border border-red-100 text-red-600 text-xs rounded-xl flex items-center gap-2">
+                    <AlertCircle size={14} />
+                    {errorMessage}
+                  </div>
+                )}
                 <div>
                   <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Nama Penuh</label>
                   <input 
@@ -309,6 +330,45 @@ export default function UserManagement() {
                   </button>
                 </div>
               </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Delete Confirmation Modal */}
+      <AnimatePresence>
+        {isDeleteModalOpen && (
+          <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white w-full max-w-sm rounded-3xl shadow-2xl p-6 text-center"
+            >
+              <div className="w-16 h-16 bg-red-50 text-red-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <Trash2 size={32} />
+              </div>
+              <h3 className="text-xl font-bold text-slate-900 mb-2">Padam Akses?</h3>
+              <p className="text-slate-500 text-sm mb-6">
+                Adakah anda pasti untuk memadam akses untuk <span className="font-bold text-slate-700">{userToDelete?.email}</span>? Tindakan ini tidak boleh diundur.
+              </p>
+              
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setIsDeleteModalOpen(false)}
+                  className="flex-1 px-4 py-3 bg-slate-100 text-slate-600 rounded-xl font-bold hover:bg-slate-200 transition-all"
+                >
+                  BATAL
+                </button>
+                <button
+                  onClick={handleDelete}
+                  disabled={saving}
+                  className="flex-1 px-4 py-3 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 transition-all flex items-center justify-center gap-2"
+                >
+                  {saving ? <Loader2 className="animate-spin" size={18} /> : null}
+                  PADAM
+                </button>
+              </div>
             </motion.div>
           </div>
         )}

@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { onAuthStateChanged, User } from 'firebase/auth';
-import { doc, onSnapshot, collection, query, where, getDocs, setDoc } from 'firebase/firestore';
+import { doc, onSnapshot, collection, query, where, getDocs, setDoc, getDoc } from 'firebase/firestore';
 import { auth, db } from '../firebase';
 
 interface AuthContextType {
@@ -23,10 +23,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isAuthReady, setIsAuthReady] = useState(false);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (u) => {
       setUser(u);
+      setIsAuthReady(true);
       if (!u) {
         setProfile(null);
         setLoading(false);
@@ -39,99 +41,84 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     if (user) {
       setLoading(true);
       const userEmail = user.email?.toLowerCase();
-      const unsubscribe = onSnapshot(doc(db, 'users', user.uid), async (snap) => {
-        if (snap.exists()) {
-          const userData = snap.data();
-          
-          // Hardcoded super admin check
-          if (userEmail === "photonazifah1617@gmail.com" && userData.role !== 'SUPER_ADMIN') {
-            const updatedProfile = { ...userData, role: 'SUPER_ADMIN' };
-            await setDoc(doc(db, 'users', user.uid), updatedProfile);
-            setProfile(updatedProfile);
-            setLoading(false);
-            return;
-          }
+      
+      // Initial fetch to avoid listener race conditions
+      const fetchProfile = async () => {
+        try {
+          const userDoc = await getDoc(doc(db, 'users', user.uid));
+          if (userDoc.exists()) {
+            const userData = userDoc.data();
+            
+            // Hardcoded super admin check
+            if (userEmail === "photonazifah1617@gmail.com" && userData.role !== 'SUPER_ADMIN') {
+              const updatedProfile = { ...userData, role: 'SUPER_ADMIN' };
+              await setDoc(doc(db, 'users', user.uid), updatedProfile);
+              setProfile(updatedProfile);
+            } else {
+              setProfile(userData);
+            }
+          } else {
+            // Create profile
+            let role = 'USER';
+            let name = user.displayName || 'Pengguna';
 
-          // If role is not admin, check admin_users just in case it was updated there but not synced
-          if (userData.role !== 'ADMIN' && userData.role !== 'SUPER_ADMIN') {
-            try {
+            if (userEmail === "photonazifah1617@gmail.com") {
+              role = 'SUPER_ADMIN';
+              name = 'Super Admin';
+            } else {
+              // Check admin_users
               const q = query(collection(db, 'admin_users'), where('email', '==', userEmail));
               const adminSnap = await getDocs(q);
               if (!adminSnap.empty) {
                 const adminData = adminSnap.docs[0].data();
-                const updatedProfile = { 
-                  ...userData,
-                  role: adminData.role || 'ADMIN', 
-                  name: adminData.name || userData.name || user.displayName || 'Admin'
-                };
-                await setDoc(doc(db, 'users', user.uid), updatedProfile);
-                setProfile(updatedProfile);
-                setLoading(false);
-                return;
+                role = adminData.role || 'ADMIN';
+                name = adminData.name || name;
               }
-            } catch (error) {
-              console.error("Admin re-check error:", error);
             }
+
+            const newProfile = { 
+              role, 
+              name, 
+              email: userEmail,
+              createdAt: new Date().toISOString()
+            };
+            await setDoc(doc(db, 'users', user.uid), newProfile);
+            setProfile(newProfile);
           }
-          setProfile(userData);
-          setLoading(false);
-        } else {
-          // Check if email is in admin_users
-          try {
-            const q = query(collection(db, 'admin_users'), where('email', '==', userEmail));
-            const adminSnap = await getDocs(q);
-            
-            if (!adminSnap.empty) {
-              const adminData = adminSnap.docs[0].data();
-              const newProfile = { 
-                role: adminData.role || 'ADMIN', 
-                name: adminData.name || user.displayName || 'Admin',
-                email: userEmail,
-                createdAt: new Date().toISOString()
-              };
-              await setDoc(doc(db, 'users', user.uid), newProfile);
-              setProfile(newProfile);
-            } else if (userEmail === "photonazifah1617@gmail.com") {
-              const superAdminProfile = { 
-                role: 'SUPER_ADMIN', 
-                name: 'Super Admin', 
-                email: userEmail,
-                createdAt: new Date().toISOString()
-              };
-              await setDoc(doc(db, 'users', user.uid), superAdminProfile);
-              setProfile(superAdminProfile);
-            } else {
-              // Create a regular USER profile for anyone else
-              const userProfile = { 
-                role: 'USER', 
-                name: user.displayName || 'Pengguna',
-                email: userEmail,
-                createdAt: new Date().toISOString()
-              };
-              await setDoc(doc(db, 'users', user.uid), userProfile);
-              setProfile(userProfile);
-            }
-          } catch (error) {
-            console.error("Admin check error:", error);
-            setProfile(null);
+        } catch (error) {
+          console.error("Profile fetch error:", error);
+          // If it fails, we still want to allow the super admin in
+          if (userEmail === "photonazifah1617@gmail.com") {
+            setProfile({ role: 'SUPER_ADMIN', name: 'Super Admin', email: userEmail });
           }
+        } finally {
           setLoading(false);
         }
-      }, (err) => {
-        console.error("Profile fetch error:", err);
-        setLoading(false);
+      };
+
+      fetchProfile();
+
+      // Set up real-time listener for profile updates (e.g. role changes)
+      const unsubProfile = onSnapshot(doc(db, 'users', user.uid), (snap) => {
+        if (snap.exists()) {
+          setProfile(snap.data());
+        }
       });
-      return unsubscribe;
+
+      return () => unsubProfile();
     }
   }, [user]);
 
   const userEmail = user?.email?.toLowerCase();
+  const isAdmin = profile?.role === 'ADMIN' || profile?.role === 'SUPER_ADMIN' || userEmail === "photonazifah1617@gmail.com";
+  const isSuperAdmin = profile?.role === 'SUPER_ADMIN' || userEmail === "photonazifah1617@gmail.com";
+
   const value = {
     user,
     profile,
-    loading,
-    isAdmin: profile?.role === 'ADMIN' || profile?.role === 'SUPER_ADMIN' || userEmail === "photonazifah1617@gmail.com",
-    isSuperAdmin: profile?.role === 'SUPER_ADMIN' || userEmail === "photonazifah1617@gmail.com",
+    loading: !isAuthReady || (user && loading),
+    isAdmin,
+    isSuperAdmin,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
