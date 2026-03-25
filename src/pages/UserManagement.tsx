@@ -16,9 +16,13 @@ export default function UserManagement() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    const q = query(collection(db, 'users'), orderBy('email', 'asc'), limit(100));
+    // Fetch all users from the 'users' collection
+    const q = query(collection(db, 'users'), limit(500));
     const unsubscribe = onSnapshot(q, (snap) => {
-      setUsers(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      const allUsers = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      // Sort manually to avoid index requirements for now
+      allUsers.sort((a: any, b: any) => (a.email || '').localeCompare(b.email || ''));
+      setUsers(allUsers);
       setLoading(false);
     });
     return unsubscribe;
@@ -141,7 +145,8 @@ export default function UserManagement() {
 
   const filteredUsers = users.filter(u => 
     u.name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    u.email?.toLowerCase().includes(searchTerm.toLowerCase())
+    u.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    u.role?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -171,6 +176,31 @@ export default function UserManagement() {
           />
         </div>
       </div>
+
+      {/* New Users Alert */}
+      {users.some(u => u.role === 'USER') && (
+        <motion.div 
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-amber-50 border border-amber-200 p-6 rounded-3xl flex flex-col md:flex-row items-center justify-between gap-4"
+        >
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-amber-100 text-amber-600 rounded-2xl flex items-center justify-center shrink-0">
+              <User size={24} />
+            </div>
+            <div>
+              <h3 className="font-bold text-amber-900">Terdapat Pengguna Baru</h3>
+              <p className="text-amber-700 text-sm">Beberapa pengguna telah mendaftar secara automatik tetapi belum mempunyai akses pentadbir.</p>
+            </div>
+          </div>
+          <button 
+            onClick={() => setSearchTerm('USER')}
+            className="bg-amber-600 hover:bg-amber-700 text-white px-6 py-3 rounded-xl font-bold text-sm transition-all whitespace-nowrap"
+          >
+            LIHAT PENGGUNA BARU
+          </button>
+        </motion.div>
+      )}
 
       <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
         <table className="w-full text-left border-collapse">

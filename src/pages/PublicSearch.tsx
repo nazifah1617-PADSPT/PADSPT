@@ -259,7 +259,7 @@ export default function PublicSearch() {
             </div>
           </div>
           <div className="flex gap-8 text-sm font-medium text-slate-600">
-            <Link to="/admin" className="hover:text-gov-blue transition-colors">
+            <Link to="/login" className="hover:text-gov-blue transition-colors">
               {isAdmin ? 'Dashboard Admin' : 'Log Masuk Pegawai'}
             </Link>
             <a href="#" className="hover:text-gov-blue transition-colors">Dasar Privasi</a>

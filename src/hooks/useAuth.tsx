@@ -42,12 +42,22 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setLoading(true);
       const userEmail = user.email?.toLowerCase();
       
-      // Initial fetch to avoid listener race conditions
       const fetchProfile = async () => {
+        // Create a timeout promise
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error("Timeout fetching profile")), 10000)
+        );
+
         try {
-          const userDoc = await getDoc(doc(db, 'users', user.uid));
+          console.log("Fetching profile for:", user.uid);
+          const userDocPromise = getDoc(doc(db, 'users', user.uid));
+          
+          // Race the fetch against the timeout
+          const userDoc = await Promise.race([userDocPromise, timeoutPromise]) as any;
+          
           if (userDoc.exists()) {
             const userData = userDoc.data();
+            console.log("Profile found:", userData.role);
             
             // Hardcoded super admin check
             if (userEmail === "photonazifah1617@gmail.com" && userData.role !== 'SUPER_ADMIN') {
@@ -58,6 +68,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
               setProfile(userData);
             }
           } else {
+            console.log("No profile found, creating default...");
             // Create profile
             let role = 'USER';
             let name = user.displayName || 'Pengguna';
@@ -90,6 +101,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           // If it fails, we still want to allow the super admin in
           if (userEmail === "photonazifah1617@gmail.com") {
             setProfile({ role: 'SUPER_ADMIN', name: 'Super Admin', email: userEmail });
+          } else {
+            // Set a default profile so loading ends
+            setProfile({ role: 'USER', name: user.displayName || 'Pengguna', email: userEmail });
           }
         } finally {
           setLoading(false);
@@ -98,11 +112,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       fetchProfile();
 
-      // Set up real-time listener for profile updates (e.g. role changes)
+      // Set up real-time listener for profile updates
       const unsubProfile = onSnapshot(doc(db, 'users', user.uid), (snap) => {
         if (snap.exists()) {
           setProfile(snap.data());
         }
+      }, (err) => {
+        console.error("Profile listener error:", err);
       });
 
       return () => unsubProfile();
