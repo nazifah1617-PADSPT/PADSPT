@@ -27,7 +27,9 @@ export default function LoginPage() {
     try {
       const provider = new GoogleAuthProvider();
       await signInWithPopup(auth, provider);
-      // Don't navigate immediately, let the useEffect handle it after profile loads
+      // After successful login, we wait for useAuth to update isAdmin
+      // We'll set a timeout to stop the local loading if redirection doesn't happen
+      setTimeout(() => setLoading(false), 2000);
     } catch (error: any) {
       console.error("Login error:", error);
       if (error.code === 'auth/popup-closed-by-user') {

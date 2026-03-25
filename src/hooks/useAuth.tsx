@@ -37,12 +37,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     if (user) {
+      setLoading(true);
+      const userEmail = user.email?.toLowerCase();
       const unsubscribe = onSnapshot(doc(db, 'users', user.uid), async (snap) => {
         if (snap.exists()) {
           const userData = snap.data();
           
           // Hardcoded super admin check
-          if (user.email === "photonazifah1617@gmail.com" && userData.role !== 'SUPER_ADMIN') {
+          if (userEmail === "photonazifah1617@gmail.com" && userData.role !== 'SUPER_ADMIN') {
             const updatedProfile = { ...userData, role: 'SUPER_ADMIN' };
             await setDoc(doc(db, 'users', user.uid), updatedProfile);
             setProfile(updatedProfile);
@@ -53,7 +55,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           // If role is not admin, check admin_users just in case it was updated there but not synced
           if (userData.role !== 'ADMIN' && userData.role !== 'SUPER_ADMIN') {
             try {
-              const q = query(collection(db, 'admin_users'), where('email', '==', user.email));
+              const q = query(collection(db, 'admin_users'), where('email', '==', userEmail));
               const adminSnap = await getDocs(q);
               if (!adminSnap.empty) {
                 const adminData = adminSnap.docs[0].data();
@@ -76,7 +78,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         } else {
           // Check if email is in admin_users
           try {
-            const q = query(collection(db, 'admin_users'), where('email', '==', user.email));
+            const q = query(collection(db, 'admin_users'), where('email', '==', userEmail));
             const adminSnap = await getDocs(q);
             
             if (!adminSnap.empty) {
@@ -84,13 +86,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
               const newProfile = { 
                 role: adminData.role || 'ADMIN', 
                 name: adminData.name || user.displayName || 'Admin',
-                email: user.email
+                email: userEmail
               };
               // Auto-create user profile
               await setDoc(doc(db, 'users', user.uid), newProfile);
               setProfile(newProfile);
-            } else if (user.email === "photonazifah1617@gmail.com") {
-              const superAdminProfile = { role: 'SUPER_ADMIN', name: 'Super Admin', email: user.email };
+            } else if (userEmail === "photonazifah1617@gmail.com") {
+              const superAdminProfile = { role: 'SUPER_ADMIN', name: 'Super Admin', email: userEmail };
               await setDoc(doc(db, 'users', user.uid), superAdminProfile);
               setProfile(superAdminProfile);
             } else {
@@ -110,12 +112,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   }, [user]);
 
+  const userEmail = user?.email?.toLowerCase();
   const value = {
     user,
     profile,
     loading,
-    isAdmin: profile?.role === 'ADMIN' || profile?.role === 'SUPER_ADMIN' || user?.email === "photonazifah1617@gmail.com",
-    isSuperAdmin: profile?.role === 'SUPER_ADMIN' || user?.email === "photonazifah1617@gmail.com",
+    isAdmin: profile?.role === 'ADMIN' || profile?.role === 'SUPER_ADMIN' || userEmail === "photonazifah1617@gmail.com",
+    isSuperAdmin: profile?.role === 'SUPER_ADMIN' || userEmail === "photonazifah1617@gmail.com",
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

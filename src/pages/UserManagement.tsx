@@ -38,42 +38,47 @@ export default function UserManagement() {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
+    const normalizedEmail = formData.email.toLowerCase().trim();
+    const updatedFormData = { ...formData, email: normalizedEmail };
+
     try {
       if (selectedUser) {
         await updateDoc(doc(db, 'admin_users', selectedUser.id), {
-          ...formData,
+          ...updatedFormData,
           updatedAt: serverTimestamp()
         });
         
         // Sync to users collection if they exist
-        const userQuery = query(collection(db, 'users'), where('email', '==', formData.email));
+        const userQuery = query(collection(db, 'users'), where('email', '==', normalizedEmail));
         const userSnap = await getDocs(userQuery);
         if (!userSnap.empty) {
           await updateDoc(doc(db, 'users', userSnap.docs[0].id), {
             role: formData.role,
-            name: formData.name
+            name: formData.name,
+            email: normalizedEmail
           });
         }
         
-        await logActivity('UPDATE_ADMIN', `Mengemaskini admin: ${formData.email}`);
+        await logActivity('UPDATE_ADMIN', `Mengemaskini admin: ${normalizedEmail}`);
       } else {
         await addDoc(collection(db, 'admin_users'), {
-          ...formData,
+          ...updatedFormData,
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp()
         });
         
         // Also check if user already exists in users collection to update their role immediately
-        const userQuery = query(collection(db, 'users'), where('email', '==', formData.email));
+        const userQuery = query(collection(db, 'users'), where('email', '==', normalizedEmail));
         const userSnap = await getDocs(userQuery);
         if (!userSnap.empty) {
           await updateDoc(doc(db, 'users', userSnap.docs[0].id), {
             role: formData.role,
-            name: formData.name
+            name: formData.name,
+            email: normalizedEmail
           });
         }
         
-        await logActivity('ADD_ADMIN', `Menambah admin baru: ${formData.email}`);
+        await logActivity('ADD_ADMIN', `Menambah admin baru: ${normalizedEmail}`);
       }
       setIsModalOpen(false);
     } catch (error) {
