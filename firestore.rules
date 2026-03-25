@@ -12,18 +12,17 @@ service cloud.firestore {
       return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
     }
 
-    function isAdmin() {
+    function isSuperAdmin() {
       return isAuthenticated() && (
-        getUserData().role == 'ADMIN' || 
-        getUserData().role == 'SUPER_ADMIN' ||
-        (request.auth.token.email == "photonazifah1617@gmail.com" && request.auth.token.email_verified == true)
+        (request.auth.token.email == "photonazifah1617@gmail.com" && request.auth.token.email_verified == true) ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && getUserData().role == 'SUPER_ADMIN')
       );
     }
 
-    function isSuperAdmin() {
+    function isAdmin() {
       return isAuthenticated() && (
-        getUserData().role == 'SUPER_ADMIN' ||
-        (request.auth.token.email == "photonazifah1617@gmail.com" && request.auth.token.email_verified == true)
+        isSuperAdmin() ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && getUserData().role == 'ADMIN')
       );
     }
 

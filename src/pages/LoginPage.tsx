@@ -64,9 +64,18 @@ export default function LoginPage() {
         
         <div className="p-8">
           {error && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-100 text-red-600 text-sm rounded-xl font-medium flex items-center gap-2">
-              <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
-              {error}
+            <div className="space-y-4">
+              <div className="p-4 bg-red-50 border border-red-100 text-red-600 text-sm rounded-xl font-medium flex items-center gap-2">
+                <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+                {error}
+              </div>
+              
+              <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl text-[10px] font-mono text-slate-500 break-all">
+                <p className="font-bold mb-1 uppercase text-slate-400">Maklumat Diagnostik:</p>
+                <p>Domain: {window.location.hostname}</p>
+                <p>URL: {window.location.origin}</p>
+                <p className="mt-2 text-slate-400 italic">Sila pastikan domain di atas telah ditambah ke "Authorized Domains" di Firebase Console.</p>
+              </div>
             </div>
           )}
           
