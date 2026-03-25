@@ -85,6 +85,15 @@ export const JKModal = ({ isOpen, onClose, initialData }: JKModalProps) => {
               />
             </div>
             <div className="space-y-2">
+              <label className="text-[10px] uppercase font-bold text-slate-400">No. Telefon</label>
+              <input 
+                required
+                className="w-full px-4 py-3 bg-slate-50 border-none rounded-xl focus:ring-2 focus:ring-gov-blue/20 outline-none"
+                value={formData.noTel}
+                onChange={(e) => setFormData({...formData, noTel: e.target.value})}
+              />
+            </div>
+            <div className="space-y-2">
               <label className="text-[10px] uppercase font-bold text-slate-400">Jawatan</label>
               <select 
                 className="w-full px-4 py-3 bg-slate-50 border-none rounded-xl focus:ring-2 focus:ring-gov-blue/20 outline-none"
@@ -92,12 +101,12 @@ export const JKModal = ({ isOpen, onClose, initialData }: JKModalProps) => {
                 onChange={(e) => setFormData({...formData, jawatan: e.target.value})}
               >
                 <option>Pengerusi</option>
-                <option>Timb. Pengerusi</option>
+                <option>Tim. Pengerusi</option>
                 <option>Setiausaha</option>
                 <option>Bendahari</option>
                 <option>AJK</option>
                 <option>AJK Wanita</option>
-                <option>Pemeriksa Kira-Kira</option>
+                <option>Pemeriksa Kira-kira</option>
               </select>
             </div>
             <div className="space-y-2">
