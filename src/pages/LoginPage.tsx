@@ -13,13 +13,13 @@ export default function LoginPage() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!authLoading && isAdmin) {
-      const timer = setTimeout(() => {
-        navigate('/admin');
-      }, 500);
-      return () => clearTimeout(timer);
+    if (!authLoading && user && isAdmin) {
+      navigate('/admin', { replace: true });
+    } else if (!authLoading && user && !isAdmin) {
+      // If logged in but not admin, stay here or go home
+      // The UI already shows "KEMBALI KE LAMAN UTAMA"
     }
-  }, [isAdmin, authLoading, navigate]);
+  }, [isAdmin, user, authLoading, navigate]);
 
   const handleLogin = async () => {
     setLoading(true);

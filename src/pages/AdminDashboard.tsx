@@ -8,7 +8,8 @@ import {
   Clock, 
   TrendingUp, 
   Map as MapIcon,
-  ChevronRight
+  ChevronRight,
+  ShieldCheck
 } from 'lucide-react';
 import { 
   BarChart, 
@@ -22,10 +23,13 @@ import {
   PieChart,
   Pie
 } from 'recharts';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
+import { useAuth } from '../hooks/useAuth';
+import { Link } from 'react-router-dom';
 
 export default function AdminDashboard() {
+  const { isSuperAdmin } = useAuth();
   const [stats, setStats] = useState({
     totalJK: 0,
     totalMasjid: 0,
@@ -127,6 +131,33 @@ export default function AdminDashboard() {
           </motion.div>
         ))}
       </div>
+
+      {/* Super Admin Quick Actions */}
+      <AnimatePresence>
+        {isSuperAdmin && (
+          <motion.div 
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            className="bg-gov-blue/5 border border-gov-blue/10 p-6 rounded-3xl flex flex-col md:flex-row items-center justify-between gap-4"
+          >
+            <div className="flex items-center gap-4">
+              <div className="bg-gov-blue text-white p-3 rounded-2xl">
+                <ShieldCheck size={24} />
+              </div>
+              <div>
+                <h4 className="font-bold text-slate-900">Pengurusan Akses Pengguna</h4>
+                <p className="text-sm text-slate-500">Terdapat pengguna baru yang mendaftar secara automatik? Klik butang di sebelah untuk menaik taraf peranan mereka.</p>
+              </div>
+            </div>
+            <Link 
+              to="/admin/users"
+              className="bg-gov-blue hover:bg-gov-blue/90 text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 transition-all shadow-lg shadow-gov-blue/20"
+            >
+              URUS PENGGUNA <ChevronRight size={18} />
+            </Link>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Main Chart */}

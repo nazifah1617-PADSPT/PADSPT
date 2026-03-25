@@ -16,7 +16,7 @@ export default function UserManagement() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    const q = query(collection(db, 'admin_users'), orderBy('email', 'asc'), limit(50));
+    const q = query(collection(db, 'users'), orderBy('email', 'asc'), limit(100));
     const unsubscribe = onSnapshot(q, (snap) => {
       setUsers(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
       setLoading(false);
@@ -27,10 +27,10 @@ export default function UserManagement() {
   const handleOpenModal = (user: any = null) => {
     if (user) {
       setSelectedUser(user);
-      setFormData({ name: user.name, email: user.email, role: user.role });
+      setFormData({ name: user.name || '', email: user.email || '', role: user.role || 'USER' });
     } else {
       setSelectedUser(null);
-      setFormData({ name: '', email: '', role: 'ADMIN' });
+      setFormData({ name: '', email: '', role: 'USER' });
     }
     setIsModalOpen(true);
   };
@@ -43,57 +43,81 @@ export default function UserManagement() {
 
     try {
       if (selectedUser) {
-        await updateDoc(doc(db, 'admin_users', selectedUser.id), {
+        // Update the user document directly
+        await updateDoc(doc(db, 'users', selectedUser.id), {
           ...updatedFormData,
           updatedAt: serverTimestamp()
         });
         
-        // Sync to users collection if they exist
-        const userQuery = query(collection(db, 'users'), where('email', '==', normalizedEmail));
-        const userSnap = await getDocs(userQuery);
-        if (!userSnap.empty) {
-          await updateDoc(doc(db, 'users', userSnap.docs[0].id), {
-            role: formData.role,
-            name: formData.name,
-            email: normalizedEmail
-          });
+        // Also sync to admin_users if they are now an admin
+        if (formData.role === 'ADMIN' || formData.role === 'SUPER_ADMIN') {
+          const adminQuery = query(collection(db, 'admin_users'), where('email', '==', normalizedEmail));
+          const adminSnap = await getDocs(adminQuery);
+          if (adminSnap.empty) {
+            await addDoc(collection(db, 'admin_users'), {
+              ...updatedFormData,
+              createdAt: serverTimestamp(),
+              updatedAt: serverTimestamp()
+            });
+          } else {
+            await updateDoc(doc(db, 'admin_users', adminSnap.docs[0].id), {
+              ...updatedFormData,
+              updatedAt: serverTimestamp()
+            });
+          }
+        } else {
+          // If role changed to USER, remove from admin_users
+          const adminQuery = query(collection(db, 'admin_users'), where('email', '==', normalizedEmail));
+          const adminSnap = await getDocs(adminQuery);
+          if (!adminSnap.empty) {
+            await deleteDoc(doc(db, 'admin_users', adminSnap.docs[0].id));
+          }
         }
         
-        await logActivity('UPDATE_ADMIN', `Mengemaskini admin: ${normalizedEmail}`);
+        await logActivity('UPDATE_USER', `Mengemaskini peranan pengguna: ${normalizedEmail} kepada ${formData.role}`);
       } else {
-        await addDoc(collection(db, 'admin_users'), {
-          ...updatedFormData,
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp()
-        });
-        
-        // Also check if user already exists in users collection to update their role immediately
+        // Manual add - check if user already exists
         const userQuery = query(collection(db, 'users'), where('email', '==', normalizedEmail));
         const userSnap = await getDocs(userQuery);
+        
         if (!userSnap.empty) {
           await updateDoc(doc(db, 'users', userSnap.docs[0].id), {
-            role: formData.role,
-            name: formData.name,
-            email: normalizedEmail
+            ...updatedFormData,
+            updatedAt: serverTimestamp()
+          });
+        } else {
+          // If they don't exist yet, we add to admin_users so they get the role when they first log in
+          await addDoc(collection(db, 'admin_users'), {
+            ...updatedFormData,
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp()
           });
         }
         
-        await logActivity('ADD_ADMIN', `Menambah admin baru: ${normalizedEmail}`);
+        await logActivity('ADD_USER', `Menambah/Mengemaskini akses: ${normalizedEmail}`);
       }
       setIsModalOpen(false);
     } catch (error) {
       console.error("Save error:", error);
-      alert("Gagal menyimpan data admin.");
+      alert("Gagal menyimpan data pengguna.");
     } finally {
       setSaving(false);
     }
   };
 
   const handleDelete = async (id: string, email: string) => {
-    if (confirm(`Adakah anda pasti untuk memadam admin ${email}?`)) {
+    if (confirm(`Adakah anda pasti untuk memadam akses ${email}?`)) {
       try {
-        await deleteDoc(doc(db, 'admin_users', id));
-        await logActivity('DELETE_ADMIN', `Memadam admin: ${email}`);
+        await deleteDoc(doc(db, 'users', id));
+        
+        // Also remove from admin_users
+        const adminQuery = query(collection(db, 'admin_users'), where('email', '==', email.toLowerCase()));
+        const adminSnap = await getDocs(adminQuery);
+        if (!adminSnap.empty) {
+          await deleteDoc(doc(db, 'admin_users', adminSnap.docs[0].id));
+        }
+        
+        await logActivity('DELETE_USER', `Memadam akses: ${email}`);
       } catch (error) {
         console.error("Delete error:", error);
       }
@@ -261,6 +285,7 @@ export default function UserManagement() {
                     value={formData.role}
                     onChange={(e) => setFormData({ ...formData, role: e.target.value })}
                   >
+                    <option value="USER">PENGGUNA BIASA (Carian Sahaja)</option>
                     <option value="ADMIN">ADMIN (Boleh Edit, Tiada Padam)</option>
                     <option value="SUPER_ADMIN">SUPER ADMIN (Akses Penuh)</option>
                   </select>
