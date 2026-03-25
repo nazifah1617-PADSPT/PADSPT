@@ -1,14 +1,22 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
 import { auth } from '../firebase';
-import { ShieldCheck, LogIn, Loader2 } from 'lucide-react';
+import { ShieldCheck, LogIn, Loader2, LayoutDashboard } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../hooks/useAuth';
 
 export default function LoginPage() {
+  const { isAdmin, loading: authLoading } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!authLoading && isAdmin) {
+      navigate('/admin');
+    }
+  }, [isAdmin, authLoading, navigate]);
 
   const handleLogin = async () => {
     setLoading(true);

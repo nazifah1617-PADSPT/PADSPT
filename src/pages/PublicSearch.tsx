@@ -1,16 +1,28 @@
 import React, { useState, useEffect } from 'react';
 import { collection, query, where, getDocs, limit, orderBy } from 'firebase/firestore';
 import { db } from '../firebase';
-import { Search, MapPin, Phone, User, Building2, ChevronRight, Loader2 } from 'lucide-react';
+import { Search, MapPin, Phone, User, Building2, ChevronRight, Loader2, LayoutDashboard } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../hooks/useAuth';
 
 export default function PublicSearch() {
+  const { isAdmin, loading: authLoading } = useAuth();
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [results, setResults] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [stats, setStats] = useState({ masjid: 0, jk: 0 });
+
+  useEffect(() => {
+    // If user is admin and lands on public search, redirect to dashboard
+    // unless they specifically came here to search.
+    // For now, let's auto-redirect to solve the user's issue.
+    if (!authLoading && isAdmin && !searchTerm) {
+      navigate('/admin');
+    }
+  }, [isAdmin, authLoading, navigate, searchTerm]);
 
   useEffect(() => {
     // Fetch some basic stats for the hero
@@ -53,15 +65,27 @@ export default function PublicSearch() {
         <div className="absolute bottom-0 left-0 w-64 h-64 bg-gov-gold/10 rounded-full -ml-32 -mb-32 blur-2xl" />
         
         <div className="max-w-4xl mx-auto text-center relative z-10">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="flex justify-center mb-6"
-          >
-            <div className="bg-white p-3 rounded-2xl shadow-xl">
-              <img src="https://i.postimg.cc/T3NqjCYM/logo-penangpng.png" alt="Jata Pulau Pinang" className="h-16 w-16" />
+          <div className="flex justify-between items-center mb-12">
+            <div className="w-32 hidden md:block" /> {/* Spacer */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+            >
+              <div className="bg-white p-3 rounded-2xl shadow-xl inline-block">
+                <img src="https://i.postimg.cc/T3NqjCYM/logo-penangpng.png" alt="Jata Pulau Pinang" className="h-16 w-16" />
+              </div>
+            </motion.div>
+            <div className="w-32 flex justify-end">
+              {isAdmin && (
+                <Link 
+                  to="/admin" 
+                  className="bg-white text-gov-blue hover:bg-slate-50 px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all shadow-lg"
+                >
+                  <LayoutDashboard size={16} /> DASHBOARD
+                </Link>
+              )}
             </div>
-          </motion.div>
+          </div>
           
           <motion.h1 
             initial={{ opacity: 0, y: 20 }}
@@ -220,7 +244,9 @@ export default function PublicSearch() {
             </div>
           </div>
           <div className="flex gap-8 text-sm font-medium text-slate-600">
-            <Link to="/admin" className="hover:text-gov-blue transition-colors">Log Masuk Pegawai</Link>
+            <Link to="/admin" className="hover:text-gov-blue transition-colors">
+              {isAdmin ? 'Dashboard Admin' : 'Log Masuk Pegawai'}
+            </Link>
             <a href="#" className="hover:text-gov-blue transition-colors">Dasar Privasi</a>
             <a href="#" className="hover:text-gov-blue transition-colors">Terma & Syarat</a>
           </div>
