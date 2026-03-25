@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { collection, query, onSnapshot, orderBy, limit, addDoc, updateDoc, deleteDoc, doc, serverTimestamp } from 'firebase/firestore';
+import { collection, query, onSnapshot, orderBy, limit, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, where, getDocs } from 'firebase/firestore';
 import { db } from '../firebase';
 import { Settings, Search, Plus, User, Shield, Edit3, Trash2, Loader2, Mail, X, Save } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -44,6 +44,17 @@ export default function UserManagement() {
           ...formData,
           updatedAt: serverTimestamp()
         });
+        
+        // Sync to users collection if they exist
+        const userQuery = query(collection(db, 'users'), where('email', '==', formData.email));
+        const userSnap = await getDocs(userQuery);
+        if (!userSnap.empty) {
+          await updateDoc(doc(db, 'users', userSnap.docs[0].id), {
+            role: formData.role,
+            name: formData.name
+          });
+        }
+        
         await logActivity('UPDATE_ADMIN', `Mengemaskini admin: ${formData.email}`);
       } else {
         await addDoc(collection(db, 'admin_users'), {
@@ -51,6 +62,17 @@ export default function UserManagement() {
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp()
         });
+        
+        // Also check if user already exists in users collection to update their role immediately
+        const userQuery = query(collection(db, 'users'), where('email', '==', formData.email));
+        const userSnap = await getDocs(userQuery);
+        if (!userSnap.empty) {
+          await updateDoc(doc(db, 'users', userSnap.docs[0].id), {
+            role: formData.role,
+            name: formData.name
+          });
+        }
+        
         await logActivity('ADD_ADMIN', `Menambah admin baru: ${formData.email}`);
       }
       setIsModalOpen(false);

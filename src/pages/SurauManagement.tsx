@@ -36,6 +36,10 @@ export default function SurauManagement() {
   };
 
   const handleDelete = async (id: string, name: string) => {
+    if (!isSuperAdmin) {
+      alert("Hanya Super Admin dibenarkan memadam rekod.");
+      return;
+    }
     if (confirm(`Adakah anda pasti untuk memadam rekod surau ${name}?`)) {
       try {
         await deleteDoc(doc(db, 'surau_records', id));

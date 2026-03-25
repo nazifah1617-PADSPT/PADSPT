@@ -40,7 +40,10 @@ export default function JKManagement() {
   }, []);
 
   const handleDelete = async (id: string, name: string) => {
-    if (!isSuperAdmin) return;
+    if (!isSuperAdmin) {
+      alert("Hanya Super Admin dibenarkan memadam rekod.");
+      return;
+    }
     if (confirm(`Adakah anda pasti untuk memadam rekod ${name}?`)) {
       try {
         await deleteDoc(doc(db, 'jk_records', id));

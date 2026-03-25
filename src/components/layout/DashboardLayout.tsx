@@ -18,7 +18,7 @@ export const DashboardLayout = ({ children }: { children: React.ReactNode }) => 
     { name: 'Pegawai Masjid', path: '/admin/pegawai', icon: UserCheck, show: isAdmin },
     { name: 'Upload Data', path: '/admin/upload', icon: Upload, show: isAdmin },
     { name: 'Laporan AI', path: '/admin/reports', icon: FileBarChart, show: isAdmin },
-    { name: 'Audit Log', path: '/admin/audit', icon: ShieldCheck, show: isSuperAdmin },
+    { name: 'Audit Log', path: '/admin/audit', icon: ShieldCheck, show: isAdmin },
     { name: 'Pengurusan Admin', path: '/admin/users', icon: Settings, show: isSuperAdmin },
     { name: 'Carian Awam', path: '/', icon: Search, show: true },
   ];

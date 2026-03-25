@@ -39,7 +39,39 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     if (user) {
       const unsubscribe = onSnapshot(doc(db, 'users', user.uid), async (snap) => {
         if (snap.exists()) {
-          setProfile(snap.data());
+          const userData = snap.data();
+          
+          // Hardcoded super admin check
+          if (user.email === "photonazifah1617@gmail.com" && userData.role !== 'SUPER_ADMIN') {
+            const updatedProfile = { ...userData, role: 'SUPER_ADMIN' };
+            await setDoc(doc(db, 'users', user.uid), updatedProfile);
+            setProfile(updatedProfile);
+            setLoading(false);
+            return;
+          }
+
+          // If role is not admin, check admin_users just in case it was updated there but not synced
+          if (userData.role !== 'ADMIN' && userData.role !== 'SUPER_ADMIN') {
+            try {
+              const q = query(collection(db, 'admin_users'), where('email', '==', user.email));
+              const adminSnap = await getDocs(q);
+              if (!adminSnap.empty) {
+                const adminData = adminSnap.docs[0].data();
+                const updatedProfile = { 
+                  ...userData,
+                  role: adminData.role || 'ADMIN', 
+                  name: adminData.name || userData.name || user.displayName || 'Admin'
+                };
+                await setDoc(doc(db, 'users', user.uid), updatedProfile);
+                setProfile(updatedProfile);
+                setLoading(false);
+                return;
+              }
+            } catch (error) {
+              console.error("Admin re-check error:", error);
+            }
+          }
+          setProfile(userData);
           setLoading(false);
         } else {
           // Check if email is in admin_users

@@ -37,27 +37,59 @@ export default function AdminDashboard() {
   const [recentLogs, setRecentLogs] = useState<any[]>([]);
 
   useEffect(() => {
-    // Mock data for analytics - in real app we'd aggregate from Firestore
-    setStats({
-      totalJK: 12450,
-      totalMasjid: 452,
-      expiringSoon: 124,
-      vacancies: 45
-    });
+    const fetchStats = async () => {
+      try {
+        const jkSnap = await getDocs(collection(db, 'jk_records'));
+        const surauSnap = await getDocs(collection(db, 'surau_records'));
+        const pegawaiSnap = await getDocs(collection(db, 'pegawai_records'));
+        
+        const jkDocs = jkSnap.docs.map(d => d.data());
+        const activeJK = jkDocs.filter(d => d.statusLantikan === 'Aktif').length;
+        
+        // Calculate expiring soon (within 30 days)
+        const now = new Date();
+        const thirtyDaysFromNow = new Date(now.getTime() + (30 * 24 * 60 * 60 * 1000));
+        const expiring = jkDocs.filter(d => {
+          if (!d.tarikhTamat) return false;
+          const expiry = d.tarikhTamat.toDate ? d.tarikhTamat.toDate() : new Date(d.tarikhTamat);
+          return expiry > now && expiry <= thirtyDaysFromNow;
+        }).length;
 
-    setChartData([
-      { name: 'Timur Laut', value: 120, parlimen: 'Bukit Bendera', dun: 'Air Itam' },
-      { name: 'Barat Daya', value: 98, parlimen: 'Balik Pulau', dun: 'Bayan Lepas' },
-      { name: 'Seberang Perai Utara', value: 150, parlimen: 'Kepala Batas', dun: 'Bertam' },
-      { name: 'Seberang Perai Tengah', value: 110, parlimen: 'Permatang Pauh', dun: 'Seberang Jaya' },
-      { name: 'Seberang Perai Selatan', value: 85, parlimen: 'Nibong Tebal', dun: 'Jawi' },
-    ]);
+        setStats({
+          totalJK: activeJK,
+          totalMasjid: surauSnap.size,
+          expiringSoon: expiring,
+          vacancies: pegawaiSnap.size // Using pegawai as a placeholder for vacancies for now
+        });
+
+        // Chart data by daerah
+        const daerahCounts: {[key: string]: number} = {};
+        jkDocs.forEach(d => {
+          if (d.daerah) {
+            daerahCounts[d.daerah] = (daerahCounts[d.daerah] || 0) + 1;
+          }
+        });
+
+        const newChartData = Object.entries(daerahCounts).map(([name, value]) => ({
+          name,
+          value
+        })).sort((a, b) => b.value - a.value).slice(0, 5);
+
+        if (newChartData.length > 0) {
+          setChartData(newChartData);
+        }
+      } catch (error) {
+        console.error("Stats fetch error:", error);
+      }
+    };
 
     const fetchLogs = async () => {
       const q = query(collection(db, 'audit_logs'), orderBy('timestamp', 'desc'), limit(5));
       const snap = await getDocs(q);
       setRecentLogs(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
     };
+
+    fetchStats();
     fetchLogs();
   }, []);
 
