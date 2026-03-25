@@ -59,6 +59,21 @@ export default function PublicSearch() {
 
   return (
     <div className="min-h-screen bg-slate-50">
+      {/* Admin Redirection Notice */}
+      <AnimatePresence>
+        {!authLoading && isAdmin && !searchTerm && (
+          <motion.div 
+            initial={{ opacity: 0, y: -50 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -50 }}
+            className="fixed top-0 left-0 right-0 z-[100] bg-gov-blue text-white p-4 text-center font-bold shadow-lg flex items-center justify-center gap-3"
+          >
+            <Loader2 className="animate-spin" size={20} />
+            Akses Pentadbir Dikesan. Mengalihkan anda ke Dashboard...
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Hero Section */}
       <section className="gov-gradient text-white pt-20 pb-32 px-4 relative overflow-hidden">
         <div className="absolute top-0 right-0 w-96 h-96 bg-white/5 rounded-full -mr-48 -mt-48 blur-3xl" />

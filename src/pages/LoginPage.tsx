@@ -14,7 +14,10 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (!authLoading && isAdmin) {
-      navigate('/admin');
+      const timer = setTimeout(() => {
+        navigate('/admin');
+      }, 500);
+      return () => clearTimeout(timer);
     }
   }, [isAdmin, authLoading, navigate]);
 
@@ -24,7 +27,7 @@ export default function LoginPage() {
     try {
       const provider = new GoogleAuthProvider();
       await signInWithPopup(auth, provider);
-      navigate('/admin');
+      // Don't navigate immediately, let the useEffect handle it after profile loads
     } catch (error: any) {
       console.error("Login error:", error);
       if (error.code === 'auth/popup-closed-by-user') {
@@ -38,7 +41,6 @@ export default function LoginPage() {
       } else {
         setError(`Ralat: ${error.message || "Gagal log masuk."}`);
       }
-    } finally {
       setLoading(false);
     }
   };
@@ -66,16 +68,31 @@ export default function LoginPage() {
             </div>
           )}
           
-          <button 
-            onClick={handleLogin}
-            disabled={loading}
-            className="w-full bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 py-4 rounded-xl font-bold transition-all flex items-center justify-center gap-3 shadow-sm disabled:opacity-50"
-          >
-            {loading ? <Loader2 className="animate-spin" /> : (
-              <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" className="w-5 h-5" />
-            )}
-            LOG MASUK DENGAN GOOGLE
-          </button>
+          {isAdmin ? (
+            <div className="space-y-4">
+              <div className="p-4 bg-emerald-50 border border-emerald-100 text-emerald-700 rounded-xl text-center font-medium">
+                Anda telah log masuk sebagai Admin.
+              </div>
+              <button 
+                onClick={() => navigate('/admin')}
+                className="w-full bg-gov-blue text-white py-4 rounded-xl font-bold transition-all flex items-center justify-center gap-3 shadow-lg shadow-gov-blue/20 hover:bg-gov-blue/90"
+              >
+                <LayoutDashboard size={20} />
+                KE DASHBOARD ADMIN
+              </button>
+            </div>
+          ) : (
+            <button 
+              onClick={handleLogin}
+              disabled={loading}
+              className="w-full bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 py-4 rounded-xl font-bold transition-all flex items-center justify-center gap-3 shadow-sm disabled:opacity-50"
+            >
+              {loading ? <Loader2 className="animate-spin" /> : (
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" className="w-5 h-5" />
+              )}
+              LOG MASUK DENGAN GOOGLE
+            </button>
+          )}
           
           <div className="mt-6 text-center">
             <p className="text-xs text-slate-400">
