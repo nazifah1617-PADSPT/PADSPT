@@ -8,6 +8,7 @@ import { logActivity } from '../services/auditService';
 
 export default function UserManagement() {
   const [users, setUsers] = useState<any[]>([]);
+  const [pendingAdmins, setPendingAdmins] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -17,30 +18,37 @@ export default function UserManagement() {
 
   useEffect(() => {
     // Fetch all users from the 'users' collection
-    const q = query(collection(db, 'users'), limit(500));
-    const unsubscribe = onSnapshot(q, (snap) => {
-      const allUsers = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      // Sort manually to avoid index requirements for now
-      allUsers.sort((a: any, b: any) => (a.email || '').localeCompare(b.email || ''));
-      setUsers(allUsers);
+    const qUsers = query(collection(db, 'users'), limit(500));
+    const unsubUsers = onSnapshot(qUsers, (snap) => {
+      setUsers(snap.docs.map(doc => ({ id: doc.id, ...doc.data(), type: 'REGISTERED' })));
       setLoading(false);
     });
-    return unsubscribe;
+
+    // Fetch pending admins from 'admin_users'
+    const qAdmin = query(collection(db, 'admin_users'), limit(100));
+    const unsubAdmin = onSnapshot(qAdmin, (snap) => {
+      setPendingAdmins(snap.docs.map(doc => ({ id: doc.id, ...doc.data(), type: 'PENDING' })));
+    });
+
+    return () => {
+      unsubUsers();
+      unsubAdmin();
+    };
   }, []);
 
   const handleOpenModal = (user: any = null) => {
     if (user) {
       setSelectedUser(user);
-      setFormData({ name: user.name || '', email: user.email || '', role: user.role || 'USER' });
+      setFormData({ name: user.name || '', email: user.email || '', role: user.role || 'ADMIN' });
     } else {
       setSelectedUser(null);
-      setFormData({ name: '', email: '', role: 'USER' });
+      setFormData({ name: '', email: '', role: 'ADMIN' });
     }
     setIsModalOpen(true);
   };
 
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [userToDelete, setUserToDelete] = useState<{id: string, email: string} | null>(null);
+  const [userToDelete, setUserToDelete] = useState<{id: string, email: string, type: string} | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const handleSave = async (e: React.FormEvent) => {
@@ -52,34 +60,42 @@ export default function UserManagement() {
 
     try {
       if (selectedUser) {
-        // Update the user document directly
-        await updateDoc(doc(db, 'users', selectedUser.id), {
-          ...updatedFormData,
-          updatedAt: serverTimestamp()
-        });
-        
-        // Also sync to admin_users if they are now an admin
-        if (formData.role === 'ADMIN' || formData.role === 'SUPER_ADMIN') {
-          const adminQuery = query(collection(db, 'admin_users'), where('email', '==', normalizedEmail));
-          const adminSnap = await getDocs(adminQuery);
-          if (adminSnap.empty) {
-            await addDoc(collection(db, 'admin_users'), {
-              ...updatedFormData,
-              createdAt: serverTimestamp(),
-              updatedAt: serverTimestamp()
-            });
-          } else {
-            await updateDoc(doc(db, 'admin_users', adminSnap.docs[0].id), {
-              ...updatedFormData,
-              updatedAt: serverTimestamp()
-            });
-          }
+        if (selectedUser.type === 'PENDING') {
+          // Update the pending invite in admin_users
+          await updateDoc(doc(db, 'admin_users', selectedUser.id), {
+            ...updatedFormData,
+            updatedAt: serverTimestamp()
+          });
         } else {
-          // If role changed to USER, remove from admin_users
-          const adminQuery = query(collection(db, 'admin_users'), where('email', '==', normalizedEmail));
-          const adminSnap = await getDocs(adminQuery);
-          if (!adminSnap.empty) {
-            await deleteDoc(doc(db, 'admin_users', adminSnap.docs[0].id));
+          // Update the registered user document directly
+          await updateDoc(doc(db, 'users', selectedUser.id), {
+            ...updatedFormData,
+            updatedAt: serverTimestamp()
+          });
+          
+          // Also sync to admin_users if they are now an admin
+          if (formData.role === 'ADMIN' || formData.role === 'SUPER_ADMIN') {
+            const adminQuery = query(collection(db, 'admin_users'), where('email', '==', normalizedEmail));
+            const adminSnap = await getDocs(adminQuery);
+            if (adminSnap.empty) {
+              await addDoc(collection(db, 'admin_users'), {
+                ...updatedFormData,
+                createdAt: serverTimestamp(),
+                updatedAt: serverTimestamp()
+              });
+            } else {
+              await updateDoc(doc(db, 'admin_users', adminSnap.docs[0].id), {
+                ...updatedFormData,
+                updatedAt: serverTimestamp()
+              });
+            }
+          } else {
+            // If role changed to USER, remove from admin_users
+            const adminQuery = query(collection(db, 'admin_users'), where('email', '==', normalizedEmail));
+            const adminSnap = await getDocs(adminQuery);
+            if (!adminSnap.empty) {
+              await deleteDoc(doc(db, 'admin_users', adminSnap.docs[0].id));
+            }
           }
         }
         
@@ -114,8 +130,8 @@ export default function UserManagement() {
     }
   };
 
-  const confirmDelete = (id: string, email: string) => {
-    setUserToDelete({ id, email });
+  const confirmDelete = (id: string, email: string, type: string) => {
+    setUserToDelete({ id, email, type });
     setIsDeleteModalOpen(true);
   };
 
@@ -123,13 +139,17 @@ export default function UserManagement() {
     if (!userToDelete) return;
     setSaving(true);
     try {
-      await deleteDoc(doc(db, 'users', userToDelete.id));
-      
-      // Also remove from admin_users
-      const adminQuery = query(collection(db, 'admin_users'), where('email', '==', userToDelete.email.toLowerCase()));
-      const adminSnap = await getDocs(adminQuery);
-      if (!adminSnap.empty) {
-        await deleteDoc(doc(db, 'admin_users', adminSnap.docs[0].id));
+      if (userToDelete.type === 'PENDING') {
+        await deleteDoc(doc(db, 'admin_users', userToDelete.id));
+      } else {
+        await deleteDoc(doc(db, 'users', userToDelete.id));
+        
+        // Also remove from admin_users
+        const adminQuery = query(collection(db, 'admin_users'), where('email', '==', userToDelete.email.toLowerCase()));
+        const adminSnap = await getDocs(adminQuery);
+        if (!adminSnap.empty) {
+          await deleteDoc(doc(db, 'admin_users', adminSnap.docs[0].id));
+        }
       }
       
       await logActivity('DELETE_USER', `Memadam akses: ${userToDelete.email}`);
@@ -143,7 +163,21 @@ export default function UserManagement() {
     }
   };
 
-  const filteredUsers = users.filter(u => 
+  const combinedUsers = React.useMemo(() => {
+    const list = [...users];
+    
+    // Add pending admins if they aren't already in the users list
+    pendingAdmins.forEach(pending => {
+      const exists = users.find(u => u.email?.toLowerCase() === pending.email?.toLowerCase());
+      if (!exists) {
+        list.push(pending);
+      }
+    });
+
+    return list.sort((a, b) => (a.email || '').localeCompare(b.email || ''));
+  }, [users, pendingAdmins]);
+
+  const filteredUsers = combinedUsers.filter(u => 
     u.name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
     u.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     u.role?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -250,9 +284,15 @@ export default function UserManagement() {
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                    <span className="px-2 py-1 bg-emerald-100 text-emerald-700 text-[10px] font-bold rounded-md uppercase">
-                      AKTIF
-                    </span>
+                    {u.type === 'PENDING' ? (
+                      <span className="px-2 py-1 bg-amber-100 text-amber-700 text-[10px] font-bold rounded-md uppercase">
+                        DIJEMPUT (BELUM LOG MASUK)
+                      </span>
+                    ) : (
+                      <span className="px-2 py-1 bg-emerald-100 text-emerald-700 text-[10px] font-bold rounded-md uppercase">
+                        AKTIF
+                      </span>
+                    )}
                   </td>
                   <td className="px-6 py-4 text-right">
                     <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -263,7 +303,7 @@ export default function UserManagement() {
                         <Edit3 size={18} />
                       </button>
                       <button 
-                        onClick={() => confirmDelete(u.id, u.email)}
+                        onClick={() => confirmDelete(u.id, u.email, u.type)}
                         className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
                       >
                         <Trash2 size={18} />
