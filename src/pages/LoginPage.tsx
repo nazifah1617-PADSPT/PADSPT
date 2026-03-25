@@ -7,7 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 
 export default function LoginPage() {
-  const { isAdmin, loading: authLoading } = useAuth();
+  const { user, isAdmin, loading: authLoading } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
@@ -28,7 +28,6 @@ export default function LoginPage() {
       const provider = new GoogleAuthProvider();
       await signInWithPopup(auth, provider);
       // After successful login, we wait for useAuth to update isAdmin
-      // We'll set a timeout to stop the local loading if redirection doesn't happen
       setTimeout(() => setLoading(false), 2000);
     } catch (error: any) {
       console.error("Login error:", error);
@@ -44,6 +43,15 @@ export default function LoginPage() {
         setError(`Ralat: ${error.message || "Gagal log masuk."}`);
       }
       setLoading(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await auth.signOut();
+      window.location.reload();
+    } catch (error) {
+      console.error("Logout error:", error);
     }
   };
 
@@ -64,7 +72,7 @@ export default function LoginPage() {
         
         <div className="p-8">
           {error && (
-            <div className="space-y-4">
+            <div className="space-y-4 mb-6">
               <div className="p-4 bg-red-50 border border-red-100 text-red-600 text-sm rounded-xl font-medium flex items-center gap-2">
                 <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
                 {error}
@@ -79,17 +87,25 @@ export default function LoginPage() {
             </div>
           )}
           
-          {isAdmin ? (
+          {user ? (
             <div className="space-y-4">
-              <div className="p-4 bg-emerald-50 border border-emerald-100 text-emerald-700 rounded-xl text-center font-medium">
-                Anda telah log masuk sebagai Admin.
+              <div className={`p-4 rounded-xl text-center font-medium ${isAdmin ? 'bg-emerald-50 border border-emerald-100 text-emerald-700' : 'bg-blue-50 border border-blue-100 text-blue-700'}`}>
+                Anda telah log masuk sebagai {isAdmin ? 'Admin' : 'Pengguna'}.
               </div>
+              
               <button 
-                onClick={() => navigate('/admin')}
+                onClick={() => navigate(isAdmin ? '/admin' : '/')}
                 className="w-full bg-gov-blue text-white py-4 rounded-xl font-bold transition-all flex items-center justify-center gap-3 shadow-lg shadow-gov-blue/20 hover:bg-gov-blue/90"
               >
-                <LayoutDashboard size={20} />
-                KE DASHBOARD ADMIN
+                {isAdmin ? <LayoutDashboard size={20} /> : <LogIn size={20} />}
+                {isAdmin ? 'KE DASHBOARD ADMIN' : 'KEMBALI KE LAMAN UTAMA'}
+              </button>
+
+              <button 
+                onClick={handleLogout}
+                className="w-full bg-white border border-slate-200 text-slate-500 py-3 rounded-xl text-sm font-medium hover:bg-slate-50 transition-all flex items-center justify-center gap-2"
+              >
+                LOG KELUAR
               </button>
             </div>
           ) : (

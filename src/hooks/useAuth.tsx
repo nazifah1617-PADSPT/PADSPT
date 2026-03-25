@@ -86,17 +86,30 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
               const newProfile = { 
                 role: adminData.role || 'ADMIN', 
                 name: adminData.name || user.displayName || 'Admin',
-                email: userEmail
+                email: userEmail,
+                createdAt: new Date().toISOString()
               };
-              // Auto-create user profile
               await setDoc(doc(db, 'users', user.uid), newProfile);
               setProfile(newProfile);
             } else if (userEmail === "photonazifah1617@gmail.com") {
-              const superAdminProfile = { role: 'SUPER_ADMIN', name: 'Super Admin', email: userEmail };
+              const superAdminProfile = { 
+                role: 'SUPER_ADMIN', 
+                name: 'Super Admin', 
+                email: userEmail,
+                createdAt: new Date().toISOString()
+              };
               await setDoc(doc(db, 'users', user.uid), superAdminProfile);
               setProfile(superAdminProfile);
             } else {
-              setProfile(null);
+              // Create a regular USER profile for anyone else
+              const userProfile = { 
+                role: 'USER', 
+                name: user.displayName || 'Pengguna',
+                email: userEmail,
+                createdAt: new Date().toISOString()
+              };
+              await setDoc(doc(db, 'users', user.uid), userProfile);
+              setProfile(userProfile);
             }
           } catch (error) {
             console.error("Admin check error:", error);
