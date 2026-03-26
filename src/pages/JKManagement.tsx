@@ -54,6 +54,8 @@ export default function JKManagement() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('Semua');
+  const [selectedParlimen, setSelectedParlimen] = useState('Semua');
+  const [selectedDun, setSelectedDun] = useState('Semua');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<any>(null);
   const [selectedForPrint, setSelectedForPrint] = useState<string[]>([]);
@@ -103,8 +105,20 @@ export default function JKManagement() {
                          r.noTel?.includes(searchTerm) ||
                          r.masjidName?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = selectedStatus === 'Semua' || r.statusLantikan === selectedStatus;
-    return matchesSearch && matchesStatus;
+    const matchesParlimen = selectedParlimen === 'Semua' || r.parlimen === selectedParlimen;
+    const matchesDun = selectedDun === 'Semua' || r.dun === selectedDun;
+    return matchesSearch && matchesStatus && matchesParlimen && matchesDun;
   });
+
+  const uniqueParlimens = useMemo(() => {
+    const p = records.map(r => r.parlimen).filter(Boolean);
+    return ['Semua', ...Array.from(new Set(p))].sort();
+  }, [records]);
+
+  const uniqueDuns = useMemo(() => {
+    const d = records.map(r => r.dun).filter(Boolean);
+    return ['Semua', ...Array.from(new Set(d))].sort();
+  }, [records]);
 
   // Group by Masjid
   const groupedRecords = useMemo(() => {
@@ -251,32 +265,71 @@ export default function JKManagement() {
       </div>
 
       {/* Filters */}
-      <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex flex-col md:flex-row gap-4">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-          <input 
-            type="text"
-            placeholder="Cari Nama, No. KP, No. Tel atau Masjid..."
-            className="w-full pl-10 pr-4 py-2 bg-slate-50 border-none rounded-xl focus:ring-2 focus:ring-gov-blue/20 outline-none"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+      <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 space-y-4">
+        <div className="flex flex-col md:flex-row gap-4">
+          <div className="relative flex-1">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+            <input 
+              type="text"
+              placeholder="Cari Nama, No. KP, No. Tel atau Masjid..."
+              className="w-full pl-12 pr-4 py-3 bg-slate-50 border-none rounded-xl focus:ring-2 focus:ring-gov-blue/20 outline-none font-medium"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          <div className="flex gap-2 overflow-x-auto pb-2 md:pb-0 scrollbar-hide">
+            {['Semua', 'Aktif', 'Tamat tempoh', 'Letak jawatan', 'Meninggal dunia'].map(status => (
+              <button
+                key={status}
+                onClick={() => setSelectedStatus(status)}
+                className={cn(
+                  "px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all",
+                  selectedStatus === status 
+                    ? "bg-gov-blue text-white shadow-md" 
+                    : "bg-slate-50 text-slate-500 hover:bg-slate-100"
+                )}
+              >
+                {status}
+              </button>
+            ))}
+          </div>
         </div>
-        <div className="flex gap-2 overflow-x-auto pb-2 md:pb-0">
-          {['Semua', 'Aktif', 'Tamat tempoh', 'Letak jawatan', 'Meninggal dunia'].map(status => (
-            <button
-              key={status}
-              onClick={() => setSelectedStatus(status)}
-              className={cn(
-                "px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all",
-                selectedStatus === status 
-                  ? "bg-gov-blue text-white shadow-md" 
-                  : "bg-slate-50 text-slate-500 hover:bg-slate-100"
-              )}
-            >
-              {status}
-            </button>
-          ))}
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t border-slate-50">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center text-slate-400 shrink-0">
+              <MapPin size={18} />
+            </div>
+            <div className="flex-1">
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Tapis Mengikut Parlimen</p>
+              <select 
+                className="w-full bg-slate-50 border-none rounded-xl py-2 px-3 text-sm font-bold text-slate-700 outline-none focus:ring-2 focus:ring-gov-blue/20"
+                value={selectedParlimen}
+                onChange={(e) => setSelectedParlimen(e.target.value)}
+              >
+                {uniqueParlimens.map(p => (
+                  <option key={p} value={p}>{p}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center text-slate-400 shrink-0">
+              <Building2 size={18} />
+            </div>
+            <div className="flex-1">
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Tapis Mengikut DUN</p>
+              <select 
+                className="w-full bg-slate-50 border-none rounded-xl py-2 px-3 text-sm font-bold text-slate-700 outline-none focus:ring-2 focus:ring-gov-blue/20"
+                value={selectedDun}
+                onChange={(e) => setSelectedDun(e.target.value)}
+              >
+                {uniqueDuns.map(d => (
+                  <option key={d} value={d}>{d}</option>
+                ))}
+              </select>
+            </div>
+          </div>
         </div>
       </div>
 

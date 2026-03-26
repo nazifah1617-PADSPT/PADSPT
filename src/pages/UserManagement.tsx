@@ -285,9 +285,14 @@ export default function UserManagement() {
                   </td>
                   <td className="px-6 py-4">
                     {u.type === 'PENDING' ? (
-                      <span className="px-2 py-1 bg-amber-100 text-amber-700 text-[10px] font-bold rounded-md uppercase">
-                        DIJEMPUT (BELUM LOG MASUK)
-                      </span>
+                      <div className="flex flex-col gap-1">
+                        <span className="px-2 py-1 bg-amber-100 text-amber-700 text-[10px] font-bold rounded-md uppercase w-fit">
+                          DIJEMPUT (BELUM LOG MASUK)
+                        </span>
+                        <p className="text-[9px] text-amber-600 font-medium italic leading-tight">
+                          *Akses Admin telah diberikan. Status akan bertukar kepada 'AKTIF' selepas pengguna log masuk buat kali pertama.
+                        </p>
+                      </div>
                     ) : (
                       <span className="px-2 py-1 bg-emerald-100 text-emerald-700 text-[10px] font-bold rounded-md uppercase">
                         AKTIF
