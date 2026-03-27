@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { collection, query, onSnapshot, orderBy, limit, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, where, getDocs } from 'firebase/firestore';
 import { db } from '../firebase';
-import { Settings, Search, Plus, User, Shield, Edit3, Trash2, Loader2, Mail, X, Save, AlertCircle } from 'lucide-react';
+import { Settings, Search, Plus, User, Shield, Edit3, Trash2, Loader2, Mail, X, Save, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
 import { logActivity } from '../services/auditService';
@@ -15,9 +15,53 @@ export default function UserManagement() {
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [formData, setFormData] = useState({ name: '', email: '', role: 'ADMIN' });
   const [saving, setSaving] = useState(false);
+  const [isBootstrapping, setIsBootstrapping] = useState(false);
+
+  // Bootstrap requested admins
+  useEffect(() => {
+    const bootstrapAdmins = async () => {
+      const requestedEmails = [
+        { email: 'muhammad_basaruddin@penang.gov.my', name: 'Muhammad Basaruddin' },
+        { email: 'zularief@islam.gov.my', name: 'Zularief' }
+      ];
+
+      try {
+        for (const admin of requestedEmails) {
+          const q = query(collection(db, 'admin_users'), where('email', '==', admin.email));
+          const snap = await getDocs(q);
+          
+          if (snap.empty) {
+            // Check if they are already in users collection
+            const uQ = query(collection(db, 'users'), where('email', '==', admin.email));
+            const uSnap = await getDocs(uQ);
+            
+            if (uSnap.empty) {
+              await addDoc(collection(db, 'admin_users'), {
+                name: admin.name,
+                email: admin.email,
+                role: 'ADMIN',
+                createdAt: serverTimestamp(),
+                updatedAt: serverTimestamp()
+              });
+              console.log(`Bootstrapped admin: ${admin.email}`);
+            } else {
+              // Update existing user role
+              await updateDoc(doc(db, 'users', uSnap.docs[0].id), {
+                role: 'ADMIN',
+                updatedAt: serverTimestamp()
+              });
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Bootstrap error:", err);
+      }
+    };
+
+    bootstrapAdmins();
+  }, []);
 
   useEffect(() => {
-    // Fetch all users from the 'users' collection
     const qUsers = query(collection(db, 'users'), limit(500));
     const unsubUsers = onSnapshot(qUsers, (snap) => {
       setUsers(snap.docs.map(doc => ({ id: doc.id, ...doc.data(), type: 'REGISTERED' })));
@@ -50,11 +94,13 @@ export default function UserManagement() {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<{id: string, email: string, type: string} | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
     setErrorMessage(null);
+    setSuccessMessage(null);
     const normalizedEmail = formData.email.toLowerCase().trim();
     const updatedFormData = { ...formData, email: normalizedEmail };
 
@@ -121,6 +167,8 @@ export default function UserManagement() {
         
         await logActivity('ADD_USER', `Menambah/Mengemaskini akses: ${normalizedEmail}`);
       }
+      setSuccessMessage(`Berjaya menyimpan akses untuk ${normalizedEmail}`);
+      setTimeout(() => setSuccessMessage(null), 5000);
       setIsModalOpen(false);
     } catch (error) {
       console.error("Save error:", error);
@@ -212,7 +260,7 @@ export default function UserManagement() {
       </div>
 
       {/* New Users Alert */}
-      {users.some(u => u.role === 'USER') && (
+      {users.some(u => u.role === 'USER' || !u.role) && (
         <motion.div 
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -352,6 +400,12 @@ export default function UserManagement() {
                   <div className="p-3 bg-red-50 border border-red-100 text-red-600 text-xs rounded-xl flex items-center gap-2">
                     <AlertCircle size={14} />
                     {errorMessage}
+                  </div>
+                )}
+                {successMessage && (
+                  <div className="p-3 bg-emerald-50 border border-emerald-100 text-emerald-600 text-xs rounded-xl flex items-center gap-2">
+                    <CheckCircle2 size={14} />
+                    {successMessage}
                   </div>
                 )}
                 <div>
