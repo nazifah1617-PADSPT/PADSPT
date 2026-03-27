@@ -1,7 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { collection, query, onSnapshot, orderBy, limit, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, where, getDocs } from 'firebase/firestore';
-import { db } from '../firebase';
-import { Settings, Search, Plus, User, Shield, Edit3, Trash2, Loader2, Mail, X, Save, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { initializeApp } from 'firebase/app';
+import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
+import { db, auth } from '../firebase';
+// @ts-ignore
+import firebaseConfig from '../../firebase-applet-config.json';
+import { Settings, Search, Plus, User, Shield, Edit3, Trash2, Loader2, Mail, X, Save, AlertCircle, CheckCircle2, Key } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
 import { logActivity } from '../services/auditService';
@@ -17,7 +21,52 @@ export default function UserManagement() {
   const [saving, setSaving] = useState(false);
   const [isBootstrapping, setIsBootstrapping] = useState(false);
 
-  // Bootstrap requested admins
+  const handleBootstrapAuth = async () => {
+    setIsBootstrapping(true);
+    setErrorMessage(null);
+    setSuccessMessage(null);
+    
+    const adminAccounts = [
+      { email: 'muhammad_basaruddin@penang.gov.my', password: 'adminpadspt1617' },
+      { email: 'zularief@islam.gov.my', password: 'adminpadspt1617' }
+    ];
+
+    try {
+      // Use a secondary app instance to avoid logging out the current Super Admin
+      const secondaryApp = initializeApp(firebaseConfig, 'SecondaryAuth');
+      const secondaryAuth = getAuth(secondaryApp);
+      
+      let successCount = 0;
+      let failCount = 0;
+      let alreadyExistsCount = 0;
+
+      for (const acc of adminAccounts) {
+        try {
+          await createUserWithEmailAndPassword(secondaryAuth, acc.email, acc.password);
+          successCount++;
+          console.log(`Created auth user: ${acc.email}`);
+        } catch (err: any) {
+          if (err.code === 'auth/email-already-in-use') {
+            alreadyExistsCount++;
+            console.log(`Auth user already exists: ${acc.email}`);
+          } else {
+            failCount++;
+            console.error(`Failed to create auth user ${acc.email}:`, err);
+          }
+        }
+      }
+
+      setSuccessMessage(`Selesai! Berjaya: ${successCount}, Sedia ada: ${alreadyExistsCount}, Gagal: ${failCount}.`);
+      await logActivity('BOOTSTRAP_AUTH', `Menjalankan bootstrap akaun manual untuk admin.`);
+    } catch (err: any) {
+      console.error("Bootstrap Auth error:", err);
+      setErrorMessage(`Ralat bootstrap: ${err.message}`);
+    } finally {
+      setIsBootstrapping(false);
+    }
+  };
+
+  // Bootstrap requested admins in Firestore
   useEffect(() => {
     const bootstrapAdmins = async () => {
       const requestedEmails = [
@@ -238,12 +287,23 @@ export default function UserManagement() {
           <h1 className="text-3xl font-bold text-slate-900">Pengurusan Admin</h1>
           <p className="text-slate-500">Kawal akses pegawai ke dalam sistem e-Kariah.</p>
         </div>
-        <button 
-          onClick={() => handleOpenModal()}
-          className="bg-gov-blue hover:bg-gov-blue/90 text-white px-8 py-4 rounded-xl font-bold flex items-center gap-2 shadow-lg shadow-gov-blue/20 transition-all"
-        >
-          <Plus size={20} /> TAMBAH ADMIN BARU
-        </button>
+        <div className="flex flex-wrap gap-3">
+          <button 
+            onClick={handleBootstrapAuth}
+            disabled={isBootstrapping}
+            className="bg-amber-600 hover:bg-amber-700 text-white px-6 py-4 rounded-xl font-bold flex items-center gap-2 shadow-lg shadow-amber-600/20 transition-all disabled:opacity-50"
+            title="Sediakan akaun log masuk manual untuk admin khas"
+          >
+            {isBootstrapping ? <Loader2 className="animate-spin" size={20} /> : <Key size={20} />}
+            BOOTSTRAP AUTH
+          </button>
+          <button 
+            onClick={() => handleOpenModal()}
+            className="bg-gov-blue hover:bg-gov-blue/90 text-white px-8 py-4 rounded-xl font-bold flex items-center gap-2 shadow-lg shadow-gov-blue/20 transition-all"
+          >
+            <Plus size={20} /> TAMBAH ADMIN BARU
+          </button>
+        </div>
       </div>
 
       <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">

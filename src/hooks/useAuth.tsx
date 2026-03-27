@@ -40,7 +40,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     if (user) {
       setLoading(true);
-      const userEmail = user.email?.toLowerCase();
+      const userEmail = user.email?.toLowerCase().trim();
       
       const fetchProfile = async () => {
         // Create a timeout promise
@@ -49,7 +49,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         );
 
         try {
-          console.log("Fetching profile for:", user.uid);
+          console.log("Fetching profile for UID:", user.uid, "Email:", userEmail);
           const userDocPromise = getDoc(doc(db, 'users', user.uid));
           
           // Race the fetch against the timeout
@@ -59,23 +59,31 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           let role = userData?.role || 'USER';
           let name = userData?.name || user.displayName || 'Pengguna';
 
+          console.log("Initial role from Firestore:", role);
+
           // 1. Hardcoded Super Admin Check
           if (userEmail === "photonazifah1617@gmail.com") {
             role = 'SUPER_ADMIN';
             name = 'Super Admin';
+            console.log("Promoted to SUPER_ADMIN via hardcode");
           } 
           // 2. Requested Admins Bootstrap Check (Fail-safe)
           else if (userEmail === 'muhammad_basaruddin@penang.gov.my' || userEmail === 'zularief@islam.gov.my') {
             role = 'ADMIN';
+            console.log("Promoted to ADMIN via fail-safe list");
           }
           // 3. Check admin_users collection if they are currently a USER
           else if (role === 'USER') {
+            console.log("Checking admin_users for email:", userEmail);
             const q = query(collection(db, 'admin_users'), where('email', '==', userEmail));
             const adminSnap = await getDocs(q);
             if (!adminSnap.empty) {
               const adminData = adminSnap.docs[0].data();
               role = adminData.role || 'ADMIN';
               name = adminData.name || name;
+              console.log("Promoted to", role, "via admin_users collection");
+            } else {
+              console.log("No match in admin_users for:", userEmail);
             }
           }
 
@@ -89,7 +97,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
           // Update Firestore if role changed or profile didn't exist
           if (!userDoc.exists() || userData.role !== role) {
-            console.log("Updating/Creating profile with role:", role);
+            console.log("Syncing role to Firestore users collection:", role);
             await setDoc(doc(db, 'users', user.uid), finalProfile, { merge: true });
           }
           

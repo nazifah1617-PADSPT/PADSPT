@@ -165,9 +165,9 @@ export default function JKManagement() {
     }
   };
 
-  const generatePDF = () => {
+  const generatePDF = (groupBy?: 'parlimen' | 'dun') => {
     const doc = new jsPDF();
-    const printData = selectedForPrint.length > 0 
+    let printData = selectedForPrint.length > 0 
       ? records.filter(r => selectedForPrint.includes(r.id))
       : filteredRecords;
 
@@ -176,7 +176,51 @@ export default function JKManagement() {
       return;
     }
 
-    // Group printData by masjid for separate tables/titles
+    // If grouping by Parlimen or DUN, we might want to sort differently
+    if (groupBy) {
+      const groups: { [key: string]: any[] } = {};
+      printData.forEach(r => {
+        const key = r[groupBy] || `Tiada ${groupBy.toUpperCase()}`;
+        if (!groups[key]) groups[key] = [];
+        groups[key].push(r);
+      });
+
+      let currentY = 20;
+      const sortedGroups = Object.entries(groups).sort(([a], [b]) => a.localeCompare(b));
+
+      sortedGroups.forEach(([groupName, members], index) => {
+        if (index > 0) {
+          doc.addPage();
+          currentY = 20;
+        }
+
+        doc.setFontSize(16);
+        doc.setTextColor(0, 51, 102);
+        doc.text(`LAPORAN JK KARIAH MENGIKUT ${groupBy.toUpperCase()}: ${groupName}`, 14, currentY);
+        currentY += 10;
+
+        autoTable(doc, {
+          startY: currentY,
+          head: [['Bil', 'Masjid', 'Nama Penuh', 'Jawatan', 'No. Tel']],
+          body: members.sort((a,b) => (a.masjidName || '').localeCompare(b.masjidName || '')).map((r, i) => [
+            i + 1,
+            r.masjidName || '-',
+            r.namaPenuh,
+            r.jawatan,
+            r.noTel || '-'
+          ]),
+          headStyles: { fillColor: [0, 51, 102] },
+          alternateRowStyles: { fillColor: [245, 245, 245] },
+          margin: { top: 20 },
+        });
+      });
+
+      doc.save(`Laporan_JK_${groupBy}_${new Date().getTime()}.pdf`);
+      logActivity('PRINT', `Mencetak PDF Laporan ${groupBy} (${printData.length} rekod)`);
+      return;
+    }
+
+    // Default grouping by Masjid
     const printGroups: { [key: string]: any[] } = {};
     printData.forEach(r => {
       const masjid = r.masjidName || 'Tiada Nama Masjid';
@@ -246,14 +290,35 @@ export default function JKManagement() {
           <h1 className="text-3xl font-bold text-slate-900">Pengurusan JK Kariah</h1>
           <p className="text-slate-500">Kawal selia data ahli jawatankuasa kariah masjid.</p>
         </div>
-        <div className="flex gap-3">
-          <button 
-            onClick={generatePDF}
-            className="bg-white border border-slate-200 text-slate-700 px-6 py-3 rounded-xl font-bold flex items-center gap-2 shadow-sm hover:bg-slate-50 transition-all"
-          >
-            <Printer size={20} />
-            CETAK PDF {selectedForPrint.length > 0 ? `(${selectedForPrint.length})` : ''}
-          </button>
+        <div className="flex flex-wrap gap-3">
+          <div className="relative group">
+            <button 
+              className="bg-white border border-slate-200 text-slate-700 px-6 py-3 rounded-xl font-bold flex items-center gap-2 shadow-sm hover:bg-slate-50 transition-all"
+            >
+              <Printer size={20} />
+              CETAK LAPORAN <ChevronDown size={16} />
+            </button>
+            <div className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-xl border border-slate-100 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 overflow-hidden">
+              <button 
+                onClick={() => generatePDF()}
+                className="w-full text-left px-4 py-3 text-sm font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-2"
+              >
+                <Building2 size={16} className="text-gov-blue" /> Ikut Masjid
+              </button>
+              <button 
+                onClick={() => generatePDF('parlimen')}
+                className="w-full text-left px-4 py-3 text-sm font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-2 border-t border-slate-50"
+              >
+                <MapPin size={16} className="text-gov-blue" /> Ikut Parlimen
+              </button>
+              <button 
+                onClick={() => generatePDF('dun')}
+                className="w-full text-left px-4 py-3 text-sm font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-2 border-t border-slate-50"
+              >
+                <MapPin size={16} className="text-gov-blue" /> Ikut DUN
+              </button>
+            </div>
+          </div>
           <button 
             onClick={handleAdd}
             className="bg-gov-blue text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 shadow-lg shadow-gov-blue/20 hover:bg-gov-blue/90 transition-all"
