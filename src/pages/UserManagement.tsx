@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { collection, query, onSnapshot, orderBy, limit, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, where, getDocs } from 'firebase/firestore';
-import { initializeApp } from 'firebase/app';
-import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
+import { getApp, getApps, initializeApp } from 'firebase/app';
+import { getAuth, createUserWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
 import { db, auth } from '../firebase';
 // @ts-ignore
 import firebaseConfig from '../../firebase-applet-config.json';
@@ -33,7 +33,16 @@ export default function UserManagement() {
 
     try {
       // Use a secondary app instance to avoid logging out the current Super Admin
-      const secondaryApp = initializeApp(firebaseConfig, 'SecondaryAuth');
+      let secondaryApp;
+      const apps = getApps();
+      const existingApp = apps.find(a => a.name === 'SecondaryAuth');
+      
+      if (existingApp) {
+        secondaryApp = existingApp;
+      } else {
+        secondaryApp = initializeApp(firebaseConfig, 'SecondaryAuth');
+      }
+      
       const secondaryAuth = getAuth(secondaryApp);
       
       let successCount = 0;
@@ -63,6 +72,23 @@ export default function UserManagement() {
       setErrorMessage(`Ralat bootstrap: ${err.message}`);
     } finally {
       setIsBootstrapping(false);
+    }
+  };
+
+  const handleResetPassword = async (email: string) => {
+    setSaving(true);
+    setErrorMessage(null);
+    setSuccessMessage(null);
+    try {
+      await sendPasswordResetEmail(auth, email);
+      setSuccessMessage(`Emel tetapan semula kata laluan telah dihantar ke ${email}`);
+      setTimeout(() => setSuccessMessage(null), 5000);
+      await logActivity('RESET_PASSWORD', `Menghantar emel tetapan semula kata laluan kepada: ${email}`);
+    } catch (err: any) {
+      console.error("Reset password error:", err);
+      setErrorMessage(`Gagal menghantar emel: ${err.message}`);
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -319,6 +345,34 @@ export default function UserManagement() {
         </div>
       </div>
 
+      {/* Global Feedback */}
+      {(errorMessage || successMessage) && (
+        <motion.div 
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="space-y-2"
+        >
+          {errorMessage && (
+            <div className="p-4 bg-red-50 border border-red-100 text-red-600 rounded-2xl flex items-center gap-3 shadow-sm">
+              <AlertCircle size={20} />
+              <p className="font-medium">{errorMessage}</p>
+              <button onClick={() => setErrorMessage(null)} className="ml-auto text-red-400 hover:text-red-600">
+                <X size={18} />
+              </button>
+            </div>
+          )}
+          {successMessage && (
+            <div className="p-4 bg-emerald-50 border border-emerald-100 text-emerald-600 rounded-2xl flex items-center gap-3 shadow-sm">
+              <CheckCircle2 size={20} />
+              <p className="font-medium">{successMessage}</p>
+              <button onClick={() => setSuccessMessage(null)} className="ml-auto text-emerald-400 hover:text-emerald-600">
+                <X size={18} />
+              </button>
+            </div>
+          )}
+        </motion.div>
+      )}
+
       {/* New Users Alert */}
       {users.some(u => u.role === 'USER' || !u.role) && (
         <motion.div 
@@ -409,6 +463,13 @@ export default function UserManagement() {
                   </td>
                   <td className="px-6 py-4 text-right">
                     <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button 
+                        onClick={() => handleResetPassword(u.email)}
+                        className="p-2 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-all"
+                        title="Hantar Emel Reset Password"
+                      >
+                        <Key size={18} />
+                      </button>
                       <button 
                         onClick={() => handleOpenModal(u)}
                         className="p-2 text-slate-400 hover:text-gov-blue hover:bg-slate-100 rounded-lg transition-all"
@@ -501,22 +562,35 @@ export default function UserManagement() {
                   </select>
                 </div>
 
-                <div className="pt-4 flex gap-3">
-                  <button 
-                    type="button"
-                    onClick={() => setIsModalOpen(false)}
-                    className="flex-1 px-6 py-3 bg-slate-100 text-slate-600 rounded-xl font-bold hover:bg-slate-200 transition-all"
-                  >
-                    BATAL
-                  </button>
-                  <button 
-                    type="submit"
-                    disabled={saving}
-                    className="flex-1 px-6 py-3 bg-gov-blue text-white rounded-xl font-bold hover:bg-gov-blue/90 shadow-lg shadow-gov-blue/20 transition-all flex items-center justify-center gap-2"
-                  >
-                    {saving ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />}
-                    SIMPAN
-                  </button>
+                <div className="pt-4 flex flex-col gap-3">
+                  {(formData.email === 'muhammad_basaruddin@penang.gov.my' || formData.email === 'zularief@islam.gov.my') && (
+                    <button 
+                      type="button"
+                      onClick={() => handleResetPassword(formData.email)}
+                      disabled={saving}
+                      className="w-full px-6 py-3 bg-amber-50 text-amber-600 rounded-xl font-bold hover:bg-amber-100 transition-all flex items-center justify-center gap-2 border border-amber-100"
+                    >
+                      <Key size={18} />
+                      HANTAR EMEL RESET PASSWORD
+                    </button>
+                  )}
+                  <div className="flex gap-3">
+                    <button 
+                      type="button"
+                      onClick={() => setIsModalOpen(false)}
+                      className="flex-1 px-6 py-3 bg-slate-100 text-slate-600 rounded-xl font-bold hover:bg-slate-200 transition-all"
+                    >
+                      BATAL
+                    </button>
+                    <button 
+                      type="submit"
+                      disabled={saving}
+                      className="flex-1 px-6 py-3 bg-gov-blue text-white rounded-xl font-bold hover:bg-gov-blue/90 shadow-lg shadow-gov-blue/20 transition-all flex items-center justify-center gap-2"
+                    >
+                      {saving ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />}
+                      SIMPAN
+                    </button>
+                  </div>
                 </div>
               </form>
             </motion.div>

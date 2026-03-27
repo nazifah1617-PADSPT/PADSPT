@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { signInWithPopup, GoogleAuthProvider, signOut, signInWithEmailAndPassword } from 'firebase/auth';
+import { signInWithPopup, GoogleAuthProvider, signOut, signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
 import { auth } from '../firebase';
 import { ShieldCheck, Loader2, ArrowRight, AlertCircle, RefreshCcw, User, ArrowLeft, LogOut, KeyRound, Mail } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -56,6 +56,24 @@ export default function LoginPage() {
     
     try {
       await signInWithEmailAndPassword(auth, manualEmail, manualPassword);
+    } catch (err: any) {
+      handleAuthError(err);
+    } finally {
+      setIsLoggingIn(false);
+    }
+  };
+
+  const handleForgotPassword = async () => {
+    if (!manualEmail) {
+      setError("Sila masukkan emel anda terlebih dahulu untuk set semula kata laluan.");
+      return;
+    }
+    setIsLoggingIn(true);
+    setError(null);
+    setDebugInfo(null);
+    try {
+      await sendPasswordResetEmail(auth, manualEmail);
+      setDebugInfo(`Emel tetapan semula kata laluan telah dihantar ke ${manualEmail}. Sila semak peti masuk anda.`);
     } catch (err: any) {
       handleAuthError(err);
     } finally {
@@ -296,6 +314,15 @@ export default function LoginPage() {
                           className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl py-4 pl-12 pr-4 text-sm focus:border-gov-blue focus:bg-white outline-none transition-all"
                         />
                       </div>
+                    </div>
+                    <div className="flex justify-end">
+                      <button 
+                        type="button"
+                        onClick={handleForgotPassword}
+                        className="text-[10px] font-bold text-gov-blue hover:underline"
+                      >
+                        LUPA KATA LALUAN?
+                      </button>
                     </div>
                     <button 
                       type="submit"
