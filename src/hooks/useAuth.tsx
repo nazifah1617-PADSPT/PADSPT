@@ -55,56 +55,51 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           // Race the fetch against the timeout
           const userDoc = await Promise.race([userDocPromise, timeoutPromise]) as any;
           
-          if (userDoc.exists()) {
-            const userData = userDoc.data();
-            console.log("Profile found:", userData.role);
-            
-            // Hardcoded super admin check
-            if (userEmail === "photonazifah1617@gmail.com" && userData.role !== 'SUPER_ADMIN') {
-              const updatedProfile = { ...userData, role: 'SUPER_ADMIN' };
-              await setDoc(doc(db, 'users', user.uid), updatedProfile);
-              setProfile(updatedProfile);
-            } else {
-              setProfile(userData);
-            }
-          } else {
-            console.log("No profile found, creating default...");
-            // Create profile
-            let role = 'USER';
-            let name = user.displayName || 'Pengguna';
+          let userData = userDoc.exists() ? userDoc.data() : null;
+          let role = userData?.role || 'USER';
+          let name = userData?.name || user.displayName || 'Pengguna';
 
-            if (userEmail === "photonazifah1617@gmail.com") {
-              role = 'SUPER_ADMIN';
-              name = 'Super Admin';
-            } else {
-              // Check admin_users
-              const q = query(collection(db, 'admin_users'), where('email', '==', userEmail));
-              const adminSnap = await getDocs(q);
-              if (!adminSnap.empty) {
-                const adminData = adminSnap.docs[0].data();
-                role = adminData.role || 'ADMIN';
-                name = adminData.name || name;
-              }
-            }
-
-            const newProfile = { 
-              role, 
-              name, 
-              email: userEmail,
-              createdAt: new Date().toISOString()
-            };
-            await setDoc(doc(db, 'users', user.uid), newProfile);
-            setProfile(newProfile);
+          // 1. Hardcoded Super Admin Check
+          if (userEmail === "photonazifah1617@gmail.com") {
+            role = 'SUPER_ADMIN';
+            name = 'Super Admin';
+          } 
+          // 2. Requested Admins Bootstrap Check (Fail-safe)
+          else if (userEmail === 'muhammad_basaruddin@penang.gov.my' || userEmail === 'zularief@islam.gov.my') {
+            role = 'ADMIN';
           }
+          // 3. Check admin_users collection if they are currently a USER
+          else if (role === 'USER') {
+            const q = query(collection(db, 'admin_users'), where('email', '==', userEmail));
+            const adminSnap = await getDocs(q);
+            if (!adminSnap.empty) {
+              const adminData = adminSnap.docs[0].data();
+              role = adminData.role || 'ADMIN';
+              name = adminData.name || name;
+            }
+          }
+
+          const finalProfile = {
+            ...userData,
+            role,
+            name,
+            email: userEmail,
+            updatedAt: new Date().toISOString()
+          };
+
+          // Update Firestore if role changed or profile didn't exist
+          if (!userDoc.exists() || userData.role !== role) {
+            console.log("Updating/Creating profile with role:", role);
+            await setDoc(doc(db, 'users', user.uid), finalProfile, { merge: true });
+          }
+          
+          setProfile(finalProfile);
         } catch (error) {
           console.error("Profile fetch error:", error);
-          // If it fails, we still want to allow the super admin in
-          if (userEmail === "photonazifah1617@gmail.com") {
-            setProfile({ role: 'SUPER_ADMIN', name: 'Super Admin', email: userEmail });
-          } else {
-            // Set a default profile so loading ends
-            setProfile({ role: 'USER', name: user.displayName || 'Pengguna', email: userEmail });
-          }
+          // Fallback logic
+          const fallbackRole = (userEmail === "photonazifah1617@gmail.com") ? 'SUPER_ADMIN' : 
+                               (userEmail === 'muhammad_basaruddin@penang.gov.my' || userEmail === 'zularief@islam.gov.my') ? 'ADMIN' : 'USER';
+          setProfile({ role: fallbackRole, name: user.displayName || 'Pengguna', email: userEmail });
         } finally {
           setLoading(false);
         }

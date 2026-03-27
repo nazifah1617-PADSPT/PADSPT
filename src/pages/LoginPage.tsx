@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { signInWithPopup, GoogleAuthProvider, signOut } from 'firebase/auth';
 import { auth } from '../firebase';
-import { ShieldCheck, Loader2, ArrowRight, AlertCircle, RefreshCcw, User, ArrowLeft } from 'lucide-react';
+import { ShieldCheck, Loader2, ArrowRight, AlertCircle, RefreshCcw, User, ArrowLeft, LogOut } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
@@ -177,10 +177,18 @@ export default function LoginPage() {
                       </p>
                     </div>
                     
+                    <button 
+                      onClick={() => window.location.reload()}
+                      className="w-full bg-slate-100 text-slate-600 py-4 rounded-2xl font-bold hover:bg-slate-200 transition-all flex items-center justify-center gap-2 mb-3"
+                    >
+                      <RefreshCcw size={18} />
+                      SEMAK SEMULA AKSES (SYNC)
+                    </button>
+                    
                     <div className="grid grid-cols-1 gap-3">
                       <button 
                         onClick={handleLogout}
-                        className="w-full bg-slate-100 text-slate-600 py-4 rounded-2xl font-bold hover:bg-slate-200 transition-all flex items-center justify-center gap-2"
+                        className="w-full bg-red-50 text-red-600 py-4 rounded-2xl font-bold hover:bg-red-100 transition-all flex items-center justify-center gap-2"
                       >
                         LOG KELUAR & TUKAR AKAUN
                       </button>
