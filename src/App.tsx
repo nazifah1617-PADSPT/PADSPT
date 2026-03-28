@@ -5,11 +5,15 @@ import LoginPage from './pages/LoginPage';
 import AdminDashboard from './pages/AdminDashboard';
 import UploadEngine from './pages/UploadEngine';
 import JKManagement from './pages/JKManagement';
+import JKSurauManagement from './pages/JKSurauManagement';
 import AuditLogs from './pages/AuditLogs';
 import SurauManagement from './pages/SurauManagement';
+import MasjidManagement from './pages/MasjidManagement';
 import PegawaiManagement from './pages/PegawaiManagement';
 import ReportsAI from './pages/ReportsAI';
 import UserManagement from './pages/UserManagement';
+import PrivacyPolicy from './pages/PrivacyPolicy';
+import TermsConditions from './pages/TermsConditions';
 import { DashboardLayout } from './components/layout/DashboardLayout';
 import { Loader2 } from 'lucide-react';
 import { useEffect, useState, useCallback } from 'react';
@@ -80,6 +84,8 @@ export default function App() {
         <Routes>
           <Route path="/" element={<PublicSearch />} />
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/privacy" element={<PrivacyPolicy />} />
+          <Route path="/terms" element={<TermsConditions />} />
           
           <Route path="/admin" element={
             <ProtectedRoute requireAdmin>
@@ -99,9 +105,21 @@ export default function App() {
             </ProtectedRoute>
           } />
 
+          <Route path="/admin/jk-surau" element={
+            <ProtectedRoute requireAdmin>
+              <JKSurauManagement />
+            </ProtectedRoute>
+          } />
+
           <Route path="/admin/surau" element={
             <ProtectedRoute requireAdmin>
               <SurauManagement />
+            </ProtectedRoute>
+          } />
+
+          <Route path="/admin/masjid" element={
+            <ProtectedRoute requireAdmin>
+              <MasjidManagement />
             </ProtectedRoute>
           } />
 

@@ -4,13 +4,13 @@ import { doc, setDoc, addDoc, collection, serverTimestamp } from 'firebase/fires
 import { db } from '../../firebase';
 import { logActivity } from '../../services/auditService';
 
-interface SurauModalProps {
+interface MasjidModalProps {
   isOpen: boolean;
   onClose: () => void;
   initialData?: any;
 }
 
-export const SurauModal = ({ isOpen, onClose, initialData }: SurauModalProps) => {
+export const MasjidModal = ({ isOpen, onClose, initialData }: MasjidModalProps) => {
   const [formData, setFormData] = useState<any>({
     nama: '',
     kod: '',
@@ -72,23 +72,23 @@ export const SurauModal = ({ isOpen, onClose, initialData }: SurauModalProps) =>
       };
 
       if (initialData?.id) {
-        await setDoc(doc(db, 'surau_records', initialData.id), {
+        await setDoc(doc(db, 'masjid_records', initialData.id), {
           ...dataToSave,
           updatedAt: serverTimestamp(),
         });
-        await logActivity('EDIT_SURAU', `Mengemaskini rekod Surau: ${formData.nama}`);
+        await logActivity('EDIT_MASJID', `Mengemaskini rekod Masjid: ${formData.nama}`);
       } else {
-        await addDoc(collection(db, 'surau_records'), {
+        await addDoc(collection(db, 'masjid_records'), {
           ...dataToSave,
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
         });
-        await logActivity('CREATE_SURAU', `Menambah rekod Surau baru: ${formData.nama}`);
+        await logActivity('CREATE_MASJID', `Menambah rekod Masjid baru: ${formData.nama}`);
       }
       onClose();
     } catch (error) {
       console.error("Submit error:", error);
-      alert("Gagal menyimpan data surau.");
+      alert("Gagal menyimpan data masjid.");
     } finally {
       setLoading(false);
     }
@@ -98,14 +98,14 @@ export const SurauModal = ({ isOpen, onClose, initialData }: SurauModalProps) =>
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
       <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
         <div className="gov-gradient p-6 text-white flex justify-between items-center">
-          <h2 className="text-xl font-bold">{initialData ? 'Kemaskini Surau' : 'Tambah Surau Baru'}</h2>
+          <h2 className="text-xl font-bold">{initialData ? 'Kemaskini Masjid' : 'Tambah Masjid Baru'}</h2>
           <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full"><X /></button>
         </div>
         
         <form onSubmit={handleSubmit} className="p-8 space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
-              <label className="text-[10px] uppercase font-bold text-slate-400">Nama Surau</label>
+              <label className="text-[10px] uppercase font-bold text-slate-400">Nama Masjid</label>
               <input 
                 required
                 className="w-full px-4 py-3 bg-slate-50 border-none rounded-xl focus:ring-2 focus:ring-gov-blue/20 outline-none"
@@ -114,7 +114,7 @@ export const SurauModal = ({ isOpen, onClose, initialData }: SurauModalProps) =>
               />
             </div>
             <div className="space-y-2">
-              <label className="text-[10px] uppercase font-bold text-slate-400">Kod Surau</label>
+              <label className="text-[10px] uppercase font-bold text-slate-400">Kod Masjid</label>
               <input 
                 required
                 className="w-full px-4 py-3 bg-slate-50 border-none rounded-xl focus:ring-2 focus:ring-gov-blue/20 outline-none"

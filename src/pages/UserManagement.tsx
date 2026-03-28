@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { collection, query, onSnapshot, orderBy, limit, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, where, getDocs } from 'firebase/firestore';
+import { collection, query, onSnapshot, orderBy, limit, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, where, getDocs, getDoc, setDoc } from 'firebase/firestore';
 import { getApp, getApps, initializeApp } from 'firebase/app';
 import { getAuth, createUserWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
 import { db, auth } from '../firebase';
@@ -26,10 +26,7 @@ export default function UserManagement() {
     setErrorMessage(null);
     setSuccessMessage(null);
     
-    const adminAccounts = [
-      { email: 'muhammad_basaruddin@penang.gov.my', password: 'adminpadspt1617' },
-      { email: 'zularief@islam.gov.my', password: 'adminpadspt1617' }
-    ];
+    const adminAccounts: any[] = [];
 
     try {
       // Use a secondary app instance to avoid logging out the current Super Admin
@@ -58,6 +55,10 @@ export default function UserManagement() {
           if (err.code === 'auth/email-already-in-use') {
             alreadyExistsCount++;
             console.log(`Auth user already exists: ${acc.email}`);
+          } else if (err.code === 'auth/operation-not-allowed') {
+            failCount++;
+            setErrorMessage("Ralat: 'Email/Password' provider belum diaktifkan di Firebase Console. Sila aktifkan di tab 'Sign-in method' dalam Authentication.");
+            break; // Stop if provider is disabled
           } else {
             failCount++;
             console.error(`Failed to create auth user ${acc.email}:`, err);
@@ -95,23 +96,19 @@ export default function UserManagement() {
   // Bootstrap requested admins in Firestore
   useEffect(() => {
     const bootstrapAdmins = async () => {
-      const requestedEmails = [
-        { email: 'muhammad_basaruddin@penang.gov.my', name: 'Muhammad Basaruddin' },
-        { email: 'zularief@islam.gov.my', name: 'Zularief' }
-      ];
+      const requestedEmails: any[] = [];
 
       try {
         for (const admin of requestedEmails) {
-          const q = query(collection(db, 'admin_users'), where('email', '==', admin.email));
-          const snap = await getDocs(q);
+          const adminDoc = await getDoc(doc(db, 'admin_users', admin.email));
           
-          if (snap.empty) {
+          if (!adminDoc.exists()) {
             // Check if they are already in users collection
             const uQ = query(collection(db, 'users'), where('email', '==', admin.email));
             const uSnap = await getDocs(uQ);
             
             if (uSnap.empty) {
-              await addDoc(collection(db, 'admin_users'), {
+              await setDoc(doc(db, 'admin_users', admin.email), {
                 name: admin.name,
                 email: admin.email,
                 role: 'ADMIN',
@@ -196,27 +193,13 @@ export default function UserManagement() {
           
           // Also sync to admin_users if they are now an admin
           if (formData.role === 'ADMIN' || formData.role === 'SUPER_ADMIN') {
-            const adminQuery = query(collection(db, 'admin_users'), where('email', '==', normalizedEmail));
-            const adminSnap = await getDocs(adminQuery);
-            if (adminSnap.empty) {
-              await addDoc(collection(db, 'admin_users'), {
-                ...updatedFormData,
-                createdAt: serverTimestamp(),
-                updatedAt: serverTimestamp()
-              });
-            } else {
-              await updateDoc(doc(db, 'admin_users', adminSnap.docs[0].id), {
-                ...updatedFormData,
-                updatedAt: serverTimestamp()
-              });
-            }
+            await setDoc(doc(db, 'admin_users', normalizedEmail), {
+              ...updatedFormData,
+              updatedAt: serverTimestamp()
+            }, { merge: true });
           } else {
             // If role changed to USER, remove from admin_users
-            const adminQuery = query(collection(db, 'admin_users'), where('email', '==', normalizedEmail));
-            const adminSnap = await getDocs(adminQuery);
-            if (!adminSnap.empty) {
-              await deleteDoc(doc(db, 'admin_users', adminSnap.docs[0].id));
-            }
+            await deleteDoc(doc(db, 'admin_users', normalizedEmail));
           }
         }
         
@@ -233,11 +216,11 @@ export default function UserManagement() {
           });
         } else {
           // If they don't exist yet, we add to admin_users so they get the role when they first log in
-          await addDoc(collection(db, 'admin_users'), {
+          await setDoc(doc(db, 'admin_users', normalizedEmail), {
             ...updatedFormData,
             createdAt: serverTimestamp(),
             updatedAt: serverTimestamp()
-          });
+          }, { merge: true });
         }
         
         await logActivity('ADD_USER', `Menambah/Mengemaskini akses: ${normalizedEmail}`);
@@ -263,16 +246,12 @@ export default function UserManagement() {
     setSaving(true);
     try {
       if (userToDelete.type === 'PENDING') {
-        await deleteDoc(doc(db, 'admin_users', userToDelete.id));
+        await deleteDoc(doc(db, 'admin_users', userToDelete.email.toLowerCase()));
       } else {
         await deleteDoc(doc(db, 'users', userToDelete.id));
         
         // Also remove from admin_users
-        const adminQuery = query(collection(db, 'admin_users'), where('email', '==', userToDelete.email.toLowerCase()));
-        const adminSnap = await getDocs(adminQuery);
-        if (!adminSnap.empty) {
-          await deleteDoc(doc(db, 'admin_users', adminSnap.docs[0].id));
-        }
+        await deleteDoc(doc(db, 'admin_users', userToDelete.email.toLowerCase()));
       }
       
       await logActivity('DELETE_USER', `Memadam akses: ${userToDelete.email}`);
@@ -346,32 +325,43 @@ export default function UserManagement() {
       </div>
 
       {/* Global Feedback */}
-      {(errorMessage || successMessage) && (
-        <motion.div 
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="space-y-2"
-        >
-          {errorMessage && (
-            <div className="p-4 bg-red-50 border border-red-100 text-red-600 rounded-2xl flex items-center gap-3 shadow-sm">
-              <AlertCircle size={20} />
-              <p className="font-medium">{errorMessage}</p>
-              <button onClick={() => setErrorMessage(null)} className="ml-auto text-red-400 hover:text-red-600">
-                <X size={18} />
-              </button>
+      <AnimatePresence>
+        {(errorMessage || successMessage) && (
+          <motion.div 
+            initial={{ opacity: 0, y: -50 }}
+            animate={{ opacity: 1, y: 20 }}
+            exit={{ opacity: 0, y: -50 }}
+            className="fixed top-0 left-0 right-0 z-[200] flex justify-center px-4 pointer-events-none"
+          >
+            <div className="pointer-events-auto max-w-2xl w-full space-y-2">
+              {errorMessage && (
+                <div className="p-4 bg-red-600 text-white rounded-2xl flex items-center gap-3 shadow-2xl border border-red-500">
+                  <AlertCircle size={24} className="shrink-0" />
+                  <div className="flex-1">
+                    <p className="font-bold">Ralat</p>
+                    <p className="text-sm opacity-90">{errorMessage}</p>
+                  </div>
+                  <button onClick={() => setErrorMessage(null)} className="p-2 hover:bg-white/20 rounded-lg transition-colors">
+                    <X size={20} />
+                  </button>
+                </div>
+              )}
+              {successMessage && (
+                <div className="p-4 bg-emerald-600 text-white rounded-2xl flex items-center gap-3 shadow-2xl border border-emerald-500">
+                  <CheckCircle2 size={24} className="shrink-0" />
+                  <div className="flex-1">
+                    <p className="font-bold">Berjaya</p>
+                    <p className="text-sm opacity-90">{successMessage}</p>
+                  </div>
+                  <button onClick={() => setSuccessMessage(null)} className="p-2 hover:bg-white/20 rounded-lg transition-colors">
+                    <X size={20} />
+                  </button>
+                </div>
+              )}
             </div>
-          )}
-          {successMessage && (
-            <div className="p-4 bg-emerald-50 border border-emerald-100 text-emerald-600 rounded-2xl flex items-center gap-3 shadow-sm">
-              <CheckCircle2 size={20} />
-              <p className="font-medium">{successMessage}</p>
-              <button onClick={() => setSuccessMessage(null)} className="ml-auto text-emerald-400 hover:text-emerald-600">
-                <X size={18} />
-              </button>
-            </div>
-          )}
-        </motion.div>
-      )}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* New Users Alert */}
       {users.some(u => u.role === 'USER' || !u.role) && (
@@ -563,17 +553,15 @@ export default function UserManagement() {
                 </div>
 
                 <div className="pt-4 flex flex-col gap-3">
-                  {(formData.email === 'muhammad_basaruddin@penang.gov.my' || formData.email === 'zularief@islam.gov.my') && (
-                    <button 
-                      type="button"
-                      onClick={() => handleResetPassword(formData.email)}
-                      disabled={saving}
-                      className="w-full px-6 py-3 bg-amber-50 text-amber-600 rounded-xl font-bold hover:bg-amber-100 transition-all flex items-center justify-center gap-2 border border-amber-100"
-                    >
-                      <Key size={18} />
-                      HANTAR EMEL RESET PASSWORD
-                    </button>
-                  )}
+                  <button 
+                    type="button"
+                    onClick={() => handleResetPassword(formData.email)}
+                    disabled={saving || !formData.email}
+                    className="w-full px-6 py-3 bg-amber-50 text-amber-600 rounded-xl font-bold hover:bg-amber-100 transition-all flex items-center justify-center gap-2 border border-amber-100"
+                  >
+                    <Key size={18} />
+                    HANTAR EMEL RESET PASSWORD
+                  </button>
                   <div className="flex gap-3">
                     <button 
                       type="button"

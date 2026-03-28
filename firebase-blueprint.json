@@ -47,6 +47,25 @@
       },
       "required": ["userId", "action", "timestamp"]
     },
+    "SurauRecord": {
+      "title": "Surau/Masjid Record",
+      "description": "Maklumat lokasi dan pengurusan Surau atau Masjid.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "nama": { "type": "string" },
+        "kod": { "type": "string" },
+        "daerah": { "type": "string" },
+        "parlimen": { "type": "string" },
+        "dun": { "type": "string" },
+        "alamat": { "type": "string" },
+        "latitude": { "type": "number" },
+        "longitude": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["nama", "kod", "daerah"]
+    },
     "UserProfile": {
       "title": "User Profile",
       "description": "Maklumat pengguna sistem (Admin/Super Admin).",
@@ -65,6 +84,22 @@
       "schema": "JKRecord",
       "description": "Koleksi utama data Jawatankuasa Kariah."
     },
+    "/jk_surau_records": {
+      "schema": "JKRecord",
+      "description": "Koleksi utama data Jawatankuasa Surau."
+    },
+    "/surau_records": {
+      "schema": "SurauRecord",
+      "description": "Koleksi utama data Surau."
+    },
+    "/masjid_records": {
+      "schema": "SurauRecord",
+      "description": "Koleksi utama data Masjid."
+    },
+    "/pegawai_records": {
+      "schema": "JKRecord",
+      "description": "Koleksi utama data Pegawai Masjid (menggunakan skema yang sama dengan JK)."
+    },
     "/audit_logs": {
       "schema": "AuditLog",
       "description": "Koleksi log audit sistem."
@@ -72,6 +107,10 @@
     "/users": {
       "schema": "UserProfile",
       "description": "Koleksi profil pengguna sistem."
+    },
+    "/admin_users": {
+      "schema": "UserProfile",
+      "description": "Koleksi pengguna yang telah diluluskan untuk menjadi Admin/Super Admin (Pre-approved)."
     }
   }
 }

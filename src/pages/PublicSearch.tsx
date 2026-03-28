@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { collection, query, where, getDocs, limit, orderBy } from 'firebase/firestore';
+import { collection, query, where, getDocs, limit, orderBy, getCountFromServer } from 'firebase/firestore';
 import { db } from '../firebase';
-import { Search, MapPin, Phone, User, Building2, ChevronRight, Loader2, LayoutDashboard } from 'lucide-react';
+import { Search, MapPin, Phone, User, Building2, ChevronRight, Loader2, LayoutDashboard, Users, UserCheck } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
 import { Link, useNavigate } from 'react-router-dom';
@@ -13,7 +13,13 @@ export default function PublicSearch() {
   const [searchTerm, setSearchTerm] = useState('');
   const [results, setResults] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
-  const [stats, setStats] = useState({ masjid: 0, jk: 0 });
+  const [stats, setStats] = useState({ 
+    masjid: 0, 
+    surau: 0,
+    jkMasjid: 0,
+    jkSurau: 0,
+    pegawai: 0
+  });
 
   useEffect(() => {
     // If user is admin and lands on public search, redirect to dashboard
@@ -25,11 +31,33 @@ export default function PublicSearch() {
   }, [isAdmin, authLoading, navigate, searchTerm]);
 
   useEffect(() => {
-    // Fetch some basic stats for the hero
+    // Fetch real stats from Firestore
     const fetchStats = async () => {
-      const q = query(collection(db, 'jk_records'), limit(1));
-      // In a real app, we'd use a counter doc
-      setStats({ masjid: 450, jk: 12400 });
+      try {
+        const [
+          masjidCount,
+          surauCount,
+          jkMasjidCount,
+          jkSurauCount,
+          pegawaiCount
+        ] = await Promise.all([
+          getCountFromServer(collection(db, 'masjid_records')),
+          getCountFromServer(collection(db, 'surau_records')),
+          getCountFromServer(collection(db, 'jk_records')),
+          getCountFromServer(collection(db, 'jk_surau_records')),
+          getCountFromServer(collection(db, 'pegawai_records'))
+        ]);
+
+        setStats({
+          masjid: masjidCount.data().count,
+          surau: surauCount.data().count,
+          jkMasjid: jkMasjidCount.data().count,
+          jkSurau: jkSurauCount.data().count,
+          pegawai: pegawaiCount.data().count
+        });
+      } catch (error) {
+        console.error("Error fetching stats:", error);
+      }
     };
     fetchStats();
   }, []);
@@ -40,16 +68,58 @@ export default function PublicSearch() {
 
     setLoading(true);
     try {
-      // Simple search logic - in production we'd use Algolia or similar
-      const q = query(
-        collection(db, 'jk_records'),
-        where('namaPenuh', '>=', searchTerm.toUpperCase()),
-        where('namaPenuh', '<=', searchTerm.toUpperCase() + '\uf8ff'),
-        limit(20)
-      );
+      const term = searchTerm.toUpperCase().trim();
+      const icTerm = term.replace(/-/g, ''); // Remove dashes for IC search
       
-      const snap = await getDocs(q);
-      setResults(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      // We'll perform multiple queries and merge results
+      const collections = ['jk_records', 'jk_surau_records', 'pegawai_records'];
+      const allResults: any[] = [];
+
+      for (const coll of collections) {
+        const nameField = coll === 'pegawai_records' ? 'nama' : 'namaPenuh';
+        
+        // Search by Name (Prefix)
+        const qName = query(
+          collection(db, coll),
+          where(nameField, '>=', term),
+          where(nameField, '<=', term + '\uf8ff'),
+          limit(50)
+        );
+
+        // Search by IC (Prefix)
+        const qIC = query(
+          collection(db, coll),
+          where('noKP', '>=', icTerm),
+          where('noKP', '<=', icTerm + '\uf8ff'),
+          limit(50)
+        );
+
+        // Search by Masjid/Surau Name (Prefix)
+        const qMasjid = query(
+          collection(db, coll),
+          where('masjidName', '>=', term),
+          where('masjidName', '<=', term + '\uf8ff'),
+          limit(50)
+        );
+
+        const [snapName, snapIC, snapMasjid] = await Promise.all([
+          getDocs(qName),
+          getDocs(qIC),
+          getDocs(qMasjid)
+        ]);
+
+        snapName.docs.forEach(doc => allResults.push({ id: doc.id, ...doc.data(), source: coll, displayTitle: doc.data()[nameField] }));
+        snapIC.docs.forEach(doc => allResults.push({ id: doc.id, ...doc.data(), source: coll, displayTitle: doc.data()[nameField] }));
+        snapMasjid.docs.forEach(doc => allResults.push({ id: doc.id, ...doc.data(), source: coll, displayTitle: doc.data()[nameField] }));
+      }
+
+      // De-duplicate results by ID
+      const uniqueResults = Array.from(new Map(allResults.map(item => [item.id, item])).values());
+      
+      // Sort by name
+      uniqueResults.sort((a, b) => (a.displayTitle || '').localeCompare(b.displayTitle || ''));
+      
+      setResults(uniqueResults);
     } catch (error) {
       console.error("Search error:", error);
     } finally {
@@ -116,7 +186,7 @@ export default function PublicSearch() {
             transition={{ delay: 0.2 }}
             className="text-lg md:text-xl opacity-90 mb-12 font-medium"
           >
-            Portal Rasmi Semakan Jawatankuasa Kariah Masjid Seluruh Malaysia
+            Portal Semakan Jawatankuasa Kariah, Surau & Pegawai Masjid Daerah Seberang Perai Tengah
           </motion.p>
 
           <motion.div 
@@ -129,7 +199,7 @@ export default function PublicSearch() {
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
               <input 
                 type="text"
-                placeholder="Cari Nama, No. KP atau Nama Masjid..."
+                placeholder="Cari Nama, No. KP, Nama Masjid atau Surau..."
                 className="w-full pl-12 pr-4 py-4 rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-gov-blue/20 transition-all font-medium"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -146,22 +216,26 @@ export default function PublicSearch() {
             </button>
           </motion.div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-16 max-w-3xl mx-auto opacity-80">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mt-16 max-w-5xl mx-auto opacity-80">
             <div className="text-center">
-              <p className="text-2xl font-bold">{stats.masjid}+</p>
-              <p className="text-[10px] uppercase tracking-widest font-bold">Masjid Berdaftar</p>
+              <p className="text-2xl font-bold">{stats.masjid}</p>
+              <p className="text-[10px] uppercase tracking-widest font-bold">Masjid</p>
             </div>
             <div className="text-center">
-              <p className="text-2xl font-bold">{stats.jk}+</p>
-              <p className="text-[10px] uppercase tracking-widest font-bold">Ahli JK Aktif</p>
+              <p className="text-2xl font-bold">{stats.surau}</p>
+              <p className="text-[10px] uppercase tracking-widest font-bold">Surau</p>
             </div>
             <div className="text-center">
-              <p className="text-2xl font-bold">100%</p>
-              <p className="text-[10px] uppercase tracking-widest font-bold">Data Sah</p>
+              <p className="text-2xl font-bold">{stats.jkMasjid}</p>
+              <p className="text-[10px] uppercase tracking-widest font-bold">JK Masjid</p>
             </div>
             <div className="text-center">
-              <p className="text-2xl font-bold">24/7</p>
-              <p className="text-[10px] uppercase tracking-widest font-bold">Akses Terbuka</p>
+              <p className="text-2xl font-bold">{stats.jkSurau}</p>
+              <p className="text-[10px] uppercase tracking-widest font-bold">JK Surau</p>
+            </div>
+            <div className="text-center">
+              <p className="text-2xl font-bold">{stats.pegawai}</p>
+              <p className="text-[10px] uppercase tracking-widest font-bold">Pegawai Masjid</p>
             </div>
           </div>
         </div>
@@ -193,10 +267,19 @@ export default function PublicSearch() {
                         <User size={32} />
                       </div>
                       <div>
-                        <h3 className="text-xl font-bold text-slate-900 group-hover:text-gov-blue transition-colors">{jk.namaPenuh}</h3>
+                        <h3 className="text-xl font-bold text-slate-900 group-hover:text-gov-blue transition-colors">{jk.displayTitle}</h3>
                         <div className="flex items-center gap-2 mt-1">
                           <span className="px-2 py-0.5 bg-gov-blue/10 text-gov-blue text-[10px] font-bold rounded-full uppercase">
                             {jk.jawatan}
+                          </span>
+                          <span className={cn(
+                            "px-2 py-0.5 text-[10px] font-bold rounded-full uppercase",
+                            jk.source === 'jk_records' ? "bg-gov-blue text-white" : 
+                            jk.source === 'jk_surau_records' ? "bg-amber-100 text-amber-700" :
+                            "bg-purple-100 text-purple-700"
+                          )}>
+                            {jk.source === 'jk_records' ? 'MASJID' : 
+                             jk.source === 'jk_surau_records' ? 'SURAU' : 'PEGAWAI'}
                           </span>
                           <span className={cn(
                             "px-2 py-0.5 text-[10px] font-bold rounded-full uppercase",
@@ -209,6 +292,10 @@ export default function PublicSearch() {
                     </div>
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3 text-sm">
+                      <div className="flex items-center gap-2 text-slate-600">
+                        <User size={16} className="text-slate-400" />
+                        <span className="font-medium">IC: {jk.noKP ? `${jk.noKP.substring(0, 6)}-${jk.noKP.substring(6, 8)}-XXXX` : 'Tiada Maklumat'}</span>
+                      </div>
                       <div className="flex items-center gap-2 text-slate-600">
                         <Building2 size={16} className="text-slate-400" />
                         <span className="font-medium">{jk.masjidName}</span>
@@ -241,7 +328,7 @@ export default function PublicSearch() {
               </div>
               <h3 className="text-2xl font-bold text-slate-900 mb-2">Tiada Rekod Dijumpai</h3>
               <p className="text-slate-500 max-w-md mx-auto">
-                Maaf, tiada rekod jawatankuasa kariah yang sepadan dengan carian "{searchTerm}". Sila pastikan ejaan adalah betul.
+                Maaf, tiada rekod jawatankuasa kariah, surau atau pegawai masjid yang sepadan dengan carian "{searchTerm}". Sila pastikan ejaan adalah betul.
               </p>
             </motion.div>
           ) : null}
@@ -262,8 +349,8 @@ export default function PublicSearch() {
             <Link to="/login" className="hover:text-gov-blue transition-colors">
               {isAdmin ? 'Dashboard Admin' : 'Log Masuk Pegawai'}
             </Link>
-            <a href="#" className="hover:text-gov-blue transition-colors">Dasar Privasi</a>
-            <a href="#" className="hover:text-gov-blue transition-colors">Terma & Syarat</a>
+            <Link to="/privacy" className="hover:text-gov-blue transition-colors">Dasar Privasi</Link>
+            <Link to="/terms" className="hover:text-gov-blue transition-colors">Terma & Syarat</Link>
           </div>
         </div>
       </footer>

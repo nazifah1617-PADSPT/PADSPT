@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { collection, query, getDocs, limit, orderBy, where } from 'firebase/firestore';
 import { db } from '../firebase';
+import { handleFirestoreError, OperationType } from '../lib/firestore-errors';
 import { 
   Users, 
   Building2, 
@@ -9,7 +10,8 @@ import {
   TrendingUp, 
   Map as MapIcon,
   ChevronRight,
-  ShieldCheck
+  ShieldCheck,
+  Loader2
 } from 'lucide-react';
 import { 
   BarChart, 
@@ -27,28 +29,42 @@ import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
 import { useAuth } from '../hooks/useAuth';
 import { Link } from 'react-router-dom';
+import GisMap from '../components/GisMap';
 
 export default function AdminDashboard() {
   const { isSuperAdmin } = useAuth();
   const [stats, setStats] = useState({
     totalJK: 0,
     totalMasjid: 0,
+    totalSurau: 0,
     expiringSoon: 0,
     vacancies: 0
   });
 
   const [chartData, setChartData] = useState<any[]>([]);
+  const [chartGrouping, setChartGrouping] = useState<'parlimen' | 'dun'>('parlimen');
+  const [allJkDocs, setAllJkDocs] = useState<any[]>([]);
   const [recentLogs, setRecentLogs] = useState<any[]>([]);
+  const [allLocations, setAllLocations] = useState<any[]>([]);
+  const [loadingMap, setLoadingMap] = useState(true);
 
   useEffect(() => {
     const fetchStats = async () => {
       try {
         const jkSnap = await getDocs(collection(db, 'jk_records'));
         const surauSnap = await getDocs(collection(db, 'surau_records'));
+        const masjidSnap = await getDocs(collection(db, 'masjid_records'));
         const pegawaiSnap = await getDocs(collection(db, 'pegawai_records'));
         
         const jkDocs = jkSnap.docs.map(d => d.data());
+        setAllJkDocs(jkDocs);
         const activeJK = jkDocs.filter(d => d.statusLantikan === 'Aktif').length;
+        
+        const surauDocs = surauSnap.docs.map(doc => ({ id: doc.id, ...doc.data(), type: 'surau' }));
+        const masjidDocs = masjidSnap.docs.map(doc => ({ id: doc.id, ...doc.data(), type: 'masjid' }));
+        
+        setAllLocations([...masjidDocs, ...surauDocs]);
+        setLoadingMap(false);
         
         // Calculate expiring soon (within 30 days)
         const now = new Date();
@@ -61,43 +77,62 @@ export default function AdminDashboard() {
 
         setStats({
           totalJK: activeJK,
-          totalMasjid: surauSnap.size,
+          totalMasjid: masjidSnap.size,
+          totalSurau: surauSnap.size,
           expiringSoon: expiring,
-          vacancies: pegawaiSnap.size // Using pegawai as a placeholder for vacancies for now
+          vacancies: pegawaiSnap.size
         });
 
-        // Chart data by daerah
-        const daerahCounts: {[key: string]: number} = {};
-        jkDocs.forEach(d => {
-          if (d.daerah) {
-            daerahCounts[d.daerah] = (daerahCounts[d.daerah] || 0) + 1;
-          }
-        });
-
-        const newChartData = Object.entries(daerahCounts).map(([name, value]) => ({
-          name,
-          value
-        })).sort((a, b) => b.value - a.value).slice(0, 5);
-
-        if (newChartData.length > 0) {
-          setChartData(newChartData);
-        }
-      } catch (error) {
+        updateChartData(jkDocs, chartGrouping);
+      } catch (error: any) {
         console.error("Stats fetch error:", error);
+        if (error.code === 'permission-denied') {
+          handleFirestoreError(error, OperationType.GET, 'stats_collections');
+        }
       }
     };
 
     const fetchLogs = async () => {
-      const q = query(collection(db, 'audit_logs'), orderBy('timestamp', 'desc'), limit(5));
-      const snap = await getDocs(q);
-      setRecentLogs(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      try {
+        const q = query(collection(db, 'audit_logs'), orderBy('timestamp', 'desc'), limit(5));
+        const snap = await getDocs(q);
+        setRecentLogs(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      } catch (error: any) {
+        console.error("Logs fetch error:", error);
+        if (error.code === 'permission-denied') {
+          handleFirestoreError(error, OperationType.GET, 'audit_logs');
+        }
+      }
     };
 
     fetchStats();
     fetchLogs();
   }, []);
 
-  const COLORS = ['#003366', '#00843D', '#C5A059', '#64748b', '#0f172a'];
+  const updateChartData = (docs: any[], grouping: 'parlimen' | 'dun') => {
+    const counts: {[key: string]: number} = {};
+    docs.forEach(d => {
+      const key = d[grouping];
+      if (key) {
+        counts[key] = (counts[key] || 0) + 1;
+      }
+    });
+
+    const newChartData = Object.entries(counts).map(([name, value]) => ({
+      name,
+      value
+    })).sort((a, b) => b.value - a.value).slice(0, 8);
+
+    setChartData(newChartData);
+  };
+
+  useEffect(() => {
+    if (allJkDocs.length > 0) {
+      updateChartData(allJkDocs, chartGrouping);
+    }
+  }, [chartGrouping, allJkDocs]);
+
+  const COLORS = ['#003366', '#00843D', '#C5A059', '#64748b', '#0f172a', '#334155', '#475569', '#1e293b'];
 
   return (
     <div className="space-y-8">
@@ -107,10 +142,11 @@ export default function AdminDashboard() {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
         {[
           { label: 'Jumlah JK Aktif', value: stats.totalJK, icon: Users, color: 'text-gov-blue', bg: 'bg-gov-blue/5' },
           { label: 'Jumlah Masjid', value: stats.totalMasjid, icon: Building2, color: 'text-islamic-green', bg: 'bg-islamic-green/5' },
+          { label: 'Jumlah Surau', value: stats.totalSurau, icon: Building2, color: 'text-emerald-600', bg: 'bg-emerald-50' },
           { label: 'Tamat Tempoh (30 Hari)', value: stats.expiringSoon, icon: Clock, color: 'text-amber-600', bg: 'bg-amber-50' },
           { label: 'Kekosongan Jawatan', value: stats.vacancies, icon: AlertTriangle, color: 'text-red-600', bg: 'bg-red-50' },
         ].map((stat, i) => (
@@ -162,15 +198,31 @@ export default function AdminDashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Main Chart */}
         <div className="lg:col-span-2 bg-white p-8 rounded-3xl shadow-sm border border-slate-100">
-          <div className="flex justify-between items-center mb-8">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
             <h3 className="text-lg font-bold flex items-center gap-2">
               <TrendingUp size={20} className="text-gov-blue" />
-              Taburan JK Mengikut Daerah
+              Taburan JK Mengikut {chartGrouping === 'parlimen' ? 'Parlimen' : 'DUN'}
             </h3>
-            <select className="bg-slate-50 border-none text-xs font-bold rounded-lg px-3 py-2 outline-none">
-              <option>Tahun 2026</option>
-              <option>Tahun 2025</option>
-            </select>
+            <div className="flex bg-slate-100 p-1 rounded-xl">
+              <button 
+                onClick={() => setChartGrouping('parlimen')}
+                className={cn(
+                  "px-4 py-1.5 text-[10px] font-bold rounded-lg transition-all",
+                  chartGrouping === 'parlimen' ? "bg-white text-gov-blue shadow-sm" : "text-slate-400 hover:text-slate-600"
+                )}
+              >
+                PARLIMEN
+              </button>
+              <button 
+                onClick={() => setChartGrouping('dun')}
+                className={cn(
+                  "px-4 py-1.5 text-[10px] font-bold rounded-lg transition-all",
+                  chartGrouping === 'dun' ? "bg-white text-gov-blue shadow-sm" : "text-slate-400 hover:text-slate-600"
+                )}
+              >
+                DUN
+              </button>
+            </div>
           </div>
           <div className="h-[320px] w-full">
             <ResponsiveContainer width="100%" height="100%">
@@ -232,17 +284,41 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {/* Map Placeholder */}
+      {/* Map Section */}
       <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100">
-        <h3 className="text-lg font-bold mb-6 flex items-center gap-2">
-          <MapIcon size={20} className="text-gov-blue" />
-          Peta Interaktif Parlimen & DUN
-        </h3>
-        <div className="bg-slate-50 rounded-2xl h-96 flex items-center justify-center border border-slate-200 border-dashed">
-          <div className="text-center">
-            <MapIcon size={48} className="text-slate-300 mx-auto mb-4" />
-            <p className="text-slate-400 font-medium">Modul Peta GIS Sedang Dimuatkan...</p>
-          </div>
+        <div className="flex justify-between items-center mb-6">
+          <h3 className="text-lg font-bold flex items-center gap-2">
+            <MapIcon size={20} className="text-gov-blue" />
+            Peta Interaktif Lokasi Masjid & Surau
+          </h3>
+          <Link 
+            to="/admin/surau"
+            className="text-xs font-bold text-gov-blue hover:underline flex items-center gap-1"
+          >
+            PENGURUSAN REKOD <ChevronRight size={14} />
+          </Link>
+        </div>
+        <div className="bg-slate-50 rounded-2xl h-[500px] relative overflow-hidden">
+          {loadingMap ? (
+            <div className="h-full w-full flex items-center justify-center border border-slate-200 border-dashed rounded-2xl">
+              <div className="text-center">
+                <Loader2 className="animate-spin text-gov-blue mx-auto mb-4" size={32} />
+                <p className="text-slate-400 font-medium">Memuatkan Peta GIS...</p>
+              </div>
+            </div>
+          ) : allLocations.length > 0 ? (
+            <GisMap locations={allLocations} />
+          ) : (
+            <div className="h-full w-full flex items-center justify-center border border-slate-200 border-dashed rounded-2xl">
+              <div className="text-center">
+                <MapIcon size={48} className="text-slate-300 mx-auto mb-4" />
+                <p className="text-slate-400 font-medium">Tiada data lokasi untuk dipaparkan.</p>
+                <Link to="/admin/surau" className="text-gov-blue text-xs font-bold hover:underline mt-2 inline-block">
+                  TAMBAH REKOD BARU
+                </Link>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

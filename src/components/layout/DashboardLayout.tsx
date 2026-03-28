@@ -14,6 +14,8 @@ export const DashboardLayout = ({ children }: { children: React.ReactNode }) => 
   const navItems = [
     { name: 'Dashboard', path: '/admin', icon: LayoutDashboard, show: true },
     { name: 'JK Kariah', path: '/admin/jk', icon: Users, show: isAdmin },
+    { name: 'JK Surau', path: '/admin/jk-surau', icon: UserCheck, show: isAdmin },
+    { name: 'Masjid', path: '/admin/masjid', icon: Building2, show: isAdmin },
     { name: 'Surau', path: '/admin/surau', icon: Building2, show: isAdmin },
     { name: 'Pegawai Masjid', path: '/admin/pegawai', icon: UserCheck, show: isAdmin },
     { name: 'Upload Data', path: '/admin/upload', icon: Upload, show: isAdmin },

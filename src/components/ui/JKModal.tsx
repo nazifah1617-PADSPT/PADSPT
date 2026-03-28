@@ -8,9 +8,11 @@ interface JKModalProps {
   isOpen: boolean;
   onClose: () => void;
   initialData?: any;
+  collectionName?: string;
+  typeLabel?: string;
 }
 
-export const JKModal = ({ isOpen, onClose, initialData }: JKModalProps) => {
+export const JKModal = ({ isOpen, onClose, initialData, collectionName = 'jk_records', typeLabel = 'JK Kariah' }: JKModalProps) => {
   const [formData, setFormData] = useState<any>({
     namaPenuh: '',
     noKP: '',
@@ -27,7 +29,19 @@ export const JKModal = ({ isOpen, onClose, initialData }: JKModalProps) => {
 
   useEffect(() => {
     if (initialData) setFormData(initialData);
-  }, [initialData]);
+    else setFormData({
+      namaPenuh: '',
+      noKP: '',
+      noTel: '',
+      alamat: '',
+      masjidName: '',
+      jawatan: 'AJK',
+      statusLantikan: 'Aktif',
+      daerah: '',
+      parlimen: '',
+      dun: '',
+    });
+  }, [initialData, isOpen]);
 
   if (!isOpen) return null;
 
@@ -36,17 +50,17 @@ export const JKModal = ({ isOpen, onClose, initialData }: JKModalProps) => {
     setLoading(true);
     try {
       if (initialData?.id) {
-        await setDoc(doc(db, 'jk_records', initialData.id), {
+        await setDoc(doc(db, collectionName, initialData.id), {
           ...formData,
           updatedAt: serverTimestamp(),
         });
-        await logActivity('EDIT', `Mengemaskini rekod JK: ${formData.namaPenuh}`);
+        await logActivity('EDIT', `Mengemaskini rekod ${typeLabel}: ${formData.namaPenuh}`);
       } else {
-        await addDoc(collection(db, 'jk_records'), {
+        await addDoc(collection(db, collectionName), {
           ...formData,
           updatedAt: serverTimestamp(),
         });
-        await logActivity('CREATE', `Menambah rekod JK baru: ${formData.namaPenuh}`);
+        await logActivity('CREATE', `Menambah rekod ${typeLabel} baru: ${formData.namaPenuh}`);
       }
       onClose();
     } catch (error) {
@@ -60,7 +74,7 @@ export const JKModal = ({ isOpen, onClose, initialData }: JKModalProps) => {
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
       <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
         <div className="gov-gradient p-6 text-white flex justify-between items-center">
-          <h2 className="text-xl font-bold">{initialData ? 'Kemaskini Rekod' : 'Tambah Rekod Baru'}</h2>
+          <h2 className="text-xl font-bold">{initialData ? `Kemaskini Rekod ${typeLabel}` : `Tambah Rekod ${typeLabel} Baru`}</h2>
           <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full"><X /></button>
         </div>
         
@@ -125,7 +139,7 @@ export const JKModal = ({ isOpen, onClose, initialData }: JKModalProps) => {
           </div>
 
           <div className="space-y-2">
-            <label className="text-[10px] uppercase font-bold text-slate-400">Nama Masjid</label>
+            <label className="text-[10px] uppercase font-bold text-slate-400">{typeLabel === 'JK Surau' ? 'Nama Surau' : 'Nama Masjid'}</label>
             <input 
               required
               className="w-full px-4 py-3 bg-slate-50 border-none rounded-xl focus:ring-2 focus:ring-gov-blue/20 outline-none"

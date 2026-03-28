@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { collection, query, onSnapshot, orderBy, limit, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '../firebase';
+import { handleFirestoreError, OperationType } from '../lib/firestore-errors';
 import { UserCheck, Search, Plus, Building2, Phone, Edit3, Trash2, Loader2, Filter } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
@@ -21,6 +22,8 @@ export default function PegawaiManagement() {
     const unsubscribe = onSnapshot(q, (snap) => {
       setPegawai(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
       setLoading(false);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.GET, 'pegawai_records');
     });
     return unsubscribe;
   }, []);

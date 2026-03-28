@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { collection, query, onSnapshot, orderBy, limit, deleteDoc, doc, updateDoc } from 'firebase/firestore';
+import { collection, query, onSnapshot, orderBy, limit, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { handleFirestoreError, OperationType } from '../lib/firestore-errors';
 import { logActivity } from '../services/auditService';
@@ -8,22 +8,18 @@ import {
   Users, 
   Search, 
   Filter, 
-  MoreVertical, 
   Edit3, 
   Trash2, 
   UserPlus,
   Building2,
   MapPin,
-  CheckCircle2,
-  XCircle,
-  Clock,
   Printer,
   ChevronDown,
   ChevronRight,
   CheckSquare,
   Square
 } from 'lucide-react';
-import { cn, formatIC } from '../lib/utils';
+import { cn } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 import { JKModal } from '../components/ui/JKModal';
 import jsPDF from 'jspdf';
@@ -49,7 +45,7 @@ const getPriority = (jawatan: string) => {
   return ROLE_PRIORITY[normalized] || 99;
 };
 
-export default function JKManagement() {
+export default function JKSurauManagement() {
   const { isSuperAdmin } = useAuth();
   const [records, setRecords] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -60,19 +56,18 @@ export default function JKManagement() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<any>(null);
   const [selectedForPrint, setSelectedForPrint] = useState<string[]>([]);
-  const [expandedMasjids, setExpandedMasjids] = useState<string[]>([]);
+  const [expandedSuraus, setExpandedSuraus] = useState<string[]>([]);
 
   useEffect(() => {
-    const q = query(collection(db, 'jk_records'), orderBy('updatedAt', 'desc'), limit(500));
+    const q = query(collection(db, 'jk_surau_records'), limit(500));
     const unsubscribe = onSnapshot(q, (snap) => {
       const data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as any));
       setRecords(data);
       setLoading(false);
-      // Expand all by default
-      const uniqueMasjids = Array.from(new Set(data.map(r => r.masjidName)));
-      setExpandedMasjids(uniqueMasjids as string[]);
+      const uniqueSuraus = Array.from(new Set(data.map(r => r.masjidName)));
+      setExpandedSuraus(uniqueSuraus as string[]);
     }, (error) => {
-      handleFirestoreError(error, OperationType.GET, 'jk_records');
+      handleFirestoreError(error, OperationType.GET, 'jk_surau_records');
     });
     return unsubscribe;
   }, []);
@@ -84,8 +79,8 @@ export default function JKManagement() {
     }
     if (confirm(`Adakah anda pasti untuk memadam rekod ${name}?`)) {
       try {
-        await deleteDoc(doc(db, 'jk_records', id));
-        await logActivity('DELETE', `Memadam rekod JK: ${name}`);
+        await deleteDoc(doc(db, 'jk_surau_records', id));
+        await logActivity('DELETE', `Memadam rekod JK Surau: ${name}`);
       } catch (error) {
         console.error("Delete error:", error);
       }
@@ -123,18 +118,16 @@ export default function JKManagement() {
     return ['Semua', ...Array.from(new Set(d))].sort();
   }, [records]);
 
-  // Group by Masjid
   const groupedRecords = useMemo(() => {
     const groups: { [key: string]: any[] } = {};
     filteredRecords.forEach(r => {
-      const masjid = r.masjidName || 'Tiada Nama Masjid';
-      if (!groups[masjid]) groups[masjid] = [];
-      groups[masjid].push(r);
+      const surau = r.masjidName || 'Tiada Nama Surau';
+      if (!groups[surau]) groups[surau] = [];
+      groups[surau].push(r);
     });
     
-    // Sort members within each group by priority
-    Object.keys(groups).forEach(masjid => {
-      groups[masjid].sort((a, b) => {
+    Object.keys(groups).forEach(surau => {
+      groups[surau].sort((a, b) => {
         const pA = getPriority(a.jawatan);
         const pB = getPriority(b.jawatan);
         if (pA !== pB) return pA - pB;
@@ -145,9 +138,9 @@ export default function JKManagement() {
     return Object.entries(groups).sort(([a], [b]) => a.localeCompare(b));
   }, [filteredRecords]);
 
-  const toggleMasjid = (masjid: string) => {
-    setExpandedMasjids(prev => 
-      prev.includes(masjid) ? prev.filter(m => m !== masjid) : [...prev, masjid]
+  const toggleSurau = (surau: string) => {
+    setExpandedSuraus(prev => 
+      prev.includes(surau) ? prev.filter(m => m !== surau) : [...prev, surau]
     );
   };
 
@@ -157,7 +150,7 @@ export default function JKManagement() {
     );
   };
 
-  const toggleSelectMasjid = (masjid: string, members: any[]) => {
+  const toggleSelectSurau = (surau: string, members: any[]) => {
     const memberIds = members.map(m => m.id);
     const allSelected = memberIds.every(id => selectedForPrint.includes(id));
     
@@ -179,7 +172,6 @@ export default function JKManagement() {
       return;
     }
 
-    // If grouping by Parlimen or DUN, we might want to sort differently
     if (groupBy) {
       const groups: { [key: string]: any[] } = {};
       printData.forEach(r => {
@@ -199,12 +191,12 @@ export default function JKManagement() {
 
         doc.setFontSize(16);
         doc.setTextColor(0, 51, 102);
-        doc.text(`LAPORAN JK KARIAH MENGIKUT ${groupBy.toUpperCase()}: ${groupName}`, 14, currentY);
+        doc.text(`LAPORAN JK SURAU MENGIKUT ${groupBy.toUpperCase()}: ${groupName}`, 14, currentY);
         currentY += 10;
 
         autoTable(doc, {
           startY: currentY,
-          head: [['Bil', 'Masjid', 'Nama Penuh', 'Jawatan', 'No. Tel']],
+          head: [['Bil', 'Surau', 'Nama Penuh', 'Jawatan', 'No. Tel']],
           body: members.sort((a,b) => (a.masjidName || '').localeCompare(b.masjidName || '')).map((r, i) => [
             i + 1,
             r.masjidName || '-',
@@ -218,28 +210,26 @@ export default function JKManagement() {
         });
       });
 
-      doc.save(`Laporan_JK_${groupBy}_${new Date().getTime()}.pdf`);
-      logActivity('PRINT', `Mencetak PDF Laporan ${groupBy} (${printData.length} rekod)`);
+      doc.save(`Laporan_JK_Surau_${groupBy}_${new Date().getTime()}.pdf`);
+      logActivity('PRINT', `Mencetak PDF Laporan JK Surau ${groupBy} (${printData.length} rekod)`);
       return;
     }
 
-    // Default grouping by Masjid
     const printGroups: { [key: string]: any[] } = {};
     printData.forEach(r => {
-      const masjid = r.masjidName || 'Tiada Nama Masjid';
-      if (!printGroups[masjid]) printGroups[masjid] = [];
-      printGroups[masjid].push(r);
+      const surau = r.masjidName || 'Tiada Nama Surau';
+      if (!printGroups[surau]) printGroups[surau] = [];
+      printGroups[surau].push(r);
     });
 
     let currentY = 20;
 
-    Object.entries(printGroups).forEach(([masjid, members], index) => {
+    Object.entries(printGroups).forEach(([surau, members], index) => {
       if (index > 0) {
         doc.addPage();
         currentY = 20;
       }
 
-      // Sort members by priority
       const sortedMembers = [...members].sort((a, b) => {
         const pA = getPriority(a.jawatan);
         const pB = getPriority(b.jawatan);
@@ -253,7 +243,7 @@ export default function JKManagement() {
 
       doc.setFontSize(16);
       doc.setTextColor(0, 51, 102);
-      doc.text(`Senarai JK Kariah ${masjid}`, 14, currentY);
+      doc.text(`Senarai JK Surau ${surau}`, 14, currentY);
       currentY += 8;
       
       doc.setFontSize(10);
@@ -282,16 +272,16 @@ export default function JKManagement() {
       currentY = (doc as any).lastAutoTable.finalY + 20;
     });
 
-    doc.save(`Senarai_JK_Kariah_${new Date().getTime()}.pdf`);
-    logActivity('PRINT', `Mencetak PDF Senarai JK (${printData.length} rekod)`);
+    doc.save(`Senarai_JK_Surau_${new Date().getTime()}.pdf`);
+    logActivity('PRINT', `Mencetak PDF Senarai JK Surau (${printData.length} rekod)`);
   };
 
   return (
     <div className="space-y-8">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900">Pengurusan JK Kariah</h1>
-          <p className="text-slate-500">Kawal selia data ahli jawatankuasa kariah masjid.</p>
+          <h1 className="text-3xl font-bold text-slate-900">Pengurusan JK Surau</h1>
+          <p className="text-slate-500">Kawal selia data ahli jawatankuasa surau.</p>
         </div>
         <div className="flex flex-wrap gap-3">
           <div className="relative group">
@@ -306,7 +296,7 @@ export default function JKManagement() {
                 onClick={() => generatePDF()}
                 className="w-full text-left px-4 py-3 text-sm font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-2"
               >
-                <Building2 size={16} className="text-gov-blue" /> Ikut Masjid
+                <Building2 size={16} className="text-gov-blue" /> Ikut Surau
               </button>
               <button 
                 onClick={() => generatePDF('parlimen')}
@@ -327,19 +317,18 @@ export default function JKManagement() {
             className="bg-gov-blue text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 shadow-lg shadow-gov-blue/20 hover:bg-gov-blue/90 transition-all"
           >
             <UserPlus size={20} />
-            TAMBAH JK BARU
+            TAMBAH JK SURAU BARU
           </button>
         </div>
       </div>
 
-      {/* Filters */}
       <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 space-y-4">
         <div className="flex flex-col md:flex-row gap-4">
           <div className="relative flex-1">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
             <input 
               type="text"
-              placeholder="Cari Nama, No. KP, No. Tel atau Masjid..."
+              placeholder="Cari Nama, No. KP, No. Tel atau Surau..."
               className="w-full pl-12 pr-4 py-3 bg-slate-50 border-none rounded-xl focus:ring-2 focus:ring-gov-blue/20 outline-none font-medium"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -401,29 +390,28 @@ export default function JKManagement() {
         </div>
       </div>
 
-      {/* Grouped List View */}
       <div className="space-y-6">
-        {groupedRecords.map(([masjid, members]) => (
-          <div key={masjid} className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+        {groupedRecords.map(([surau, members]) => (
+          <div key={surau} className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
             <div className="p-4 bg-slate-50 flex items-center justify-between border-b border-slate-100">
               <div className="flex items-center gap-3">
                 <button 
-                  onClick={() => toggleMasjid(masjid)}
+                  onClick={() => toggleSurau(surau)}
                   className="p-1 hover:bg-slate-200 rounded-lg transition-all"
                 >
-                  {expandedMasjids.includes(masjid) ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
+                  {expandedSuraus.includes(surau) ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
                 </button>
                 <div className="w-10 h-10 bg-gov-blue/10 rounded-xl flex items-center justify-center text-gov-blue">
                   <Building2 size={20} />
                 </div>
                 <div>
-                  <h3 className="font-bold text-slate-900">{masjid}</h3>
+                  <h3 className="font-bold text-slate-900">{surau}</h3>
                   <p className="text-xs text-slate-500">{members.length} Ahli Jawatankuasa</p>
                 </div>
               </div>
               <div className="flex items-center gap-4">
                 <button 
-                  onClick={() => toggleSelectMasjid(masjid, members)}
+                  onClick={() => toggleSelectSurau(surau, members)}
                   className="flex items-center gap-2 text-xs font-bold text-slate-600 hover:text-gov-blue transition-all"
                 >
                   {members.every(m => selectedForPrint.includes(m.id)) ? <CheckSquare size={18} className="text-gov-blue" /> : <Square size={18} />}
@@ -433,7 +421,7 @@ export default function JKManagement() {
             </div>
 
             <AnimatePresence>
-              {expandedMasjids.includes(masjid) && (
+              {expandedSuraus.includes(surau) && (
                 <motion.div
                   initial={{ height: 0, opacity: 0 }}
                   animate={{ height: 'auto', opacity: 1 }}
@@ -514,9 +502,9 @@ export default function JKManagement() {
       <JKModal 
         isOpen={isModalOpen} 
         onClose={() => setIsModalOpen(false)} 
-        initialData={selectedRecord} 
-        collectionName="jk_records"
-        typeLabel="JK Kariah"
+        initialData={selectedRecord}
+        collectionName="jk_surau_records"
+        typeLabel="JK Surau"
       />
 
       {filteredRecords.length === 0 && !loading && (
@@ -529,5 +517,3 @@ export default function JKManagement() {
     </div>
   );
 }
-
-

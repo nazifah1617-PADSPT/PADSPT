@@ -62,23 +62,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           console.log("Initial role from Firestore:", role);
 
           // 1. Hardcoded Super Admin Check
-          if (userEmail === "photonazifah1617@gmail.com") {
+          if (userEmail === "photonazifah1617@gmail.com" || userEmail === "data1617@gmail.com") {
             role = 'SUPER_ADMIN';
-            name = 'Super Admin';
+            name = userEmail === "data1617@gmail.com" ? 'Pindah Data' : 'Super Admin';
             console.log("Promoted to SUPER_ADMIN via hardcode");
           } 
-          // 2. Requested Admins Bootstrap Check (Fail-safe)
-          else if (userEmail === 'muhammad_basaruddin@penang.gov.my' || userEmail === 'zularief@islam.gov.my') {
-            role = 'ADMIN';
-            console.log("Promoted to ADMIN via fail-safe list");
-          }
           // 3. Check admin_users collection if they are currently a USER
           else if (role === 'USER') {
             console.log("Checking admin_users for email:", userEmail);
-            const q = query(collection(db, 'admin_users'), where('email', '==', userEmail));
-            const adminSnap = await getDocs(q);
-            if (!adminSnap.empty) {
-              const adminData = adminSnap.docs[0].data();
+            const adminDoc = await getDoc(doc(db, 'admin_users', userEmail));
+            if (adminDoc.exists()) {
+              const adminData = adminDoc.data();
               role = adminData.role || 'ADMIN';
               name = adminData.name || name;
               console.log("Promoted to", role, "via admin_users collection");
@@ -105,8 +99,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         } catch (error) {
           console.error("Profile fetch error:", error);
           // Fallback logic
-          const fallbackRole = (userEmail === "photonazifah1617@gmail.com") ? 'SUPER_ADMIN' : 
-                               (userEmail === 'muhammad_basaruddin@penang.gov.my' || userEmail === 'zularief@islam.gov.my') ? 'ADMIN' : 'USER';
+          const fallbackRole = (userEmail === "photonazifah1617@gmail.com") ? 'SUPER_ADMIN' : 'USER';
           setProfile({ role: fallbackRole, name: user.displayName || 'Pengguna', email: userEmail });
         } finally {
           setLoading(false);
@@ -129,8 +122,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, [user]);
 
   const userEmail = user?.email?.toLowerCase();
-  const isAdmin = profile?.role === 'ADMIN' || profile?.role === 'SUPER_ADMIN' || userEmail === "photonazifah1617@gmail.com";
-  const isSuperAdmin = profile?.role === 'SUPER_ADMIN' || userEmail === "photonazifah1617@gmail.com";
+  const isAdmin = profile?.role === 'ADMIN' || profile?.role === 'SUPER_ADMIN' || userEmail === "photonazifah1617@gmail.com" || userEmail === "data1617@gmail.com";
+  const isSuperAdmin = profile?.role === 'SUPER_ADMIN' || userEmail === "photonazifah1617@gmail.com" || userEmail === "data1617@gmail.com";
 
   const value = {
     user,
