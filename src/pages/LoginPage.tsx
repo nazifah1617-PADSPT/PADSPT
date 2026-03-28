@@ -248,7 +248,7 @@ export default function LoginPage() {
               <div className="space-y-6">
                 <div className="flex bg-slate-100 p-1 rounded-2xl">
                   <button 
-                    onClick={() => setLoginMode('GOOGLE')}
+                    onClick={() => { setLoginMode('GOOGLE'); setError(null); setDebugInfo(null); }}
                     className={cn(
                       "flex-1 py-2 text-xs font-bold rounded-xl transition-all",
                       loginMode === 'GOOGLE' ? "bg-white text-gov-blue shadow-sm" : "text-slate-500 hover:text-slate-700"
@@ -257,7 +257,7 @@ export default function LoginPage() {
                     GOOGLE LOGIN
                   </button>
                   <button 
-                    onClick={() => setLoginMode('MANUAL')}
+                    onClick={() => { setLoginMode('MANUAL'); setError(null); setDebugInfo(null); }}
                     className={cn(
                       "flex-1 py-2 text-xs font-bold rounded-xl transition-all",
                       loginMode === 'MANUAL' ? "bg-white text-gov-blue shadow-sm" : "text-slate-500 hover:text-slate-700"
