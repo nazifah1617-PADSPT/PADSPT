@@ -5,7 +5,7 @@ import { getAuth, createUserWithEmailAndPassword, sendPasswordResetEmail } from 
 import { db, auth } from '../firebase';
 // @ts-ignore
 import firebaseConfig from '../../firebase-applet-config.json';
-import { Settings, Search, Plus, User, Shield, Edit3, Trash2, Loader2, Mail, X, Save, AlertCircle, CheckCircle2, Key } from 'lucide-react';
+import { Settings, Search, Plus, User, Shield, Edit3, Trash2, Loader2, Mail, X, Save, AlertCircle, CheckCircle2, Key, Eye, EyeOff } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
 import { logActivity } from '../services/auditService';
@@ -17,63 +17,12 @@ export default function UserManagement() {
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<any>(null);
-  const [formData, setFormData] = useState({ name: '', email: '', role: 'ADMIN' });
+  const [formData, setFormData] = useState({ name: '', email: '', role: 'ADMIN', password: '' });
   const [saving, setSaving] = useState(false);
-  const [isBootstrapping, setIsBootstrapping] = useState(false);
+  const [showPasswords, setShowPasswords] = useState<Record<string, boolean>>({});
 
-  const handleBootstrapAuth = async () => {
-    setIsBootstrapping(true);
-    setErrorMessage(null);
-    setSuccessMessage(null);
-    
-    const adminAccounts: any[] = [];
-
-    try {
-      // Use a secondary app instance to avoid logging out the current Super Admin
-      let secondaryApp;
-      const apps = getApps();
-      const existingApp = apps.find(a => a.name === 'SecondaryAuth');
-      
-      if (existingApp) {
-        secondaryApp = existingApp;
-      } else {
-        secondaryApp = initializeApp(firebaseConfig, 'SecondaryAuth');
-      }
-      
-      const secondaryAuth = getAuth(secondaryApp);
-      
-      let successCount = 0;
-      let failCount = 0;
-      let alreadyExistsCount = 0;
-
-      for (const acc of adminAccounts) {
-        try {
-          await createUserWithEmailAndPassword(secondaryAuth, acc.email, acc.password);
-          successCount++;
-          console.log(`Created auth user: ${acc.email}`);
-        } catch (err: any) {
-          if (err.code === 'auth/email-already-in-use') {
-            alreadyExistsCount++;
-            console.log(`Auth user already exists: ${acc.email}`);
-          } else if (err.code === 'auth/operation-not-allowed') {
-            failCount++;
-            setErrorMessage("Ralat: 'Email/Password' provider belum diaktifkan di Firebase Console. Sila aktifkan di tab 'Sign-in method' dalam Authentication.");
-            break; // Stop if provider is disabled
-          } else {
-            failCount++;
-            console.error(`Failed to create auth user ${acc.email}:`, err);
-          }
-        }
-      }
-
-      setSuccessMessage(`Selesai! Berjaya: ${successCount}, Sedia ada: ${alreadyExistsCount}, Gagal: ${failCount}.`);
-      await logActivity('BOOTSTRAP_AUTH', `Menjalankan bootstrap akaun manual untuk admin.`);
-    } catch (err: any) {
-      console.error("Bootstrap Auth error:", err);
-      setErrorMessage(`Ralat bootstrap: ${err.message}`);
-    } finally {
-      setIsBootstrapping(false);
-    }
+  const togglePasswordVisibility = (email: string) => {
+    setShowPasswords(prev => ({ ...prev, [email]: !prev[email] }));
   };
 
   const handleResetPassword = async (email: string) => {
@@ -96,7 +45,11 @@ export default function UserManagement() {
   // Bootstrap requested admins in Firestore
   useEffect(() => {
     const bootstrapAdmins = async () => {
-      const requestedEmails: any[] = [];
+      // List of initial admins to ensure are in the system
+      const requestedEmails = [
+        { name: 'Admin JHEAIPP', email: 'admin@penang.gov.my' },
+        { name: 'Super Admin', email: 'photonazifah1617@gmail.com' }
+      ];
 
       try {
         for (const admin of requestedEmails) {
@@ -111,7 +64,8 @@ export default function UserManagement() {
               await setDoc(doc(db, 'admin_users', admin.email), {
                 name: admin.name,
                 email: admin.email,
-                role: 'ADMIN',
+                role: admin.email === 'photonazifah1617@gmail.com' ? 'SUPER_ADMIN' : 'ADMIN',
+                password: 'Password123!', // Default password for bootstrapped accounts
                 createdAt: serverTimestamp(),
                 updatedAt: serverTimestamp()
               });
@@ -155,10 +109,15 @@ export default function UserManagement() {
   const handleOpenModal = (user: any = null) => {
     if (user) {
       setSelectedUser(user);
-      setFormData({ name: user.name || '', email: user.email || '', role: user.role || 'ADMIN' });
+      setFormData({ 
+        name: user.name || '', 
+        email: user.email || '', 
+        role: user.role || 'ADMIN',
+        password: user.password || '' 
+      });
     } else {
       setSelectedUser(null);
-      setFormData({ name: '', email: '', role: 'ADMIN' });
+      setFormData({ name: '', email: '', role: 'ADMIN', password: '' });
     }
     setIsModalOpen(true);
   };
@@ -177,6 +136,24 @@ export default function UserManagement() {
     const updatedFormData = { ...formData, email: normalizedEmail };
 
     try {
+      // Prevent changing role of main Super Admin
+      if (selectedUser && selectedUser.email.toLowerCase() === 'photonazifah1617@gmail.com' && formData.role !== 'SUPER_ADMIN') {
+        setErrorMessage("Peranan Super Admin utama tidak boleh diubah.");
+        setSaving(false);
+        return;
+      }
+
+      // Use a secondary app instance for Auth operations to avoid logging out current user
+      let secondaryApp;
+      const apps = getApps();
+      const existingApp = apps.find(a => a.name === 'SecondaryAuth');
+      if (existingApp) {
+        secondaryApp = existingApp;
+      } else {
+        secondaryApp = initializeApp(firebaseConfig, 'SecondaryAuth');
+      }
+      const secondaryAuth = getAuth(secondaryApp);
+
       if (selectedUser) {
         if (selectedUser.type === 'PENDING') {
           // Update the pending invite in admin_users
@@ -184,6 +161,18 @@ export default function UserManagement() {
             ...updatedFormData,
             updatedAt: serverTimestamp()
           });
+
+          // If password is changed, try to update Auth if we have the old one or if it's a new creation
+          if (formData.password && formData.password !== selectedUser.password) {
+            try {
+              // This is tricky without Admin SDK, but if it's still PENDING, 
+              // we might be able to just create it if it didn't exist or re-auth
+              await createUserWithEmailAndPassword(secondaryAuth, normalizedEmail, formData.password);
+            } catch (e) {
+              // If already exists, we can't easily update it from here without old password
+              console.warn("Could not update Auth password for pending user, they may need to use reset email.");
+            }
+          }
         } else {
           // Update the registered user document directly
           await updateDoc(doc(db, 'users', selectedUser.id), {
@@ -205,7 +194,19 @@ export default function UserManagement() {
         
         await logActivity('UPDATE_USER', `Mengemaskini peranan pengguna: ${normalizedEmail} kepada ${formData.role}`);
       } else {
-        // Manual add - check if user already exists
+        // Manual add - check if user already exists in Auth
+        try {
+          if (formData.password) {
+            await createUserWithEmailAndPassword(secondaryAuth, normalizedEmail, formData.password);
+            console.log("Auth user created successfully");
+          }
+        } catch (authErr: any) {
+          if (authErr.code !== 'auth/email-already-in-use') {
+            console.error("Auth creation error:", authErr);
+            // We continue anyway to save to Firestore, but maybe show warning
+          }
+        }
+
         const userQuery = query(collection(db, 'users'), where('email', '==', normalizedEmail));
         const userSnap = await getDocs(userQuery);
         
@@ -243,6 +244,14 @@ export default function UserManagement() {
 
   const handleDelete = async () => {
     if (!userToDelete) return;
+    
+    // Prevent deleting the main Super Admin
+    if (userToDelete.email.toLowerCase() === 'photonazifah1617@gmail.com') {
+      setErrorMessage("Akaun Super Admin utama tidak boleh dipadam.");
+      setIsDeleteModalOpen(false);
+      return;
+    }
+
     setSaving(true);
     try {
       if (userToDelete.type === 'PENDING') {
@@ -293,15 +302,6 @@ export default function UserManagement() {
           <p className="text-slate-500">Kawal akses pegawai ke dalam sistem e-Kariah.</p>
         </div>
         <div className="flex flex-wrap gap-3">
-          <button 
-            onClick={handleBootstrapAuth}
-            disabled={isBootstrapping}
-            className="bg-amber-600 hover:bg-amber-700 text-white px-6 py-4 rounded-xl font-bold flex items-center gap-2 shadow-lg shadow-amber-600/20 transition-all disabled:opacity-50"
-            title="Sediakan akaun log masuk manual untuk admin khas"
-          >
-            {isBootstrapping ? <Loader2 className="animate-spin" size={20} /> : <Key size={20} />}
-            BOOTSTRAP AUTH
-          </button>
           <button 
             onClick={() => handleOpenModal()}
             className="bg-gov-blue hover:bg-gov-blue/90 text-white px-8 py-4 rounded-xl font-bold flex items-center gap-2 shadow-lg shadow-gov-blue/20 transition-all"
@@ -394,6 +394,7 @@ export default function UserManagement() {
             <tr>
               <th className="px-6 py-4 text-[10px] uppercase tracking-widest font-bold text-slate-400">Nama Admin</th>
               <th className="px-6 py-4 text-[10px] uppercase tracking-widest font-bold text-slate-400">Email Rasmi</th>
+              <th className="px-6 py-4 text-[10px] uppercase tracking-widest font-bold text-slate-400">Katalaluan</th>
               <th className="px-6 py-4 text-[10px] uppercase tracking-widest font-bold text-slate-400">Peranan (Role)</th>
               <th className="px-6 py-4 text-[10px] uppercase tracking-widest font-bold text-slate-400">Status</th>
               <th className="px-6 py-4 text-[10px] uppercase tracking-widest font-bold text-slate-400 text-right">Tindakan</th>
@@ -422,6 +423,20 @@ export default function UserManagement() {
                     <div className="flex items-center gap-2 text-slate-600">
                       <Mail size={14} />
                       <span className="text-sm">{u.email}</span>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-mono bg-slate-100 px-2 py-1 rounded border border-slate-200 min-w-[100px] text-center">
+                        {showPasswords[u.email] ? (u.password || 'N/A') : '••••••••'}
+                      </span>
+                      <button 
+                        onClick={() => togglePasswordVisibility(u.email)}
+                        className="p-1 text-slate-400 hover:text-gov-blue transition-colors"
+                        title={showPasswords[u.email] ? "Sembunyi Katalaluan" : "Lihat Katalaluan"}
+                      >
+                        {showPasswords[u.email] ? <EyeOff size={14} /> : <Eye size={14} />}
+                      </button>
                     </div>
                   </td>
                   <td className="px-6 py-4">
@@ -534,15 +549,29 @@ export default function UserManagement() {
                   <input 
                     type="email"
                     required
-                    className="w-full px-4 py-3 rounded-xl bg-slate-50 border-none focus:ring-2 focus:ring-gov-blue/20 outline-none font-medium"
+                    disabled={selectedUser?.email.toLowerCase() === 'photonazifah1617@gmail.com'}
+                    className="w-full px-4 py-3 rounded-xl bg-slate-50 border-none focus:ring-2 focus:ring-gov-blue/20 outline-none font-medium disabled:opacity-50"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   />
                 </div>
                 <div>
+                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Katalaluan</label>
+                  <input 
+                    type="text"
+                    required={!selectedUser}
+                    placeholder={selectedUser ? "Tinggalkan kosong jika tiada perubahan" : "Masukkan katalaluan"}
+                    className="w-full px-4 py-3 rounded-xl bg-slate-50 border-none focus:ring-2 focus:ring-gov-blue/20 outline-none font-medium"
+                    value={formData.password}
+                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  />
+                  <p className="text-[10px] text-slate-400 mt-1 italic">*Katalaluan ini akan disimpan untuk rujukan Super Admin.</p>
+                </div>
+                <div>
                   <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Peranan (Role)</label>
                   <select 
-                    className="w-full px-4 py-3 rounded-xl bg-slate-50 border-none focus:ring-2 focus:ring-gov-blue/20 outline-none font-medium"
+                    disabled={selectedUser?.email.toLowerCase() === 'photonazifah1617@gmail.com'}
+                    className="w-full px-4 py-3 rounded-xl bg-slate-50 border-none focus:ring-2 focus:ring-gov-blue/20 outline-none font-medium disabled:opacity-50"
                     value={formData.role}
                     onChange={(e) => setFormData({ ...formData, role: e.target.value })}
                   >

@@ -62,9 +62,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           console.log("Initial role from Firestore:", role);
 
           // 1. Hardcoded Super Admin Check
-          if (userEmail === "photonazifah1617@gmail.com" || userEmail === "data1617@gmail.com") {
+          if (userEmail === "photonazifah1617@gmail.com") {
             role = 'SUPER_ADMIN';
-            name = userEmail === "data1617@gmail.com" ? 'Pindah Data' : 'Super Admin';
+            name = 'Super Admin';
             console.log("Promoted to SUPER_ADMIN via hardcode");
           } 
           // 3. Check admin_users collection if they are currently a USER
@@ -122,8 +122,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, [user]);
 
   const userEmail = user?.email?.toLowerCase();
-  const isAdmin = profile?.role === 'ADMIN' || profile?.role === 'SUPER_ADMIN' || userEmail === "photonazifah1617@gmail.com" || userEmail === "data1617@gmail.com";
-  const isSuperAdmin = profile?.role === 'SUPER_ADMIN' || userEmail === "photonazifah1617@gmail.com" || userEmail === "data1617@gmail.com";
+  const isAdmin = profile?.role === 'ADMIN' || profile?.role === 'SUPER_ADMIN' || userEmail === "photonazifah1617@gmail.com";
+  const isSuperAdmin = profile?.role === 'SUPER_ADMIN' || userEmail === "photonazifah1617@gmail.com";
 
   const value = {
     user,
