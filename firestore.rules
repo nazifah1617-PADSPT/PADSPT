@@ -94,10 +94,20 @@ service cloud.firestore {
       allow delete: if isSuperAdmin();
     }
 
+    match /pembaikan_records/{recordId} {
+      allow read: if true;
+      allow create, update: if isAdmin();
+      allow delete: if isSuperAdmin();
+    }
+
     match /audit_logs/{logId} {
       allow read: if isAdmin();
       allow create: if isAuthenticated();
       allow update, delete: if false; // Immutable
+    }
+
+    match /test/{docId} {
+      allow read: if true;
     }
   }
 }

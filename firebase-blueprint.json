@@ -77,6 +77,27 @@
         "name": { "type": "string" }
       },
       "required": ["uid", "email", "role"]
+    },
+    "PembaikanRecord": {
+      "title": "Rekod Pembaikan",
+      "description": "Maklumat pembaikan masjid atau surau.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "tajuk": { "type": "string", "description": "Tajuk Pembaikan" },
+        "tarikhTerima": { "type": "string", "format": "date", "description": "Tarikh Terima" },
+        "tarikhHantar": { "type": "string", "format": "date", "description": "Tarikh hantar ke JHEAIPP" },
+        "catatan": { "type": "string", "description": "Catatan" },
+        "failUrl": { "type": "string", "description": "URL fail PDF lampiran" },
+        "masjidSurauId": { "type": "string", "description": "ID Masjid atau Surau" },
+        "masjidSurauName": { "type": "string", "description": "Nama Masjid atau Surau" },
+        "jenis": { "type": "string", "enum": ["Masjid", "Surau"], "description": "Jenis Premis" },
+        "bulan": { "type": "integer", "description": "Bulan (1-12)" },
+        "tahun": { "type": "integer", "description": "Tahun" },
+        "updatedBy": { "type": "string" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["tajuk", "tarikhTerima", "masjidSurauName", "jenis"]
     }
   },
   "firestore": {
@@ -111,6 +132,14 @@
     "/admin_users": {
       "schema": "UserProfile",
       "description": "Koleksi pengguna yang telah diluluskan untuk menjadi Admin/Super Admin (Pre-approved)."
+    },
+    "/test": {
+      "schema": "object",
+      "description": "Koleksi untuk ujian sambungan Firestore (Diagnostic)."
+    },
+    "/pembaikan_records": {
+      "schema": "PembaikanRecord",
+      "description": "Koleksi rekod pembaikan masjid dan surau."
     }
   }
 }
