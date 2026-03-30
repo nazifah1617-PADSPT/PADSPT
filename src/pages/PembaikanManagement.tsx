@@ -14,13 +14,31 @@ import { useAuth } from '../hooks/useAuth';
 import { format } from 'date-fns';
 import { motion, AnimatePresence } from 'motion/react';
 import { jsPDF } from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 
-// Extend jsPDF type for autotable
-declare module 'jspdf' {
-  interface jsPDF {
-    autoTable: (options: any) => jsPDF;
-  }
+enum OperationType {
+  CREATE = 'create',
+  UPDATE = 'update',
+  DELETE = 'delete',
+  LIST = 'list',
+  GET = 'get',
+  WRITE = 'write',
+}
+
+function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
+  const errInfo = {
+    error: error instanceof Error ? error.message : String(error),
+    authInfo: {
+      userId: auth.currentUser?.uid,
+      email: auth.currentUser?.email,
+      emailVerified: auth.currentUser?.emailVerified,
+      isAnonymous: auth.currentUser?.isAnonymous,
+    },
+    operationType,
+    path
+  };
+  console.error('Firestore Error: ', JSON.stringify(errInfo));
+  throw new Error(JSON.stringify(errInfo));
 }
 
 interface PembaikanRecord {
@@ -52,6 +70,7 @@ export default function PembaikanManagement() {
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentRecord, setCurrentRecord] = useState<Partial<PembaikanRecord> | null>(null);
+  const [modalJenis, setModalJenis] = useState<'Masjid' | 'Surau' | ''>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   // Filters
@@ -65,6 +84,12 @@ export default function PembaikanManagement() {
     fetchData();
     fetchPremis();
   }, []);
+
+  useEffect(() => {
+    if (currentRecord?.jenis) {
+      setModalJenis(currentRecord.jenis);
+    }
+  }, [currentRecord]);
 
   const fetchPremis = async () => {
     try {
@@ -84,13 +109,14 @@ export default function PembaikanManagement() {
 
   const fetchData = async () => {
     setLoading(true);
+    const path = 'pembaikan_records';
     try {
-      const q = query(collection(db, 'pembaikan_records'), orderBy('tarikhTerima', 'desc'));
+      const q = query(collection(db, path), orderBy('tarikhTerima', 'desc'));
       const snapshot = await getDocs(q);
       const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as PembaikanRecord));
       setRecords(data);
     } catch (error) {
-      console.error("Error fetching records:", error);
+      handleFirestoreError(error, OperationType.LIST, path);
     } finally {
       setLoading(false);
     }
@@ -101,6 +127,7 @@ export default function PembaikanManagement() {
     if (!currentRecord?.tajuk || !currentRecord?.tarikhTerima || !currentRecord?.masjidSurauId) return;
 
     setIsSubmitting(true);
+    const path = 'pembaikan_records';
     try {
       const selectedPremis = premisList.find(p => p.id === currentRecord.masjidSurauId);
       const date = new Date(currentRecord.tarikhTerima);
@@ -116,17 +143,16 @@ export default function PembaikanManagement() {
       };
 
       if (currentRecord.id) {
-        await updateDoc(doc(db, 'pembaikan_records', currentRecord.id), data);
+        await updateDoc(doc(db, path, currentRecord.id), data);
       } else {
-        await addDoc(collection(db, 'pembaikan_records'), data);
+        await addDoc(collection(db, path), data);
       }
 
       setIsModalOpen(false);
       setCurrentRecord(null);
       fetchData();
     } catch (error) {
-      console.error("Error saving record:", error);
-      alert("Gagal menyimpan rekod.");
+      handleFirestoreError(error, currentRecord.id ? OperationType.UPDATE : OperationType.CREATE, path);
     } finally {
       setIsSubmitting(false);
     }
@@ -134,11 +160,12 @@ export default function PembaikanManagement() {
 
   const handleDelete = async (id: string) => {
     if (!window.confirm("Adakah anda pasti ingin memadam rekod ini?")) return;
+    const path = 'pembaikan_records';
     try {
-      await deleteDoc(doc(db, 'pembaikan_records', id));
+      await deleteDoc(doc(db, path, id));
       fetchData();
     } catch (error) {
-      console.error("Error deleting record:", error);
+      handleFirestoreError(error, OperationType.DELETE, path);
     }
   };
 
@@ -174,7 +201,7 @@ export default function PembaikanManagement() {
       r.catatan || '-'
     ]);
 
-    doc.autoTable({
+    autoTable(doc, {
       startY: 40,
       head: [['No', 'Tajuk Pembaikan', 'Premis', 'Jenis', 'Tarikh Terima', 'Tarikh JHEAIPP', 'Catatan']],
       body: tableData,
@@ -217,6 +244,7 @@ export default function PembaikanManagement() {
                 tarikhTerima: format(new Date(), 'yyyy-MM-dd'),
                 tarikhHantar: format(new Date(), 'yyyy-MM-dd'),
               });
+              setModalJenis('');
               setIsModalOpen(true);
             }}
             className="flex items-center gap-2 px-4 py-2 bg-gov-blue text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
@@ -352,6 +380,7 @@ export default function PembaikanManagement() {
                         <button
                           onClick={() => {
                             setCurrentRecord(record);
+                            setModalJenis(record.jenis);
                             setIsModalOpen(true);
                           }}
                           className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
@@ -410,18 +439,39 @@ export default function PembaikanManagement() {
                     />
                   </div>
 
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-bold text-slate-700 mb-1">Pilih Masjid / Surau</label>
+                  <div>
+                    <label className="block text-sm font-bold text-slate-700 mb-1">Jenis Premis</label>
                     <select
                       required
                       className="w-full px-4 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-gov-blue outline-none"
+                      value={modalJenis}
+                      onChange={(e) => {
+                        const val = e.target.value as 'Masjid' | 'Surau';
+                        setModalJenis(val);
+                        setCurrentRecord({ ...currentRecord, jenis: val, masjidSurauId: '' });
+                      }}
+                    >
+                      <option value="">Pilih Jenis...</option>
+                      <option value="Masjid">Masjid</option>
+                      <option value="Surau">Surau</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-bold text-slate-700 mb-1">Pilih Masjid / Surau</label>
+                    <select
+                      required
+                      disabled={!modalJenis}
+                      className="w-full px-4 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-gov-blue outline-none disabled:bg-slate-50 disabled:text-slate-400"
                       value={currentRecord?.masjidSurauId || ''}
                       onChange={(e) => setCurrentRecord({ ...currentRecord, masjidSurauId: e.target.value })}
                     >
-                      <option value="">Sila Pilih...</option>
-                      {premisList.map(p => (
-                        <option key={p.id} value={p.id}>{p.nama} ({p.jenis})</option>
-                      ))}
+                      <option value="">{modalJenis ? `Pilih ${modalJenis}...` : 'Sila pilih jenis dahulu'}</option>
+                      {premisList
+                        .filter(p => p.jenis === modalJenis)
+                        .map(p => (
+                          <option key={p.id} value={p.id}>{p.nama}</option>
+                        ))}
                     </select>
                   </div>
 
