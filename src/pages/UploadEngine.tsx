@@ -80,9 +80,12 @@ export default function UploadEngine() {
       setMessage({ type: 'success', text: `Berjaya menyimpan ${batch.length} rekod ke dalam sistem.` });
       setExtractedData(null);
       setFile(null);
-    } catch (error) {
-      console.error("Save error:", error);
-      setMessage({ type: 'error', text: 'Gagal menyimpan data.' });
+    } catch (error: any) {
+      console.error("Save error details:", error);
+      const errorMsg = error.code === 'permission-denied' 
+        ? 'Ralat: Tiada kebenaran untuk menyimpan (Permission Denied).' 
+        : `Gagal menyimpan data: ${error.message || 'Ralat tidak diketahui'}`;
+      setMessage({ type: 'error', text: errorMsg });
     } finally {
       setSaving(false);
     }

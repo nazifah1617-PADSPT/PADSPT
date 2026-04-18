@@ -13,15 +13,21 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    // Simplified checks for debugging
+    // Relational checks to allow admins from Firestore collection
     function isPreApprovedSuperAdmin() {
-      return isAuthenticated() && (request.auth.token.email.lower() == "photonazifah1617@gmail.com");
+      return isAuthenticated() && (
+        (request.auth.token.email.lower() == "photonazifah1617@gmail.com") ||
+        (exists(/databases/$(database)/documents/admin_users/$(request.auth.token.email.lower())) && 
+         get(/databases/$(database)/documents/admin_users/$(request.auth.token.email.lower())).data.role == 'SUPER_ADMIN')
+      );
     }
 
     function isPreApprovedAdmin() {
       return isAuthenticated() && (
         isPreApprovedSuperAdmin() || 
-        request.auth.token.email.lower() == "admin@penang.gov.my"
+        request.auth.token.email.lower() == "admin@penang.gov.my" ||
+        (exists(/databases/$(database)/documents/admin_users/$(request.auth.token.email.lower())) && 
+         get(/databases/$(database)/documents/admin_users/$(request.auth.token.email.lower())).data.role == 'ADMIN')
       );
     }
 
@@ -30,7 +36,12 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      return isPreApprovedAdmin();
+      return isPreApprovedAdmin() || (
+        isAuthenticated() && 
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'ADMIN' || 
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'SUPER_ADMIN')
+      );
     }
 
     // ===============================================================
