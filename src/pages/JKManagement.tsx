@@ -346,13 +346,13 @@ export default function JKManagement() {
             />
           </div>
           <div className="flex gap-2 overflow-x-auto pb-2 md:pb-0 scrollbar-hide">
-            {['Semua', 'Aktif', 'Tamat tempoh', 'Letak jawatan', 'Meninggal dunia'].map(status => (
+            {['SEMUA', 'AKTIF', 'TAMAT TEMPOH', 'LETAK JAWATAN', 'MENINGGAL DUNIA'].map(status => (
               <button
                 key={status}
-                onClick={() => setSelectedStatus(status)}
+                onClick={() => setSelectedStatus(status === 'SEMUA' ? 'Semua' : status)}
                 className={cn(
                   "px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all",
-                  selectedStatus === status 
+                  (selectedStatus === status || (selectedStatus === 'Semua' && status === 'SEMUA'))
                     ? "bg-gov-blue text-white shadow-md" 
                     : "bg-slate-50 text-slate-500 hover:bg-slate-100"
                 )}

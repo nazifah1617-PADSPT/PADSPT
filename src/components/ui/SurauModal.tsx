@@ -3,6 +3,7 @@ import { X, Save, Loader2, Map as MapIcon } from 'lucide-react';
 import { doc, setDoc, addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { logActivity } from '../../services/auditService';
+import { PENANG_PARLIAMENT_DUN, DAERAH_LIST } from '../../constants';
 
 interface SurauModalProps {
   isOpen: boolean;
@@ -59,6 +60,10 @@ export const SurauModal = ({ isOpen, onClose, initialData }: SurauModalProps) =>
     } finally {
       setGeocoding(false);
     }
+  };
+
+  const handleParlimenChange = (value: string) => {
+    setFormData({ ...formData, parlimen: value, dun: '' });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -127,28 +132,46 @@ export const SurauModal = ({ isOpen, onClose, initialData }: SurauModalProps) =>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="space-y-2">
               <label className="text-[10px] uppercase font-bold text-slate-400">Daerah</label>
-              <input 
+              <select 
                 required
                 className="w-full px-4 py-3 bg-slate-50 border-none rounded-xl focus:ring-2 focus:ring-gov-blue/20 outline-none"
                 value={formData.daerah}
                 onChange={(e) => setFormData({...formData, daerah: e.target.value})}
-              />
+              >
+                <option value="">PILIH DAERAH...</option>
+                {DAERAH_LIST.map(d => (
+                  <option key={d} value={d}>{d}</option>
+                ))}
+              </select>
             </div>
             <div className="space-y-2">
               <label className="text-[10px] uppercase font-bold text-slate-400">Parlimen</label>
-              <input 
+              <select 
+                required
                 className="w-full px-4 py-3 bg-slate-50 border-none rounded-xl focus:ring-2 focus:ring-gov-blue/20 outline-none"
                 value={formData.parlimen}
-                onChange={(e) => setFormData({...formData, parlimen: e.target.value})}
-              />
+                onChange={(e) => handleParlimenChange(e.target.value)}
+              >
+                <option value="">PILIH PARLIMEN...</option>
+                {Object.keys(PENANG_PARLIAMENT_DUN).map(p => (
+                  <option key={p} value={p}>{p}</option>
+                ))}
+              </select>
             </div>
             <div className="space-y-2">
               <label className="text-[10px] uppercase font-bold text-slate-400">DUN</label>
-              <input 
-                className="w-full px-4 py-3 bg-slate-50 border-none rounded-xl focus:ring-2 focus:ring-gov-blue/20 outline-none"
+              <select 
+                required
+                className="w-full px-4 py-3 bg-slate-50 border-none rounded-xl focus:ring-2 focus:ring-gov-blue/20 outline-none disabled:opacity-50"
                 value={formData.dun}
+                disabled={!formData.parlimen}
                 onChange={(e) => setFormData({...formData, dun: e.target.value})}
-              />
+              >
+                <option value="">PILIH DUN...</option>
+                {formData.parlimen && PENANG_PARLIAMENT_DUN[formData.parlimen]?.map(d => (
+                  <option key={d} value={d}>{d}</option>
+                ))}
+              </select>
             </div>
           </div>
 

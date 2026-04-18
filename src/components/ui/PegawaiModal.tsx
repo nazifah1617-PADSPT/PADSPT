@@ -3,6 +3,7 @@ import { X, Save, Loader2 } from 'lucide-react';
 import { doc, setDoc, addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { logActivity } from '../../services/auditService';
+import { MASJID_LIST, DAERAH_LIST } from '../../constants';
 
 interface PegawaiModalProps {
   isOpen: boolean;
@@ -93,10 +94,10 @@ export const PegawaiModal = ({ isOpen, onClose, initialData }: PegawaiModalProps
                 value={formData.jawatan}
                 onChange={(e) => setFormData({...formData, jawatan: e.target.value})}
               >
-                <option>Imam</option>
-                <option>Bilal</option>
-                <option>Siak</option>
-                <option>Noja</option>
+                <option>IMAM</option>
+                <option>BILAL</option>
+                <option>SIAK</option>
+                <option>NOJA</option>
               </select>
             </div>
             <div className="space-y-2">
@@ -112,21 +113,31 @@ export const PegawaiModal = ({ isOpen, onClose, initialData }: PegawaiModalProps
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <label className="text-[10px] uppercase font-bold text-slate-400">Nama Masjid</label>
-              <input 
+              <select 
                 required
                 className="w-full px-4 py-3 bg-slate-50 border-none rounded-xl focus:ring-2 focus:ring-gov-blue/20 outline-none"
                 value={formData.masjidName}
                 onChange={(e) => setFormData({...formData, masjidName: e.target.value})}
-              />
+              >
+                <option value="">PILIH MASJID...</option>
+                {MASJID_LIST.map(m => (
+                  <option key={m} value={m}>{m}</option>
+                ))}
+              </select>
             </div>
             <div className="space-y-2">
               <label className="text-[10px] uppercase font-bold text-slate-400">Daerah</label>
-              <input 
+              <select 
                 required
                 className="w-full px-4 py-3 bg-slate-50 border-none rounded-xl focus:ring-2 focus:ring-gov-blue/20 outline-none"
                 value={formData.daerah}
                 onChange={(e) => setFormData({...formData, daerah: e.target.value})}
-              />
+              >
+                <option value="">PILIH DAERAH...</option>
+                {DAERAH_LIST.map(d => (
+                  <option key={d} value={d}>{d}</option>
+                ))}
+              </select>
             </div>
           </div>
 

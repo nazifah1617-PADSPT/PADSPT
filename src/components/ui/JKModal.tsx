@@ -4,6 +4,8 @@ import { doc, setDoc, addDoc, collection, serverTimestamp } from 'firebase/fires
 import { db } from '../../firebase';
 import { logActivity } from '../../services/auditService';
 
+import { MASJID_LIST, PENANG_PARLIAMENT_DUN, DAERAH_LIST } from '../../constants';
+
 interface JKModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -70,6 +72,10 @@ export const JKModal = ({ isOpen, onClose, initialData, collectionName = 'jk_rec
     }
   };
 
+  const handleParlimenChange = (value: string) => {
+    setFormData({ ...formData, parlimen: value, dun: '' });
+  };
+
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
       <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
@@ -114,13 +120,13 @@ export const JKModal = ({ isOpen, onClose, initialData, collectionName = 'jk_rec
                 value={formData.jawatan}
                 onChange={(e) => setFormData({...formData, jawatan: e.target.value})}
               >
-                <option>Pengerusi</option>
-                <option>Tim. Pengerusi</option>
-                <option>Setiausaha</option>
-                <option>Bendahari</option>
+                <option>PENGERUSI</option>
+                <option>TIM. PENGERUSI</option>
+                <option>SETIAUSAHA</option>
+                <option>BENDAHARI</option>
                 <option>AJK</option>
-                <option>AJK Wanita</option>
-                <option>Pemeriksa Kira-kira</option>
+                <option>AJK WANITA</option>
+                <option>PEMERIKSA KIRA-KIRA</option>
               </select>
             </div>
             <div className="space-y-2">
@@ -130,48 +136,78 @@ export const JKModal = ({ isOpen, onClose, initialData, collectionName = 'jk_rec
                 value={formData.statusLantikan}
                 onChange={(e) => setFormData({...formData, statusLantikan: e.target.value})}
               >
-                <option>Aktif</option>
-                <option>Tamat tempoh</option>
-                <option>Letak jawatan</option>
-                <option>Meninggal dunia</option>
+                <option>AKTIF</option>
+                <option>TAMAT TEMPOH</option>
+                <option>LETAK JAWATAN</option>
+                <option>MENINGGAL DUNIA</option>
               </select>
             </div>
           </div>
 
           <div className="space-y-2">
             <label className="text-[10px] uppercase font-bold text-slate-400">{typeLabel === 'JK Surau' ? 'Nama Surau' : 'Nama Masjid'}</label>
-            <input 
-              required
-              className="w-full px-4 py-3 bg-slate-50 border-none rounded-xl focus:ring-2 focus:ring-gov-blue/20 outline-none"
-              value={formData.masjidName}
-              onChange={(e) => setFormData({...formData, masjidName: e.target.value})}
-            />
+            {typeLabel === 'JK Surau' ? (
+              <input 
+                required
+                className="w-full px-4 py-3 bg-slate-50 border-none rounded-xl focus:ring-2 focus:ring-gov-blue/20 outline-none"
+                value={formData.masjidName}
+                onChange={(e) => setFormData({...formData, masjidName: e.target.value})}
+              />
+            ) : (
+              <select 
+                required
+                className="w-full px-4 py-3 bg-slate-50 border-none rounded-xl focus:ring-2 focus:ring-gov-blue/20 outline-none"
+                value={formData.masjidName}
+                onChange={(e) => setFormData({...formData, masjidName: e.target.value})}
+              >
+                <option value="">PILIH MASJID...</option>
+                {MASJID_LIST.map(m => (
+                  <option key={m} value={m}>{m}</option>
+                ))}
+              </select>
+            )}
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="space-y-2">
               <label className="text-[10px] uppercase font-bold text-slate-400">Daerah</label>
-              <input 
+              <select 
                 className="w-full px-4 py-3 bg-slate-50 border-none rounded-xl focus:ring-2 focus:ring-gov-blue/20 outline-none"
                 value={formData.daerah}
                 onChange={(e) => setFormData({...formData, daerah: e.target.value})}
-              />
+              >
+                <option value="">PILIH DAERAH...</option>
+                {DAERAH_LIST.map(d => (
+                  <option key={d} value={d}>{d}</option>
+                ))}
+              </select>
             </div>
             <div className="space-y-2">
               <label className="text-[10px] uppercase font-bold text-slate-400">Parlimen</label>
-              <input 
+              <select 
                 className="w-full px-4 py-3 bg-slate-50 border-none rounded-xl focus:ring-2 focus:ring-gov-blue/20 outline-none"
                 value={formData.parlimen}
-                onChange={(e) => setFormData({...formData, parlimen: e.target.value})}
-              />
+                onChange={(e) => handleParlimenChange(e.target.value)}
+              >
+                <option value="">PILIH PARLIMEN...</option>
+                {Object.keys(PENANG_PARLIAMENT_DUN).map(p => (
+                  <option key={p} value={p}>{p}</option>
+                ))}
+              </select>
             </div>
             <div className="space-y-2">
               <label className="text-[10px] uppercase font-bold text-slate-400">DUN</label>
-              <input 
-                className="w-full px-4 py-3 bg-slate-50 border-none rounded-xl focus:ring-2 focus:ring-gov-blue/20 outline-none"
+              <select 
+                className="w-full px-4 py-3 bg-slate-50 border-none rounded-xl focus:ring-2 focus:ring-gov-blue/20 outline-none disabled:opacity-50"
                 value={formData.dun}
+                disabled={!formData.parlimen}
                 onChange={(e) => setFormData({...formData, dun: e.target.value})}
-              />
+              >
+                <option value="">PILIH DUN...</option>
+                {formData.parlimen && PENANG_PARLIAMENT_DUN[formData.parlimen]?.map(d => (
+                  <option key={d} value={d}>{d}</option>
+                ))}
+              </select>
             </div>
           </div>
         </form>

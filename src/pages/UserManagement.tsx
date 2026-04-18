@@ -575,9 +575,9 @@ export default function UserManagement() {
                     value={formData.role}
                     onChange={(e) => setFormData({ ...formData, role: e.target.value })}
                   >
-                    <option value="USER">PENGGUNA BIASA (Carian Sahaja)</option>
-                    <option value="ADMIN">ADMIN (Boleh Edit, Tiada Padam)</option>
-                    <option value="SUPER_ADMIN">SUPER ADMIN (Akses Penuh)</option>
+                    <option value="USER">PENGGUNA BIASA (CARIAN SAHAJA)</option>
+                    <option value="ADMIN">ADMIN (BOLEH EDIT, TIADA PADAM)</option>
+                    <option value="SUPER_ADMIN">SUPER ADMIN (AKSES PENUH)</option>
                   </select>
                 </div>
 

@@ -275,20 +275,20 @@ export default function PembaikanManagement() {
             setFilterPremis(''); // Reset premis when jenis changes
           }}
         >
-          <option value="">Semua Jenis</option>
-          <option value="Masjid">Masjid</option>
-          <option value="Surau">Surau</option>
+          <option value="">SEMUA JENIS</option>
+          <option value="Masjid">MASJID</option>
+          <option value="Surau">SURAU</option>
         </select>
         <select
           className="px-4 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-gov-blue outline-none"
           value={filterPremis}
           onChange={(e) => setFilterPremis(e.target.value)}
         >
-          <option value="">Semua Premis</option>
+          <option value="">SEMUA PREMIS</option>
           {premisList
             .filter(p => !filterJenis || p.jenis === filterJenis)
             .map(p => (
-              <option key={p.id} value={p.id}>{p.nama}</option>
+              <option key={p.id} value={p.id}>{p.nama.toUpperCase()}</option>
             ))}
         </select>
         <select
@@ -296,9 +296,9 @@ export default function PembaikanManagement() {
           value={filterMonth}
           onChange={(e) => setFilterMonth(e.target.value)}
         >
-          <option value="">Semua Bulan</option>
+          <option value="">SEMUA BULAN</option>
           {Array.from({ length: 12 }, (_, i) => (
-            <option key={i + 1} value={i + 1}>{format(new Date(2000, i), 'MMMM')}</option>
+            <option key={i + 1} value={i + 1}>{format(new Date(2000, i), 'MMMM').toUpperCase()}</option>
           ))}
         </select>
         <select
@@ -451,9 +451,9 @@ export default function PembaikanManagement() {
                         setCurrentRecord({ ...currentRecord, jenis: val, masjidSurauId: '' });
                       }}
                     >
-                      <option value="">Pilih Jenis...</option>
-                      <option value="Masjid">Masjid</option>
-                      <option value="Surau">Surau</option>
+                      <option value="">PILIH JENIS...</option>
+                      <option value="Masjid">MASJID</option>
+                      <option value="Surau">SURAU</option>
                     </select>
                   </div>
 
@@ -466,11 +466,11 @@ export default function PembaikanManagement() {
                       value={currentRecord?.masjidSurauId || ''}
                       onChange={(e) => setCurrentRecord({ ...currentRecord, masjidSurauId: e.target.value })}
                     >
-                      <option value="">{modalJenis ? `Pilih ${modalJenis}...` : 'Sila pilih jenis dahulu'}</option>
+                      <option value="">{modalJenis ? `PILIH ${modalJenis.toUpperCase()}...` : 'SILA PILIH JENIS DAHULU'}</option>
                       {premisList
                         .filter(p => p.jenis === modalJenis)
                         .map(p => (
-                          <option key={p.id} value={p.id}>{p.nama}</option>
+                          <option key={p.id} value={p.id}>{p.nama.toUpperCase()}</option>
                         ))}
                     </select>
                   </div>
