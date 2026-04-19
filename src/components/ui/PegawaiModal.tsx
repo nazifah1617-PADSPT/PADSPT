@@ -3,7 +3,7 @@ import { X, Save, Loader2 } from 'lucide-react';
 import { doc, setDoc, addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { logActivity } from '../../services/auditService';
-import { MASJID_LIST, DAERAH_LIST } from '../../constants';
+import { MASJID_LIST, DAERAH_LIST, DAERAH_PARLIMEN, PENANG_PARLIAMENT_DUN } from '../../constants';
 
 interface PegawaiModalProps {
   isOpen: boolean;
@@ -19,15 +19,25 @@ export const PegawaiModal = ({ isOpen, onClose, initialData }: PegawaiModalProps
     noTel: '',
     masjidName: '',
     daerah: '',
+    parlimen: '',
+    dun: '',
   });
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (initialData) setFormData(initialData);
-    else setFormData({ nama: '', jawatan: 'Imam', noKP: '', noTel: '', masjidName: '', daerah: '' });
+    else setFormData({ nama: '', jawatan: 'Imam', noKP: '', noTel: '', masjidName: '', daerah: '', parlimen: '', dun: '' });
   }, [initialData, isOpen]);
 
   if (!isOpen) return null;
+
+  const handleDaerahChange = (value: string) => {
+    setFormData({ ...formData, daerah: value, parlimen: '', dun: '' });
+  };
+
+  const handleParlimenChange = (value: string) => {
+    setFormData({ ...formData, parlimen: value, dun: '' });
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -131,10 +141,43 @@ export const PegawaiModal = ({ isOpen, onClose, initialData }: PegawaiModalProps
                 required
                 className="w-full px-4 py-3 bg-slate-50 border-none rounded-xl focus:ring-2 focus:ring-gov-blue/20 outline-none"
                 value={formData.daerah}
-                onChange={(e) => setFormData({...formData, daerah: e.target.value})}
+                onChange={(e) => handleDaerahChange(e.target.value)}
               >
                 <option value="">PILIH DAERAH...</option>
                 {DAERAH_LIST.map(d => (
+                  <option key={d} value={d}>{d}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <label className="text-[10px] uppercase font-bold text-slate-400">Parlimen</label>
+              <select 
+                required
+                className="w-full px-4 py-3 bg-slate-50 border-none rounded-xl focus:ring-2 focus:ring-gov-blue/20 outline-none disabled:opacity-50"
+                value={formData.parlimen}
+                disabled={!formData.daerah}
+                onChange={(e) => handleParlimenChange(e.target.value)}
+              >
+                <option value="">PILIH PARLIMEN...</option>
+                {formData.daerah && DAERAH_PARLIMEN[formData.daerah]?.map(p => (
+                  <option key={p} value={p}>{p}</option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-2">
+              <label className="text-[10px] uppercase font-bold text-slate-400">DUN</label>
+              <select 
+                required
+                className="w-full px-4 py-3 bg-slate-50 border-none rounded-xl focus:ring-2 focus:ring-gov-blue/20 outline-none disabled:opacity-50"
+                value={formData.dun}
+                disabled={!formData.parlimen}
+                onChange={(e) => setFormData({...formData, dun: e.target.value})}
+              >
+                <option value="">PILIH DUN...</option>
+                {formData.parlimen && PENANG_PARLIAMENT_DUN[formData.parlimen]?.map(d => (
                   <option key={d} value={d}>{d}</option>
                 ))}
               </select>

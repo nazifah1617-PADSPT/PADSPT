@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { collection, query, getDocs, limit, orderBy, where } from 'firebase/firestore';
+import { collection, query, onSnapshot, limit, orderBy } from 'firebase/firestore';
 import { db } from '../firebase';
 import { handleFirestoreError, OperationType } from '../lib/firestore-errors';
 import { 
@@ -30,7 +30,7 @@ import { Link } from 'react-router-dom';
 import GisMap from '../components/GisMap';
 
 export default function AdminDashboard() {
-  const { isSuperAdmin } = useAuth();
+  const { isSuperAdmin, loading: authLoading } = useAuth();
   const [stats, setStats] = useState({
     totalJK: 0,
     totalMasjid: 0,
@@ -47,65 +47,91 @@ export default function AdminDashboard() {
   const [loadingMap, setLoadingMap] = useState(true);
 
   useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        const jkSnap = await getDocs(collection(db, 'jk_records'));
-        const surauSnap = await getDocs(collection(db, 'surau_records'));
-        const masjidSnap = await getDocs(collection(db, 'masjid_records'));
-        const pegawaiSnap = await getDocs(collection(db, 'pegawai_records'));
-        
-        const jkDocs = jkSnap.docs.map(d => d.data());
-        setAllJkDocs(jkDocs);
-        const activeJK = jkDocs.filter(d => d.statusLantikan === 'Aktif').length;
-        
-        const surauDocs = surauSnap.docs.map(doc => ({ id: doc.id, ...doc.data(), type: 'surau' }));
-        const masjidDocs = masjidSnap.docs.map(doc => ({ id: doc.id, ...doc.data(), type: 'masjid' }));
-        
-        setAllLocations([...masjidDocs, ...surauDocs]);
-        setLoadingMap(false);
-        
-        // Calculate expiring soon (within 30 days)
-        const now = new Date();
-        const thirtyDaysFromNow = new Date(now.getTime() + (30 * 24 * 60 * 60 * 1000));
-        const expiring = jkDocs.filter(d => {
-          if (!d.tarikhTamat) return false;
-          const expiry = d.tarikhTamat.toDate ? d.tarikhTamat.toDate() : new Date(d.tarikhTamat);
-          return expiry > now && expiry <= thirtyDaysFromNow;
-        }).length;
+    if (authLoading) return;
 
-        setStats({
-          totalJK: activeJK,
-          totalMasjid: masjidSnap.size,
-          totalSurau: surauSnap.size,
-          expiringSoon: expiring,
-          vacancies: pegawaiSnap.size
-        });
+    // Listen to JK Records
+    const unsubJK = onSnapshot(collection(db, 'jk_records'), (snap) => {
+      const docs = snap.docs.map(d => ({ ...d.data(), id: d.id, recordType: 'masjid' }));
+      setAllJkDocs(prev => {
+        const other = prev.filter((d: any) => d.recordType !== 'masjid');
+        return [...other, ...docs];
+      });
+    }, (err) => handleFirestoreError(err, OperationType.LIST, 'jk_records'));
 
-        updateChartData(jkDocs, chartGrouping);
-      } catch (error: any) {
-        console.error("Stats fetch error:", error);
-        if (error.code === 'permission-denied') {
-          handleFirestoreError(error, OperationType.GET, 'stats_collections');
-        }
-      }
+    // Listen to JK Surau Records
+    const unsubJKSurau = onSnapshot(collection(db, 'jk_surau_records'), (snap) => {
+      const docs = snap.docs.map(d => ({ ...d.data(), id: d.id, recordType: 'surau' }));
+      setAllJkDocs(prev => {
+        const other = prev.filter((d: any) => d.recordType !== 'surau');
+        return [...other, ...docs];
+      });
+    }, (err) => handleFirestoreError(err, OperationType.LIST, 'jk_surau_records'));
+
+    // Listen to Masjid Records
+    const unsubMasjid = onSnapshot(collection(db, 'masjid_records'), (snap) => {
+      const docs = snap.docs.map(doc => ({ id: doc.id, ...doc.data(), type: 'masjid' }));
+      setStats(prev => ({ ...prev, totalMasjid: snap.size }));
+      setAllLocations(prev => {
+        const other = prev.filter(l => l.type !== 'masjid');
+        return [...other, ...docs];
+      });
+      setLoadingMap(false);
+    }, (err) => handleFirestoreError(err, OperationType.LIST, 'masjid_records'));
+
+    // Listen to Surau Records
+    const unsubSurau = onSnapshot(collection(db, 'surau_records'), (snap) => {
+      const docs = snap.docs.map(doc => ({ id: doc.id, ...doc.data(), type: 'surau' }));
+      setStats(prev => ({ ...prev, totalSurau: snap.size }));
+      setAllLocations(prev => {
+        const other = prev.filter(l => l.type !== 'surau');
+        return [...other, ...docs];
+      });
+    }, (err) => handleFirestoreError(err, OperationType.LIST, 'surau_records'));
+
+    // Listen to Pegawai Records
+    const unsubPegawai = onSnapshot(collection(db, 'pegawai_records'), (snap) => {
+      setStats(prev => ({ ...prev, vacancies: snap.size }));
+    }, (err) => handleFirestoreError(err, OperationType.LIST, 'pegawai_records'));
+
+    // Listen to Audit Logs
+    const qLogs = query(collection(db, 'audit_logs'), orderBy('timestamp', 'desc'), limit(10));
+    const unsubLogs = onSnapshot(qLogs, (snap) => {
+      setRecentLogs(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    }, (err) => handleFirestoreError(err, OperationType.LIST, 'audit_logs'));
+
+    return () => {
+      unsubJK();
+      unsubJKSurau();
+      unsubMasjid();
+      unsubSurau();
+      unsubPegawai();
+      unsubLogs();
     };
+  }, [authLoading]);
 
-    const fetchLogs = async () => {
-      try {
-        const q = query(collection(db, 'audit_logs'), orderBy('timestamp', 'desc'), limit(5));
-        const snap = await getDocs(q);
-        setRecentLogs(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-      } catch (error: any) {
-        console.error("Logs fetch error:", error);
-        if (error.code === 'permission-denied') {
-          handleFirestoreError(error, OperationType.GET, 'audit_logs');
-        }
-      }
-    };
+  useEffect(() => {
+    if (allJkDocs.length === 0) return;
 
-    fetchStats();
-    fetchLogs();
-  }, []);
+    const activeJK = allJkDocs.filter((d: any) => 
+      d.statusLantikan?.toString().trim().toUpperCase() === 'AKTIF'
+    ).length;
+
+    const now = new Date();
+    const thirtyDaysFromNow = new Date(now.getTime() + (30 * 24 * 60 * 60 * 1000));
+    const expiring = allJkDocs.filter((d: any) => {
+      if (!d.tarikhTamat) return false;
+      const expiry = d.tarikhTamat.toDate ? d.tarikhTamat.toDate() : new Date(d.tarikhTamat);
+      return expiry > now && expiry <= thirtyDaysFromNow;
+    }).length;
+
+    setStats(prev => ({ 
+      ...prev, 
+      totalJK: activeJK, 
+      expiringSoon: expiring 
+    }));
+
+    updateChartData(allJkDocs, chartGrouping);
+  }, [allJkDocs, chartGrouping]);
 
   const updateChartData = (docs: any[], grouping: 'parlimen' | 'dun') => {
     const counts: {[key: string]: number} = {};
@@ -142,7 +168,7 @@ export default function AdminDashboard() {
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
         {[
-          { label: 'Jumlah JK Aktif', value: stats.totalJK, icon: Users, color: 'text-gov-blue', bg: 'bg-gov-blue/5' },
+          { label: 'Jumlah Rekod JK', value: allJkDocs.length, icon: Users, color: 'text-gov-blue', bg: 'bg-gov-blue/5' },
           { label: 'Jumlah Masjid', value: stats.totalMasjid, icon: Building2, color: 'text-islamic-green', bg: 'bg-islamic-green/5' },
           { label: 'Jumlah Surau', value: stats.totalSurau, icon: Building2, color: 'text-emerald-600', bg: 'bg-emerald-50' },
           { label: 'Tamat Tempoh (30 Hari)', value: stats.expiringSoon, icon: Clock, color: 'text-amber-600', bg: 'bg-amber-50' },

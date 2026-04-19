@@ -3,7 +3,7 @@ import { X, Save, Loader2, Map as MapIcon } from 'lucide-react';
 import { doc, setDoc, addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { logActivity } from '../../services/auditService';
-import { PENANG_PARLIAMENT_DUN, DAERAH_LIST } from '../../constants';
+import { PENANG_PARLIAMENT_DUN, DAERAH_LIST, DAERAH_PARLIMEN } from '../../constants';
 
 interface SurauModalProps {
   isOpen: boolean;
@@ -60,6 +60,10 @@ export const SurauModal = ({ isOpen, onClose, initialData }: SurauModalProps) =>
     } finally {
       setGeocoding(false);
     }
+  };
+
+  const handleDaerahChange = (value: string) => {
+    setFormData({ ...formData, daerah: value, parlimen: '', dun: '' });
   };
 
   const handleParlimenChange = (value: string) => {
@@ -136,7 +140,7 @@ export const SurauModal = ({ isOpen, onClose, initialData }: SurauModalProps) =>
                 required
                 className="w-full px-4 py-3 bg-slate-50 border-none rounded-xl focus:ring-2 focus:ring-gov-blue/20 outline-none"
                 value={formData.daerah}
-                onChange={(e) => setFormData({...formData, daerah: e.target.value})}
+                onChange={(e) => handleDaerahChange(e.target.value)}
               >
                 <option value="">PILIH DAERAH...</option>
                 {DAERAH_LIST.map(d => (
@@ -148,12 +152,13 @@ export const SurauModal = ({ isOpen, onClose, initialData }: SurauModalProps) =>
               <label className="text-[10px] uppercase font-bold text-slate-400">Parlimen</label>
               <select 
                 required
-                className="w-full px-4 py-3 bg-slate-50 border-none rounded-xl focus:ring-2 focus:ring-gov-blue/20 outline-none"
+                className="w-full px-4 py-3 bg-slate-50 border-none rounded-xl focus:ring-2 focus:ring-gov-blue/20 outline-none disabled:opacity-50"
                 value={formData.parlimen}
+                disabled={!formData.daerah}
                 onChange={(e) => handleParlimenChange(e.target.value)}
               >
                 <option value="">PILIH PARLIMEN...</option>
-                {Object.keys(PENANG_PARLIAMENT_DUN).map(p => (
+                {formData.daerah && DAERAH_PARLIMEN[formData.daerah]?.map(p => (
                   <option key={p} value={p}>{p}</option>
                 ))}
               </select>

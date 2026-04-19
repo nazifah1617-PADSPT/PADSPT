@@ -26,6 +26,7 @@ import {
 import { cn, formatIC } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 import { JKModal } from '../components/ui/JKModal';
+import { PrintPreviewModal } from '../components/ui/PrintPreviewModal';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
@@ -55,12 +56,31 @@ export default function JKManagement() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('Semua');
+  const [selectedDaerah, setSelectedDaerah] = useState('Semua');
   const [selectedParlimen, setSelectedParlimen] = useState('Semua');
   const [selectedDun, setSelectedDun] = useState('Semua');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<any>(null);
   const [selectedForPrint, setSelectedForPrint] = useState<string[]>([]);
   const [expandedMasjids, setExpandedMasjids] = useState<string[]>([]);
+  const [previewData, setPreviewData] = useState<any[]>([]);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [previewGroupType, setPreviewGroupType] = useState<'masjid' | 'parlimen' | 'dun'>('masjid');
+
+  const handlePrintRequest = (groupBy: 'masjid' | 'parlimen' | 'dun' = 'masjid') => {
+    let data = selectedForPrint.length > 0 
+      ? records.filter(r => selectedForPrint.includes(r.id))
+      : filteredRecords;
+    
+    if (data.length === 0) {
+      alert("Tiada rekod dipilih untuk dicetak.");
+      return;
+    }
+
+    setPreviewData(data);
+    setPreviewGroupType(groupBy);
+    setIsPreviewOpen(true);
+  };
 
   useEffect(() => {
     const q = query(collection(db, 'jk_records'), orderBy('updatedAt', 'desc'), limit(500));
@@ -108,20 +128,34 @@ export default function JKManagement() {
                          r.noTel?.includes(searchTerm) ||
                          r.masjidName?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = selectedStatus === 'Semua' || r.statusLantikan === selectedStatus;
+    const matchesDaerah = selectedDaerah === 'Semua' || r.daerah === selectedDaerah;
     const matchesParlimen = selectedParlimen === 'Semua' || r.parlimen === selectedParlimen;
     const matchesDun = selectedDun === 'Semua' || r.dun === selectedDun;
-    return matchesSearch && matchesStatus && matchesParlimen && matchesDun;
+    return matchesSearch && matchesStatus && matchesDaerah && matchesParlimen && matchesDun;
   });
 
-  const uniqueParlimens = useMemo(() => {
-    const p = records.map(r => r.parlimen).filter(Boolean);
-    return ['Semua', ...Array.from(new Set(p))].sort();
-  }, [records]);
-
-  const uniqueDuns = useMemo(() => {
-    const d = records.map(r => r.dun).filter(Boolean);
+  const uniqueDaerahs = useMemo(() => {
+    const d = records.map(r => r.daerah).filter(Boolean);
     return ['Semua', ...Array.from(new Set(d))].sort();
   }, [records]);
+
+  const uniqueParlimens = useMemo(() => {
+    let p = records;
+    if (selectedDaerah !== 'Semua') {
+      p = p.filter(r => r.daerah === selectedDaerah);
+    }
+    const filtered = p.map(r => r.parlimen).filter(Boolean);
+    return ['Semua', ...Array.from(new Set(filtered))].sort();
+  }, [records, selectedDaerah]);
+
+  const uniqueDuns = useMemo(() => {
+    let d = records;
+    if (selectedParlimen !== 'Semua') {
+      d = d.filter(r => r.parlimen === selectedParlimen);
+    }
+    const filtered = d.map(r => r.dun).filter(Boolean);
+    return ['Semua', ...Array.from(new Set(filtered))].sort();
+  }, [records, selectedParlimen]);
 
   // Group by Masjid
   const groupedRecords = useMemo(() => {
@@ -199,17 +233,17 @@ export default function JKManagement() {
 
         doc.setFontSize(16);
         doc.setTextColor(0, 51, 102);
-        doc.text(`LAPORAN JK KARIAH MENGIKUT ${groupBy.toUpperCase()}: ${groupName}`, 14, currentY);
+        doc.text(`SENARAI JAWATANKUASA KARIAH MENGIKUT ${groupBy.toUpperCase()}: ${groupName.toUpperCase()}`, 14, currentY);
         currentY += 10;
 
         autoTable(doc, {
           startY: currentY,
-          head: [['Bil', 'Masjid', 'Nama Penuh', 'Jawatan', 'No. Tel']],
+          head: [['BIL', 'MASJID', 'NAMA PENUH', 'JAWATAN', 'NO. TEL']],
           body: members.sort((a,b) => (a.masjidName || '').localeCompare(b.masjidName || '')).map((r, i) => [
             i + 1,
-            r.masjidName || '-',
-            r.namaPenuh,
-            r.jawatan,
+            (r.masjidName || '-').toUpperCase(),
+            r.namaPenuh.toUpperCase(),
+            r.jawatan.toUpperCase(),
             r.noTel || '-'
           ]),
           headStyles: { fillColor: [0, 51, 102] },
@@ -253,23 +287,23 @@ export default function JKManagement() {
 
       doc.setFontSize(16);
       doc.setTextColor(0, 51, 102);
-      doc.text(`Senarai JK Kariah ${masjid}`, 14, currentY);
+      doc.text(`SENARAI JAWATANKUASA KARIAH ${masjid.toUpperCase()}`, 14, currentY);
       currentY += 8;
       
       doc.setFontSize(10);
       doc.setTextColor(100);
-      doc.text(`Parlimen: ${parlimen} | DUN: ${dun}`, 14, currentY);
+      doc.text(`PARLIMEN: ${parlimen.toUpperCase()} | DUN: ${dun.toUpperCase()}`, 14, currentY);
       currentY += 12;
 
       autoTable(doc, {
         startY: currentY,
-        head: [['Bil', 'Nama Penuh', 'No. Telefon', 'Jawatan', 'Status']],
+        head: [['BIL', 'NAMA PENUH', 'NO. TELEFON', 'JAWATAN', 'STATUS']],
         body: sortedMembers.map((r, i) => [
           i + 1,
-          r.namaPenuh,
+          r.namaPenuh.toUpperCase(),
           r.noTel || '-',
-          r.jawatan,
-          r.statusLantikan
+          r.jawatan.toUpperCase(),
+          r.statusLantikan.toUpperCase()
         ]),
         headStyles: { fillColor: [0, 51, 102] },
         alternateRowStyles: { fillColor: [245, 245, 245] },
@@ -303,19 +337,19 @@ export default function JKManagement() {
             </button>
             <div className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-xl border border-slate-100 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 overflow-hidden">
               <button 
-                onClick={() => generatePDF()}
+                onClick={() => handlePrintRequest('masjid')}
                 className="w-full text-left px-4 py-3 text-sm font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-2"
               >
                 <Building2 size={16} className="text-gov-blue" /> Ikut Masjid
               </button>
               <button 
-                onClick={() => generatePDF('parlimen')}
+                onClick={() => handlePrintRequest('parlimen')}
                 className="w-full text-left px-4 py-3 text-sm font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-2 border-t border-slate-50"
               >
                 <MapPin size={16} className="text-gov-blue" /> Ikut Parlimen
               </button>
               <button 
-                onClick={() => generatePDF('dun')}
+                onClick={() => handlePrintRequest('dun')}
                 className="w-full text-left px-4 py-3 text-sm font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-2 border-t border-slate-50"
               >
                 <MapPin size={16} className="text-gov-blue" /> Ikut DUN
@@ -363,7 +397,28 @@ export default function JKManagement() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t border-slate-50">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2 border-t border-slate-50">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center text-slate-400 shrink-0">
+              <MapPin size={18} />
+            </div>
+            <div className="flex-1">
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Tapis Mengikut Daerah</p>
+              <select 
+                className="w-full bg-slate-50 border-none rounded-xl py-2 px-3 text-sm font-bold text-slate-700 outline-none focus:ring-2 focus:ring-gov-blue/20"
+                value={selectedDaerah}
+                onChange={(e) => {
+                  setSelectedDaerah(e.target.value);
+                  setSelectedParlimen('Semua');
+                  setSelectedDun('Semua');
+                }}
+              >
+                {uniqueDaerahs.map(d => (
+                  <option key={d} value={d}>{d}</option>
+                ))}
+              </select>
+            </div>
+          </div>
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center text-slate-400 shrink-0">
               <MapPin size={18} />
@@ -373,7 +428,10 @@ export default function JKManagement() {
               <select 
                 className="w-full bg-slate-50 border-none rounded-xl py-2 px-3 text-sm font-bold text-slate-700 outline-none focus:ring-2 focus:ring-gov-blue/20"
                 value={selectedParlimen}
-                onChange={(e) => setSelectedParlimen(e.target.value)}
+                onChange={(e) => {
+                  setSelectedParlimen(e.target.value);
+                  setSelectedDun('Semua');
+                }}
               >
                 {uniqueParlimens.map(p => (
                   <option key={p} value={p}>{p}</option>
@@ -517,6 +575,15 @@ export default function JKManagement() {
         initialData={selectedRecord} 
         collectionName="jk_records"
         typeLabel="JK Kariah"
+      />
+
+      <PrintPreviewModal 
+        isOpen={isPreviewOpen}
+        onClose={() => setIsPreviewOpen(false)}
+        data={previewData}
+        title={previewGroupType === 'masjid' ? 'SENARAI JAWATANKUASA KARIAH MASJID' : `LAPORAN JK KARIAH MENGIKUT ${previewGroupType.toUpperCase()}`}
+        groupType={previewGroupType}
+        onConfirm={() => generatePDF(previewGroupType === 'masjid' ? undefined : previewGroupType)}
       />
 
       {filteredRecords.length === 0 && !loading && (
