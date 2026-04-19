@@ -102,15 +102,35 @@ export default function PublicSearch() {
           limit(50)
         );
 
-        const [snapName, snapIC, snapMasjid] = await Promise.all([
+        // Search by Jawatan (Prefix)
+        const qJawatan = query(
+          collection(db, coll),
+          where('jawatan', '>=', term),
+          where('jawatan', '<=', term + '\uf8ff'),
+          limit(50)
+        );
+
+        const [snapName, snapIC, snapMasjid, snapJawatan] = await Promise.all([
           getDocs(qName),
           getDocs(qIC),
-          getDocs(qMasjid)
+          getDocs(qMasjid),
+          getDocs(qJawatan)
         ]);
 
-        snapName.docs.forEach(doc => allResults.push({ id: doc.id, ...doc.data(), source: coll, displayTitle: doc.data()[nameField] }));
-        snapIC.docs.forEach(doc => allResults.push({ id: doc.id, ...doc.data(), source: coll, displayTitle: doc.data()[nameField] }));
-        snapMasjid.docs.forEach(doc => allResults.push({ id: doc.id, ...doc.data(), source: coll, displayTitle: doc.data()[nameField] }));
+        const addResult = (doc: any) => {
+          const data = doc.data();
+          allResults.push({ 
+            id: doc.id, 
+            ...data, 
+            source: coll, 
+            displayTitle: (data[nameField] || '').toUpperCase() 
+          });
+        };
+
+        snapName.docs.forEach(addResult);
+        snapIC.docs.forEach(addResult);
+        snapMasjid.docs.forEach(addResult);
+        snapJawatan.docs.forEach(addResult);
       }
 
       // De-duplicate results by ID

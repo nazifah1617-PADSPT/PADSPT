@@ -43,19 +43,30 @@ export const PegawaiModal = ({ isOpen, onClose, initialData }: PegawaiModalProps
     e.preventDefault();
     setLoading(true);
     try {
+      const normalizedData = {
+        ...formData,
+        nama: formData.nama.toUpperCase().trim(),
+        jawatan: formData.jawatan.toUpperCase().trim(),
+        noKP: formData.noKP.replace(/-/g, '').trim(),
+        masjidName: formData.masjidName.toUpperCase().trim(),
+        daerah: formData.daerah.toUpperCase().trim(),
+        parlimen: formData.parlimen.toUpperCase().trim(),
+        dun: formData.dun.toUpperCase().trim(),
+      };
+
       if (initialData?.id) {
         await setDoc(doc(db, 'pegawai_records', initialData.id), {
-          ...formData,
+          ...normalizedData,
           updatedAt: serverTimestamp(),
         });
-        await logActivity('EDIT_PEGAWAI', `Mengemaskini rekod Pegawai: ${formData.nama}`);
+        await logActivity('EDIT_PEGAWAI', `Mengemaskini rekod Pegawai: ${normalizedData.nama}`);
       } else {
         await addDoc(collection(db, 'pegawai_records'), {
-          ...formData,
+          ...normalizedData,
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
         });
-        await logActivity('CREATE_PEGAWAI', `Menambah rekod Pegawai baru: ${formData.nama}`);
+        await logActivity('CREATE_PEGAWAI', `Menambah rekod Pegawai baru: ${normalizedData.nama}`);
       }
       onClose();
     } catch (error) {

@@ -74,25 +74,30 @@ export const MasjidModal = ({ isOpen, onClose, initialData }: MasjidModalProps) 
     e.preventDefault();
     setLoading(true);
     try {
-      const dataToSave = {
+      const normalizedData = {
         ...formData,
+        nama: formData.nama.toUpperCase().trim(),
+        kod: formData.kod.toUpperCase().trim(),
+        daerah: formData.daerah.toUpperCase().trim(),
+        parlimen: formData.parlimen.toUpperCase().trim(),
+        dun: formData.dun.toUpperCase().trim(),
         latitude: formData.latitude ? parseFloat(formData.latitude) : null,
         longitude: formData.longitude ? parseFloat(formData.longitude) : null,
       };
 
       if (initialData?.id) {
         await setDoc(doc(db, 'masjid_records', initialData.id), {
-          ...dataToSave,
+          ...normalizedData,
           updatedAt: serverTimestamp(),
         });
-        await logActivity('EDIT_MASJID', `Mengemaskini rekod Masjid: ${formData.nama}`);
+        await logActivity('EDIT_MASJID', `Mengemaskini rekod Masjid: ${normalizedData.nama}`);
       } else {
         await addDoc(collection(db, 'masjid_records'), {
-          ...dataToSave,
+          ...normalizedData,
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
         });
-        await logActivity('CREATE_MASJID', `Menambah rekod Masjid baru: ${formData.nama}`);
+        await logActivity('CREATE_MASJID', `Menambah rekod Masjid baru: ${normalizedData.nama}`);
       }
       onClose();
     } catch (error) {

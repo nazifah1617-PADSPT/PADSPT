@@ -74,25 +74,30 @@ export const SurauModal = ({ isOpen, onClose, initialData }: SurauModalProps) =>
     e.preventDefault();
     setLoading(true);
     try {
-      const dataToSave = {
+      const normalizedData = {
         ...formData,
+        nama: formData.nama.toUpperCase().trim(),
+        kod: formData.kod.toUpperCase().trim(),
+        daerah: formData.daerah.toUpperCase().trim(),
+        parlimen: formData.parlimen.toUpperCase().trim(),
+        dun: formData.dun.toUpperCase().trim(),
         latitude: formData.latitude ? parseFloat(formData.latitude) : null,
         longitude: formData.longitude ? parseFloat(formData.longitude) : null,
       };
 
       if (initialData?.id) {
         await setDoc(doc(db, 'surau_records', initialData.id), {
-          ...dataToSave,
+          ...normalizedData,
           updatedAt: serverTimestamp(),
         });
-        await logActivity('EDIT_SURAU', `Mengemaskini rekod Surau: ${formData.nama}`);
+        await logActivity('EDIT_SURAU', `Mengemaskini rekod Surau: ${normalizedData.nama}`);
       } else {
         await addDoc(collection(db, 'surau_records'), {
-          ...dataToSave,
+          ...normalizedData,
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
         });
-        await logActivity('CREATE_SURAU', `Menambah rekod Surau baru: ${formData.nama}`);
+        await logActivity('CREATE_SURAU', `Menambah rekod Surau baru: ${normalizedData.nama}`);
       }
       onClose();
     } catch (error) {

@@ -50,19 +50,30 @@ export const JKModal = ({ isOpen, onClose, initialData, collectionName = 'jk_rec
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    
+    // Normalize data to uppercase for searchability
+    const normalizedData = {
+      ...formData,
+      namaPenuh: formData.namaPenuh.toUpperCase().trim(),
+      noKP: formData.noKP.replace(/-/g, '').trim(),
+      masjidName: formData.masjidName.toUpperCase().trim(),
+      jawatan: formData.jawatan.toUpperCase().trim(),
+      statusLantikan: formData.statusLantikan.toUpperCase().trim(),
+    };
+
     try {
       if (initialData?.id) {
         await setDoc(doc(db, collectionName, initialData.id), {
-          ...formData,
+          ...normalizedData,
           updatedAt: serverTimestamp(),
         });
-        await logActivity('EDIT', `Mengemaskini rekod ${typeLabel}: ${formData.namaPenuh}`);
+        await logActivity('EDIT', `Mengemaskini rekod ${typeLabel}: ${normalizedData.namaPenuh}`);
       } else {
         await addDoc(collection(db, collectionName), {
-          ...formData,
+          ...normalizedData,
           updatedAt: serverTimestamp(),
         });
-        await logActivity('CREATE', `Menambah rekod ${typeLabel} baru: ${formData.namaPenuh}`);
+        await logActivity('CREATE', `Menambah rekod ${typeLabel} baru: ${normalizedData.namaPenuh}`);
       }
       onClose();
     } catch (error) {
