@@ -49,6 +49,7 @@ const getPriority = (jawatan: string) => {
 export default function JKSurauManagement() {
   const { isSuperAdmin } = useAuth();
   const [records, setRecords] = useState<any[]>([]);
+  const [surauDetails, setSurauDetails] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('Semua');
@@ -89,7 +90,17 @@ export default function JKSurauManagement() {
     }, (error) => {
       handleFirestoreError(error, OperationType.GET, 'jk_surau_records');
     });
-    return unsubscribe;
+
+    // Fetch surau records for metadata lookup
+    const qSurau = query(collection(db, 'surau_records'), limit(500));
+    const unsubSurau = onSnapshot(qSurau, (snap) => {
+      setSurauDetails(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    });
+
+    return () => {
+      unsubscribe();
+      unsubSurau();
+    };
   }, []);
 
   const handleDelete = async (id: string, name: string) => {
@@ -225,7 +236,9 @@ export default function JKSurauManagement() {
 
         doc.setFontSize(16);
         doc.setTextColor(0, 51, 102);
-        doc.text(`SENARAI JAWATANKUASA SURAU MENGIKUT ${groupBy.toUpperCase()}: ${groupName.toUpperCase()}`, 14, currentY);
+        doc.text(`SENARAI JAWATANKUASA SURAU`, 14, currentY);
+        currentY += 8;
+        doc.text(`MENGIKUT ${groupBy.toUpperCase()}: ${groupName.toUpperCase()}`, 14, currentY);
         currentY += 10;
 
         autoTable(doc, {
@@ -275,14 +288,24 @@ export default function JKSurauManagement() {
       const parlimen = firstMember.parlimen || '-';
       const dun = firstMember.dun || '-';
 
+      // Find surau metadata
+      const surauInfo = surauDetails.find(s => s.nama?.toUpperCase() === surau.toUpperCase());
+
       doc.setFontSize(16);
       doc.setTextColor(0, 51, 102);
-      doc.text(`SENARAI JAWATANKUASA SURAU ${surau.toUpperCase()}`, 14, currentY);
+      doc.text(`SENARAI JAWATANKUASA SURAU`, 14, currentY);
+      currentY += 8;
+      doc.text(`${surau.toUpperCase()}`, 14, currentY);
       currentY += 8;
       
       doc.setFontSize(10);
       doc.setTextColor(100);
-      doc.text(`PARLIMEN: ${parlimen.toUpperCase()} | DUN: ${dun.toUpperCase()}`, 14, currentY);
+      let infoText = `PARLIMEN: ${parlimen.toUpperCase()} | DUN: ${dun.toUpperCase()}`;
+      if (surauInfo) {
+        if (surauInfo.kod) infoText += ` | NO. PENDAFTARAN: ${surauInfo.kod}`;
+        if (surauInfo.noFailSurau) infoText += ` | NO. FAIL: ${surauInfo.noFailSurau}`;
+      }
+      doc.text(infoText, 14, currentY);
       currentY += 12;
 
       autoTable(doc, {
@@ -569,7 +592,8 @@ export default function JKSurauManagement() {
         isOpen={isPreviewOpen}
         onClose={() => setIsPreviewOpen(false)}
         data={previewData}
-        title={previewGroupType === 'masjid' ? 'SENARAI JAWATANKUASA KARIAH SURAU' : `LAPORAN JK SURAU MENGIKUT ${previewGroupType.toUpperCase()}`}
+        metadata={surauDetails}
+        title={previewGroupType === 'masjid' ? 'SENARAI JAWATANKUASA SURAU' : `LAPORAN JK SURAU MENGIKUT ${previewGroupType.toUpperCase()}`}
         groupType={previewGroupType}
         onConfirm={() => generatePDF(previewGroupType === 'masjid' ? undefined : previewGroupType)}
       />

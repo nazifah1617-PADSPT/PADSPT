@@ -9,6 +9,7 @@ interface PrintPreviewModalProps {
   onConfirm: () => void;
   title: string;
   groupType: 'masjid' | 'parlimen' | 'dun';
+  metadata?: any[];
 }
 
 const ROLE_PRIORITY: { [key: string]: number } = {
@@ -31,8 +32,13 @@ const getPriority = (jawatan: string) => {
   return ROLE_PRIORITY[normalized] || 99;
 };
 
-export const PrintPreviewModal = ({ isOpen, onClose, data, onConfirm, title, groupType }: PrintPreviewModalProps) => {
+export const PrintPreviewModal = ({ isOpen, onClose, data, onConfirm, title, groupType, metadata }: PrintPreviewModalProps) => {
   if (!isOpen) return null;
+
+  const getMetadata = (name: string) => {
+    if (!metadata) return null;
+    return metadata.find((m: any) => m.nama?.toUpperCase() === name.toUpperCase());
+  };
 
   const groupedData = () => {
     const groups: { [key: string]: any[] } = {};
@@ -90,20 +96,36 @@ export const PrintPreviewModal = ({ isOpen, onClose, data, onConfirm, title, gro
               <p className="text-sm font-bold text-slate-500 uppercase">Tarikh Laporan: {new Date().toLocaleDateString('ms-MY')}</p>
             </div>
 
-            {groupedData().map(([group, members]) => (
-              <div key={group} className="space-y-4">
-                <div className="bg-gov-blue/10 p-4 rounded-xl border border-gov-blue/10">
-                  <h3 className="text-lg font-black text-gov-blue uppercase">
-                    {groupType === 'masjid' ? 'MASJID/SURAU' : groupType.toUpperCase()}: {group.toUpperCase()}
-                  </h3>
-                  {groupType === 'masjid' && (
-                    <p className="text-[10px] font-bold text-slate-500 mt-1 uppercase">
-                      PARLIMEN: {members[0].parlimen?.toUpperCase() || '-'} | DUN: {members[0].dun?.toUpperCase() || '-'}
-                    </p>
-                  )}
-                </div>
+            {groupedData().map(([group, members]) => {
+              const meta = getMetadata(group);
+              return (
+                <div key={group} className="space-y-4">
+                  <div className="bg-gov-blue/10 p-4 rounded-xl border border-gov-blue/10">
+                    <h3 className="text-lg font-black text-gov-blue uppercase">
+                      {groupType === 'masjid' ? 'MASJID/SURAU' : groupType.toUpperCase()}: {group.toUpperCase()}
+                    </h3>
+                    <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1">
+                      <p className="text-[10px] font-bold text-slate-500 uppercase">
+                        PARLIMEN: {members[0].parlimen?.toUpperCase() || '-'} | DUN: {members[0].dun?.toUpperCase() || '-'}
+                      </p>
+                      {meta && (
+                        <>
+                          {meta.kod && (
+                            <p className="text-[10px] font-bold text-slate-600 uppercase border-l border-slate-300 pl-4">
+                              No. Pendaftaran: {meta.kod}
+                            </p>
+                          )}
+                          {(meta.noFail || meta.noFailSurau) && (
+                            <p className="text-[10px] font-bold text-slate-600 uppercase border-l border-slate-300 pl-4">
+                              No. Fail: {meta.noFail || meta.noFailSurau}
+                            </p>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  </div>
 
-                <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+                  <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
                   <table className="w-full text-left">
                     <thead className="bg-slate-900 text-white">
                       <tr>
@@ -136,7 +158,8 @@ export const PrintPreviewModal = ({ isOpen, onClose, data, onConfirm, title, gro
                   </table>
                 </div>
               </div>
-            ))}
+            );
+          })}
           </div>
         </div>
 

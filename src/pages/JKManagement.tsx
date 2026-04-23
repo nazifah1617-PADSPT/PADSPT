@@ -53,6 +53,7 @@ const getPriority = (jawatan: string) => {
 export default function JKManagement() {
   const { isSuperAdmin } = useAuth();
   const [records, setRecords] = useState<any[]>([]);
+  const [masjidDetails, setMasjidDetails] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('Semua');
@@ -94,7 +95,17 @@ export default function JKManagement() {
     }, (error) => {
       handleFirestoreError(error, OperationType.GET, 'jk_records');
     });
-    return unsubscribe;
+
+    // Fetch masjid records for metadata lookup
+    const qMasjid = query(collection(db, 'masjid_records'), limit(500));
+    const unsubMasjid = onSnapshot(qMasjid, (snap) => {
+      setMasjidDetails(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    });
+
+    return () => {
+      unsubscribe();
+      unsubMasjid();
+    };
   }, []);
 
   const handleDelete = async (id: string, name: string) => {
@@ -233,7 +244,9 @@ export default function JKManagement() {
 
         doc.setFontSize(16);
         doc.setTextColor(0, 51, 102);
-        doc.text(`SENARAI JAWATANKUASA KARIAH MENGIKUT ${groupBy.toUpperCase()}: ${groupName.toUpperCase()}`, 14, currentY);
+        doc.text(`SENARAI JAWATANKUASA KARIAH`, 14, currentY);
+        currentY += 8;
+        doc.text(`MENGIKUT ${groupBy.toUpperCase()}: ${groupName.toUpperCase()}`, 14, currentY);
         currentY += 10;
 
         autoTable(doc, {
@@ -285,14 +298,24 @@ export default function JKManagement() {
       const parlimen = firstMember.parlimen || '-';
       const dun = firstMember.dun || '-';
 
+      // Find masjid metadata
+      const masjidInfo = masjidDetails.find(m => m.nama?.toUpperCase() === masjid.toUpperCase());
+
       doc.setFontSize(16);
       doc.setTextColor(0, 51, 102);
-      doc.text(`SENARAI JAWATANKUASA KARIAH ${masjid.toUpperCase()}`, 14, currentY);
+      doc.text(`SENARAI JAWATANKUASA KARIAH`, 14, currentY);
+      currentY += 8;
+      doc.text(`${masjid.toUpperCase()}`, 14, currentY);
       currentY += 8;
       
       doc.setFontSize(10);
       doc.setTextColor(100);
-      doc.text(`PARLIMEN: ${parlimen.toUpperCase()} | DUN: ${dun.toUpperCase()}`, 14, currentY);
+      let infoText = `PARLIMEN: ${parlimen.toUpperCase()} | DUN: ${dun.toUpperCase()}`;
+      if (masjidInfo) {
+        if (masjidInfo.kod) infoText += ` | NO. PENDAFTARAN: ${masjidInfo.kod}`;
+        if (masjidInfo.noFail) infoText += ` | NO. FAIL: ${masjidInfo.noFail}`;
+      }
+      doc.text(infoText, 14, currentY);
       currentY += 12;
 
       autoTable(doc, {
@@ -581,6 +604,7 @@ export default function JKManagement() {
         isOpen={isPreviewOpen}
         onClose={() => setIsPreviewOpen(false)}
         data={previewData}
+        metadata={masjidDetails}
         title={previewGroupType === 'masjid' ? 'SENARAI JAWATANKUASA KARIAH MASJID' : `LAPORAN JK KARIAH MENGIKUT ${previewGroupType.toUpperCase()}`}
         groupType={previewGroupType}
         onConfirm={() => generatePDF(previewGroupType === 'masjid' ? undefined : previewGroupType)}
