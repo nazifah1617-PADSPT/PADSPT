@@ -235,6 +235,15 @@ export default function PublicSearch() {
               CARI SEKARANG
             </button>
           </motion.div>
+          
+          <motion.p 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.4 }}
+            className="text-white/70 text-xs mt-4 font-medium"
+          >
+            Tip: Masukkan nama penuh atau permulaan nama (Contoh: MOHD...) untuk hasil yang lebih tepat.
+          </motion.p>
 
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mt-16 max-w-5xl mx-auto opacity-80">
             <div className="text-center">

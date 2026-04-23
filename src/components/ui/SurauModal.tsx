@@ -15,6 +15,7 @@ export const SurauModal = ({ isOpen, onClose, initialData }: SurauModalProps) =>
   const [formData, setFormData] = useState<any>({
     nama: '',
     kod: '',
+    noFailSurau: '',
     daerah: '',
     parlimen: '',
     dun: '',
@@ -30,8 +31,9 @@ export const SurauModal = ({ isOpen, onClose, initialData }: SurauModalProps) =>
       ...initialData,
       latitude: initialData.latitude || '',
       longitude: initialData.longitude || '',
+      noFailSurau: initialData.noFailSurau || '',
     });
-    else setFormData({ nama: '', kod: '', daerah: '', parlimen: '', dun: '', alamat: '', latitude: '', longitude: '' });
+    else setFormData({ nama: '', kod: '', noFailSurau: '', daerah: '', parlimen: '', dun: '', alamat: '', latitude: '', longitude: '' });
   }, [initialData, isOpen]);
 
   if (!isOpen) return null;
@@ -78,6 +80,7 @@ export const SurauModal = ({ isOpen, onClose, initialData }: SurauModalProps) =>
         ...formData,
         nama: formData.nama.toUpperCase().trim(),
         kod: formData.kod.toUpperCase().trim(),
+        noFailSurau: formData.noFailSurau.toUpperCase().trim(),
         daerah: formData.daerah.toUpperCase().trim(),
         parlimen: formData.parlimen.toUpperCase().trim(),
         dun: formData.dun.toUpperCase().trim(),
@@ -122,20 +125,30 @@ export const SurauModal = ({ isOpen, onClose, initialData }: SurauModalProps) =>
               <label className="text-[10px] uppercase font-bold text-slate-400">Nama Surau</label>
               <input 
                 required
-                className="w-full px-4 py-3 bg-slate-50 border-none rounded-xl focus:ring-2 focus:ring-gov-blue/20 outline-none"
+                className="w-full px-4 py-3 bg-slate-50 border-none rounded-xl focus:ring-2 focus:ring-gov-blue/20 outline-none uppercase"
                 value={formData.nama}
                 onChange={(e) => setFormData({...formData, nama: e.target.value})}
               />
             </div>
             <div className="space-y-2">
-              <label className="text-[10px] uppercase font-bold text-slate-400">Kod Surau</label>
+              <label className="text-[10px] uppercase font-bold text-slate-400">No. Pendaftaran</label>
               <input 
                 required
-                className="w-full px-4 py-3 bg-slate-50 border-none rounded-xl focus:ring-2 focus:ring-gov-blue/20 outline-none"
+                className="w-full px-4 py-3 bg-slate-50 border-none rounded-xl focus:ring-2 focus:ring-gov-blue/20 outline-none uppercase"
                 value={formData.kod}
                 onChange={(e) => setFormData({...formData, kod: e.target.value})}
               />
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-[10px] uppercase font-bold text-slate-400">No. Fail Surau</label>
+            <input 
+              required
+              className="w-full px-4 py-3 bg-slate-50 border-none rounded-xl focus:ring-2 focus:ring-gov-blue/20 outline-none uppercase"
+              value={formData.noFailSurau}
+              onChange={(e) => setFormData({...formData, noFailSurau: e.target.value})}
+            />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

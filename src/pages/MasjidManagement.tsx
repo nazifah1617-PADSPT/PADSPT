@@ -54,6 +54,7 @@ export default function MasjidManagement() {
   const filteredMasjid = masjid.filter(m => 
     m.nama?.toLowerCase().includes(searchTerm.toLowerCase()) || 
     m.kod?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    m.noFail?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     m.daerah?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -77,7 +78,7 @@ export default function MasjidManagement() {
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
           <input 
             type="text"
-            placeholder="Cari Nama Masjid, Kod atau Daerah..."
+            placeholder="Cari Nama Masjid, No. Pendaftaran, No. Fail atau Daerah..."
             className="w-full pl-12 pr-4 py-4 rounded-xl bg-slate-50 border-none focus:ring-2 focus:ring-gov-blue/20 transition-all font-medium"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -90,7 +91,8 @@ export default function MasjidManagement() {
           <thead className="bg-slate-50 border-bottom border-slate-100">
             <tr>
               <th className="px-6 py-4 text-[10px] uppercase tracking-widest font-bold text-slate-400">Nama Masjid</th>
-              <th className="px-6 py-4 text-[10px] uppercase tracking-widest font-bold text-slate-400">Kod</th>
+              <th className="px-6 py-4 text-[10px] uppercase tracking-widest font-bold text-slate-400">No. Pendaftaran</th>
+              <th className="px-6 py-4 text-[10px] uppercase tracking-widest font-bold text-slate-400">No. Fail</th>
               <th className="px-6 py-4 text-[10px] uppercase tracking-widest font-bold text-slate-400">Daerah</th>
               <th className="px-6 py-4 text-[10px] uppercase tracking-widest font-bold text-slate-400">Parlimen / DUN</th>
               <th className="px-6 py-4 text-[10px] uppercase tracking-widest font-bold text-slate-400 text-right">Tindakan</th>
@@ -99,7 +101,7 @@ export default function MasjidManagement() {
           <tbody className="divide-y divide-slate-50">
             {loading ? (
               <tr>
-                <td colSpan={5} className="px-6 py-12 text-center">
+                <td colSpan={6} className="px-6 py-12 text-center">
                   <Loader2 className="animate-spin mx-auto text-gov-blue" size={32} />
                   <p className="mt-4 text-slate-400 font-medium">Memuatkan data masjid...</p>
                 </td>
@@ -118,7 +120,8 @@ export default function MasjidManagement() {
                       <p className="font-bold text-slate-900">{m.nama}</p>
                     </div>
                   </td>
-                  <td className="px-6 py-4 font-mono text-sm text-slate-600">{m.kod}</td>
+                  <td className="px-6 py-4 font-mono text-sm text-slate-600 uppercase">{m.kod}</td>
+                  <td className="px-6 py-4 font-mono text-xs text-slate-500 uppercase">{m.noFail || '-'}</td>
                   <td className="px-6 py-4">
                     <span className="px-2 py-1 bg-slate-100 text-slate-600 text-[10px] font-bold rounded-md uppercase">
                       {m.daerah}
@@ -150,7 +153,7 @@ export default function MasjidManagement() {
               ))
             ) : (
               <tr>
-                <td colSpan={5} className="px-6 py-12 text-center text-slate-400 italic">
+                <td colSpan={6} className="px-6 py-12 text-center text-slate-400 italic">
                   Tiada rekod masjid dijumpai.
                 </td>
               </tr>

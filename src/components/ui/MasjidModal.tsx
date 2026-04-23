@@ -15,6 +15,7 @@ export const MasjidModal = ({ isOpen, onClose, initialData }: MasjidModalProps) 
   const [formData, setFormData] = useState<any>({
     nama: '',
     kod: '',
+    noFail: '',
     daerah: '',
     parlimen: '',
     dun: '',
@@ -30,8 +31,9 @@ export const MasjidModal = ({ isOpen, onClose, initialData }: MasjidModalProps) 
       ...initialData,
       latitude: initialData.latitude || '',
       longitude: initialData.longitude || '',
+      noFail: initialData.noFail || '',
     });
-    else setFormData({ nama: '', kod: '', daerah: '', parlimen: '', dun: '', alamat: '', latitude: '', longitude: '' });
+    else setFormData({ nama: '', kod: '', noFail: '', daerah: '', parlimen: '', dun: '', alamat: '', latitude: '', longitude: '' });
   }, [initialData, isOpen]);
 
   if (!isOpen) return null;
@@ -78,6 +80,7 @@ export const MasjidModal = ({ isOpen, onClose, initialData }: MasjidModalProps) 
         ...formData,
         nama: formData.nama.toUpperCase().trim(),
         kod: formData.kod.toUpperCase().trim(),
+        noFail: formData.noFail.toUpperCase().trim(),
         daerah: formData.daerah.toUpperCase().trim(),
         parlimen: formData.parlimen.toUpperCase().trim(),
         dun: formData.dun.toUpperCase().trim(),
@@ -133,14 +136,24 @@ export const MasjidModal = ({ isOpen, onClose, initialData }: MasjidModalProps) 
               </select>
             </div>
             <div className="space-y-2">
-              <label className="text-[10px] uppercase font-bold text-slate-400">Kod Masjid</label>
+              <label className="text-[10px] uppercase font-bold text-slate-400">No. Pendaftaran</label>
               <input 
                 required
-                className="w-full px-4 py-3 bg-slate-50 border-none rounded-xl focus:ring-2 focus:ring-gov-blue/20 outline-none"
+                className="w-full px-4 py-3 bg-slate-50 border-none rounded-xl focus:ring-2 focus:ring-gov-blue/20 outline-none uppercase"
                 value={formData.kod}
                 onChange={(e) => setFormData({...formData, kod: e.target.value})}
               />
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-[10px] uppercase font-bold text-slate-400">No. Fail Masjid</label>
+            <input 
+              required
+              className="w-full px-4 py-3 bg-slate-50 border-none rounded-xl focus:ring-2 focus:ring-gov-blue/20 outline-none uppercase"
+              value={formData.noFail}
+              onChange={(e) => setFormData({...formData, noFail: e.target.value})}
+            />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
