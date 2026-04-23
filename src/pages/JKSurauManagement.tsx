@@ -217,6 +217,11 @@ export default function JKSurauManagement() {
       return;
     }
 
+    const masjidNames = Array.from(new Set(printData.map(r => r.masjidName).filter(Boolean)));
+    const filenamePrefix = masjidNames.length === 1 
+      ? masjidNames[0].toUpperCase().replace(/[/\\?%*:|"<>]/g, '_') 
+      : (groupBy ? `Laporan_JK_Surau_${groupBy}` : 'Senarai_JK_Surau');
+
     if (groupBy) {
       const groups: { [key: string]: any[] } = {};
       printData.forEach(r => {
@@ -236,9 +241,9 @@ export default function JKSurauManagement() {
 
         doc.setFontSize(16);
         doc.setTextColor(0, 51, 102);
-        doc.text(`SENARAI JAWATANKUASA SURAU`, 14, currentY);
+        doc.text(`SENARAI JAWATANKUASA SURAU`, 105, currentY, { align: 'center' });
         currentY += 8;
-        doc.text(`MENGIKUT ${groupBy.toUpperCase()}: ${groupName.toUpperCase()}`, 14, currentY);
+        doc.text(`MENGIKUT ${groupBy.toUpperCase()}: ${groupName.toUpperCase()}`, 105, currentY, { align: 'center' });
         currentY += 10;
 
         autoTable(doc, {
@@ -257,7 +262,7 @@ export default function JKSurauManagement() {
         });
       });
 
-      doc.save(`Laporan_JK_Surau_${groupBy}_${new Date().getTime()}.pdf`);
+      doc.save(`${filenamePrefix}_${new Date().getTime()}.pdf`);
       logActivity('PRINT', `Mencetak PDF Laporan JK Surau ${groupBy} (${printData.length} rekod)`);
       return;
     }
@@ -293,20 +298,25 @@ export default function JKSurauManagement() {
 
       doc.setFontSize(16);
       doc.setTextColor(0, 51, 102);
-      doc.text(`SENARAI JAWATANKUASA SURAU`, 14, currentY);
+      doc.text(`SENARAI JAWATANKUASA SURAU`, 105, currentY, { align: 'center' });
       currentY += 8;
-      doc.text(`${surau.toUpperCase()}`, 14, currentY);
-      currentY += 8;
+      doc.text(`${surau.toUpperCase()}`, 105, currentY, { align: 'center' });
+      currentY += 10;
       
       doc.setFontSize(10);
       doc.setTextColor(100);
-      let infoText = `PARLIMEN: ${parlimen.toUpperCase()} | DUN: ${dun.toUpperCase()}`;
+      const line1 = `PARLIMEN: ${parlimen.toUpperCase()} | DUN: ${dun.toUpperCase()}`;
+      doc.text(line1, 105, currentY, { align: 'center' });
+      currentY += 5;
+      
       if (surauInfo) {
-        if (surauInfo.kod) infoText += ` | NO. PENDAFTARAN: ${surauInfo.kod}`;
-        if (surauInfo.noFailSurau) infoText += ` | NO. FAIL: ${surauInfo.noFailSurau}`;
+        let line2 = `NO. PENDAFTARAN: ${surauInfo.kod || '-'}`;
+        if (surauInfo.noFailSurau) line2 += ` | NO. FAIL: ${surauInfo.noFailSurau}`;
+        doc.text(line2, 105, currentY, { align: 'center' });
+        currentY += 7;
+      } else {
+        currentY += 2;
       }
-      doc.text(infoText, 14, currentY);
-      currentY += 12;
 
       autoTable(doc, {
         startY: currentY,
@@ -329,7 +339,7 @@ export default function JKSurauManagement() {
       currentY = (doc as any).lastAutoTable.finalY + 20;
     });
 
-    doc.save(`Senarai_JK_Surau_${new Date().getTime()}.pdf`);
+    doc.save(`${filenamePrefix}_${new Date().getTime()}.pdf`);
     logActivity('PRINT', `Mencetak PDF Senarai JK Surau (${printData.length} rekod)`);
   };
 
@@ -593,6 +603,7 @@ export default function JKSurauManagement() {
         onClose={() => setIsPreviewOpen(false)}
         data={previewData}
         metadata={surauDetails}
+        typeLabel="SURAU"
         title={previewGroupType === 'masjid' ? 'SENARAI JAWATANKUASA SURAU' : `LAPORAN JK SURAU MENGIKUT ${previewGroupType.toUpperCase()}`}
         groupType={previewGroupType}
         onConfirm={() => generatePDF(previewGroupType === 'masjid' ? undefined : previewGroupType)}

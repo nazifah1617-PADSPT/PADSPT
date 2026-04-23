@@ -10,6 +10,7 @@ interface PrintPreviewModalProps {
   title: string;
   groupType: 'masjid' | 'parlimen' | 'dun';
   metadata?: any[];
+  typeLabel?: string;
 }
 
 const ROLE_PRIORITY: { [key: string]: number } = {
@@ -32,7 +33,7 @@ const getPriority = (jawatan: string) => {
   return ROLE_PRIORITY[normalized] || 99;
 };
 
-export const PrintPreviewModal = ({ isOpen, onClose, data, onConfirm, title, groupType, metadata }: PrintPreviewModalProps) => {
+export const PrintPreviewModal = ({ isOpen, onClose, data, onConfirm, title, groupType, metadata, typeLabel = 'KARIAH' }: PrintPreviewModalProps) => {
   if (!isOpen) return null;
 
   const getMetadata = (name: string) => {
@@ -92,7 +93,9 @@ export const PrintPreviewModal = ({ isOpen, onClose, data, onConfirm, title, gro
         <div className="flex-1 overflow-y-auto p-8 bg-slate-50">
           <div className="max-w-4xl mx-auto space-y-10">
             <div className="text-center space-y-2 border-b-2 border-slate-200 pb-6">
-              <h1 className="text-2xl font-black text-slate-900 uppercase">{title}</h1>
+              <h1 className="text-2xl font-black text-slate-900 uppercase">
+                {groupType === 'masjid' ? `SENARAI JAWATANKUASA ${typeLabel}` : title}
+              </h1>
               <p className="text-sm font-bold text-slate-500 uppercase">Tarikh Laporan: {new Date().toLocaleDateString('ms-MY')}</p>
             </div>
 
@@ -100,27 +103,23 @@ export const PrintPreviewModal = ({ isOpen, onClose, data, onConfirm, title, gro
               const meta = getMetadata(group);
               return (
                 <div key={group} className="space-y-4">
-                  <div className="bg-gov-blue/10 p-4 rounded-xl border border-gov-blue/10">
-                    <h3 className="text-lg font-black text-gov-blue uppercase">
-                      {groupType === 'masjid' ? 'MASJID/SURAU' : groupType.toUpperCase()}: {group.toUpperCase()}
+                  <div className="bg-gov-blue/10 p-6 rounded-xl border border-gov-blue/10 text-center">
+                    <h3 className="text-xl font-black text-gov-blue uppercase">
+                      {groupType === 'masjid' ? `SENARAI JAWATANKUASA ${typeLabel}` : `LAPORAN MENGIKUT ${groupType.toUpperCase()}`}
                     </h3>
-                    <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1">
-                      <p className="text-[10px] font-bold text-slate-500 uppercase">
+                    <h4 className="text-lg font-black text-gov-blue uppercase mt-1">
+                      {group.toUpperCase()}
+                    </h4>
+                    <div className="flex flex-col items-center mt-4 space-y-2">
+                      <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wide">
                         PARLIMEN: {members[0].parlimen?.toUpperCase() || '-'} | DUN: {members[0].dun?.toUpperCase() || '-'}
                       </p>
                       {meta && (
-                        <>
-                          {meta.kod && (
-                            <p className="text-[10px] font-bold text-slate-600 uppercase border-l border-slate-300 pl-4">
-                              No. Pendaftaran: {meta.kod}
-                            </p>
-                          )}
-                          {(meta.noFail || meta.noFailSurau) && (
-                            <p className="text-[10px] font-bold text-slate-600 uppercase border-l border-slate-300 pl-4">
-                              No. Fail: {meta.noFail || meta.noFailSurau}
-                            </p>
-                          )}
-                        </>
+                        <p className="text-[11px] font-bold text-slate-600 uppercase tracking-wide">
+                          {meta.kod && `NO. PENDAFTARAN: ${meta.kod}`}
+                          {meta.kod && (meta.noFail || meta.noFailSurau) && ' | '}
+                          {(meta.noFail || meta.noFailSurau) && `NO. FAIL: ${meta.noFail || meta.noFailSurau}`}
+                        </p>
                       )}
                     </div>
                   </div>

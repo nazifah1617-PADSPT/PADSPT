@@ -225,6 +225,11 @@ export default function JKManagement() {
     }
 
     // If grouping by Parlimen or DUN, we might want to sort differently
+    const masjidNames = Array.from(new Set(printData.map(r => r.masjidName).filter(Boolean)));
+    const filenamePrefix = masjidNames.length === 1 
+      ? masjidNames[0].toUpperCase().replace(/[/\\?%*:|"<>]/g, '_') 
+      : (groupBy ? `Laporan_JK_${groupBy}` : 'Senarai_JK_Kariah');
+
     if (groupBy) {
       const groups: { [key: string]: any[] } = {};
       printData.forEach(r => {
@@ -244,9 +249,9 @@ export default function JKManagement() {
 
         doc.setFontSize(16);
         doc.setTextColor(0, 51, 102);
-        doc.text(`SENARAI JAWATANKUASA KARIAH`, 14, currentY);
+        doc.text(`SENARAI JAWATANKUASA KARIAH`, 105, currentY, { align: 'center' });
         currentY += 8;
-        doc.text(`MENGIKUT ${groupBy.toUpperCase()}: ${groupName.toUpperCase()}`, 14, currentY);
+        doc.text(`MENGIKUT ${groupBy.toUpperCase()}: ${groupName.toUpperCase()}`, 105, currentY, { align: 'center' });
         currentY += 10;
 
         autoTable(doc, {
@@ -265,7 +270,7 @@ export default function JKManagement() {
         });
       });
 
-      doc.save(`Laporan_JK_${groupBy}_${new Date().getTime()}.pdf`);
+      doc.save(`${filenamePrefix}_${new Date().getTime()}.pdf`);
       logActivity('PRINT', `Mencetak PDF Laporan ${groupBy} (${printData.length} rekod)`);
       return;
     }
@@ -303,20 +308,25 @@ export default function JKManagement() {
 
       doc.setFontSize(16);
       doc.setTextColor(0, 51, 102);
-      doc.text(`SENARAI JAWATANKUASA KARIAH`, 14, currentY);
+      doc.text(`SENARAI JAWATANKUASA KARIAH`, 105, currentY, { align: 'center' });
       currentY += 8;
-      doc.text(`${masjid.toUpperCase()}`, 14, currentY);
-      currentY += 8;
+      doc.text(`${masjid.toUpperCase()}`, 105, currentY, { align: 'center' });
+      currentY += 10;
       
       doc.setFontSize(10);
       doc.setTextColor(100);
-      let infoText = `PARLIMEN: ${parlimen.toUpperCase()} | DUN: ${dun.toUpperCase()}`;
+      const line1 = `PARLIMEN: ${parlimen.toUpperCase()} | DUN: ${dun.toUpperCase()}`;
+      doc.text(line1, 105, currentY, { align: 'center' });
+      currentY += 5;
+      
       if (masjidInfo) {
-        if (masjidInfo.kod) infoText += ` | NO. PENDAFTARAN: ${masjidInfo.kod}`;
-        if (masjidInfo.noFail) infoText += ` | NO. FAIL: ${masjidInfo.noFail}`;
+        let line2 = `NO. PENDAFTARAN: ${masjidInfo.kod || '-'}`;
+        if (masjidInfo.noFail) line2 += ` | NO. FAIL: ${masjidInfo.noFail}`;
+        doc.text(line2, 105, currentY, { align: 'center' });
+        currentY += 7;
+      } else {
+        currentY += 2;
       }
-      doc.text(infoText, 14, currentY);
-      currentY += 12;
 
       autoTable(doc, {
         startY: currentY,
@@ -339,7 +349,7 @@ export default function JKManagement() {
       currentY = (doc as any).lastAutoTable.finalY + 20;
     });
 
-    doc.save(`Senarai_JK_Kariah_${new Date().getTime()}.pdf`);
+    doc.save(`${filenamePrefix}_${new Date().getTime()}.pdf`);
     logActivity('PRINT', `Mencetak PDF Senarai JK (${printData.length} rekod)`);
   };
 
@@ -605,6 +615,7 @@ export default function JKManagement() {
         onClose={() => setIsPreviewOpen(false)}
         data={previewData}
         metadata={masjidDetails}
+        typeLabel="KARIAH"
         title={previewGroupType === 'masjid' ? 'SENARAI JAWATANKUASA KARIAH MASJID' : `LAPORAN JK KARIAH MENGIKUT ${previewGroupType.toUpperCase()}`}
         groupType={previewGroupType}
         onConfirm={() => generatePDF(previewGroupType === 'masjid' ? undefined : previewGroupType)}
