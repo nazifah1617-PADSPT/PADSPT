@@ -88,14 +88,14 @@ export default function UserManagement() {
   }, []);
 
   useEffect(() => {
-    const qUsers = query(collection(db, 'users'), limit(500));
+    const qUsers = query(collection(db, 'users'));
     const unsubUsers = onSnapshot(qUsers, (snap) => {
       setUsers(snap.docs.map(doc => ({ id: doc.id, ...doc.data(), type: 'REGISTERED' })));
       setLoading(false);
     });
 
     // Fetch pending admins from 'admin_users'
-    const qAdmin = query(collection(db, 'admin_users'), limit(100));
+    const qAdmin = query(collection(db, 'admin_users'));
     const unsubAdmin = onSnapshot(qAdmin, (snap) => {
       setPendingAdmins(snap.docs.map(doc => ({ id: doc.id, ...doc.data(), type: 'PENDING' })));
     });

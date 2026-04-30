@@ -18,7 +18,7 @@ export default function PegawaiManagement() {
   const [selectedPegawai, setSelectedPegawai] = useState<any>(null);
 
   useEffect(() => {
-    const q = query(collection(db, 'pegawai_records'), orderBy('nama', 'asc'), limit(50));
+    const q = query(collection(db, 'pegawai_records'), orderBy('nama', 'asc'));
     const unsubscribe = onSnapshot(q, (snap) => {
       setPegawai(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
       setLoading(false);

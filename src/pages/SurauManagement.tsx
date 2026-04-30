@@ -18,7 +18,7 @@ export default function SurauManagement() {
   const [selectedSurau, setSelectedSurau] = useState<any>(null);
 
   useEffect(() => {
-    const q = query(collection(db, 'surau_records'), orderBy('nama', 'asc'), limit(50));
+    const q = query(collection(db, 'surau_records'), orderBy('nama', 'asc'));
     const unsubscribe = onSnapshot(q, (snap) => {
       setSurau(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
       setLoading(false);

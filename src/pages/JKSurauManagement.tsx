@@ -80,7 +80,7 @@ export default function JKSurauManagement() {
   };
 
   useEffect(() => {
-    const q = query(collection(db, 'jk_surau_records'), limit(500));
+    const q = query(collection(db, 'jk_surau_records'));
     const unsubscribe = onSnapshot(q, (snap) => {
       const data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as any));
       setRecords(data);
@@ -92,7 +92,7 @@ export default function JKSurauManagement() {
     });
 
     // Fetch surau records for metadata lookup
-    const qSurau = query(collection(db, 'surau_records'), limit(500));
+    const qSurau = query(collection(db, 'surau_records'));
     const unsubSurau = onSnapshot(qSurau, (snap) => {
       setSurauDetails(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
     });

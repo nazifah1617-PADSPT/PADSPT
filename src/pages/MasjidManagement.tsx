@@ -16,7 +16,7 @@ export default function MasjidManagement() {
   const [selectedMasjid, setSelectedMasjid] = useState<any>(null);
 
   useEffect(() => {
-    const q = query(collection(db, 'masjid_records'), orderBy('nama', 'asc'), limit(50));
+    const q = query(collection(db, 'masjid_records'), orderBy('nama', 'asc'));
     const unsubscribe = onSnapshot(q, (snap) => {
       setMasjid(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
       setLoading(false);

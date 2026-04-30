@@ -84,7 +84,7 @@ export default function JKManagement() {
   };
 
   useEffect(() => {
-    const q = query(collection(db, 'jk_records'), orderBy('updatedAt', 'desc'), limit(500));
+    const q = query(collection(db, 'jk_records'), orderBy('updatedAt', 'desc'));
     const unsubscribe = onSnapshot(q, (snap) => {
       const data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as any));
       setRecords(data);
@@ -97,7 +97,7 @@ export default function JKManagement() {
     });
 
     // Fetch masjid records for metadata lookup
-    const qMasjid = query(collection(db, 'masjid_records'), limit(500));
+    const qMasjid = query(collection(db, 'masjid_records'));
     const unsubMasjid = onSnapshot(qMasjid, (snap) => {
       setMasjidDetails(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
     });
