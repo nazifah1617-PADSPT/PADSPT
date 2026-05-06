@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { collection, addDoc, updateDoc, doc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { handleFirestoreError, OperationType } from '../../lib/firestore-errors';
-import { X, Save, FileText, Calendar, Clock } from 'lucide-react';
+import { X, Save, FileText, Calendar, Clock, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { logActivity } from '../../services/auditService';
 
