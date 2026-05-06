@@ -14,19 +14,20 @@ interface PegawaiModalProps {
 export const PegawaiModal = ({ isOpen, onClose, initialData }: PegawaiModalProps) => {
   const [formData, setFormData] = useState<any>({
     nama: '',
-    jawatan: 'Imam',
+    jawatan: 'IMAM',
     noKP: '',
     noTel: '',
     masjidName: '',
     daerah: '',
     parlimen: '',
     dun: '',
+    statusLantikan: 'AKTIF',
   });
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (initialData) setFormData(initialData);
-    else setFormData({ nama: '', jawatan: 'Imam', noKP: '', noTel: '', masjidName: '', daerah: '', parlimen: '', dun: '' });
+    if (initialData) setFormData({ statusLantikan: 'AKTIF', ...initialData });
+    else setFormData({ nama: '', jawatan: 'IMAM', noKP: '', noTel: '', masjidName: '', daerah: '', parlimen: '', dun: '', statusLantikan: 'AKTIF' });
   }, [initialData, isOpen]);
 
   if (!isOpen) return null;
@@ -52,6 +53,7 @@ export const PegawaiModal = ({ isOpen, onClose, initialData }: PegawaiModalProps
         daerah: formData.daerah.toUpperCase().trim(),
         parlimen: formData.parlimen.toUpperCase().trim(),
         dun: formData.dun.toUpperCase().trim(),
+        statusLantikan: formData.statusLantikan?.toUpperCase().trim() || 'AKTIF',
       };
 
       if (initialData?.id) {
@@ -190,6 +192,22 @@ export const PegawaiModal = ({ isOpen, onClose, initialData }: PegawaiModalProps
                 {formData.parlimen && PENANG_PARLIAMENT_DUN[formData.parlimen]?.map(d => (
                   <option key={d} value={d}>{d}</option>
                 ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <label className="text-[10px] uppercase font-bold text-slate-400">Status Lantikan</label>
+              <select 
+                className="w-full px-4 py-3 bg-slate-50 border-none rounded-xl focus:ring-2 focus:ring-gov-blue/20 outline-none"
+                value={formData.statusLantikan}
+                onChange={(e) => setFormData({...formData, statusLantikan: e.target.value})}
+              >
+                <option>AKTIF</option>
+                <option>TAMAT TEMPOH</option>
+                <option>LETAK JAWATAN</option>
+                <option>MENINGGAL DUNIA</option>
               </select>
             </div>
           </div>

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { collection, query, onSnapshot, orderBy, limit, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { handleFirestoreError, OperationType } from '../lib/firestore-errors';
-import { UserCheck, Search, Plus, Building2, Phone, Edit3, Trash2, Loader2, Filter, Printer } from 'lucide-react';
+import { UserCheck, Search, Plus, Building2, Phone, Edit3, Trash2, Loader2, Filter, Printer, MapPin } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
 import { useAuth } from '../hooks/useAuth';
@@ -16,6 +16,10 @@ export default function PegawaiManagement() {
   const [pegawai, setPegawai] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedStatus, setSelectedStatus] = useState<string>('Semua');
+  const [selectedDaerah, setSelectedDaerah] = useState<string>('Semua');
+  const [selectedParlimen, setSelectedParlimen] = useState<string>('Semua');
+  const [selectedDun, setSelectedDun] = useState<string>('Semua');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedPegawai, setSelectedPegawai] = useState<any>(null);
 
@@ -79,11 +83,22 @@ export default function PegawaiManagement() {
     }
   };
 
-  const filteredPegawai = pegawai.filter(p => 
-    p.nama?.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    p.noKP?.includes(searchTerm) ||
-    p.masjidName?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const uniqueDaerahs = ['Semua', ...Array.from(new Set(pegawai.map(r => r.daerah).filter(Boolean)))].sort();
+  const uniqueParlimens = ['Semua', ...Array.from(new Set(pegawai.map(r => r.parlimen).filter(Boolean)))].sort();
+  const uniqueDuns = ['Semua', ...Array.from(new Set(pegawai.map(r => r.dun).filter(Boolean)))].sort();
+
+  const filteredPegawai = pegawai.filter(p => {
+    const matchSearch = p.nama?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+      p.noKP?.includes(searchTerm) ||
+      p.masjidName?.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchStatus = selectedStatus === 'Semua' || (p.statusLantikan || 'AKTIF') === selectedStatus;
+    const matchDaerah = selectedDaerah === 'Semua' || p.daerah === selectedDaerah;
+    const matchParlimen = selectedParlimen === 'Semua' || p.parlimen === selectedParlimen;
+    const matchDun = selectedDun === 'Semua' || p.dun === selectedDun;
+    
+    return matchSearch && matchStatus && matchDaerah && matchParlimen && matchDun;
+  });
 
   const JAWATAN_ORDER: Record<string, number> = {
     'IMAM': 1,
@@ -203,16 +218,95 @@ export default function PegawaiManagement() {
         </div>
       </div>
 
-      <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 flex flex-col md:flex-row gap-4">
-        <div className="flex-1 relative">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
-          <input 
-            type="text"
-            placeholder="Cari Nama Pegawai, No. KP atau Masjid..."
-            className="w-full pl-12 pr-4 py-4 rounded-xl bg-slate-50 border-none focus:ring-2 focus:ring-gov-blue/20 transition-all font-medium"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+      <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 space-y-4">
+        <div className="flex flex-col md:flex-row gap-4">
+          <div className="relative flex-1">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+            <input 
+              type="text"
+              placeholder="Cari Nama Pegawai, No. KP atau Masjid..."
+              className="w-full pl-12 pr-4 py-3 bg-slate-50 border-none rounded-xl focus:ring-2 focus:ring-gov-blue/20 outline-none font-medium"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          <div className="flex gap-2 overflow-x-auto pb-2 md:pb-0 scrollbar-hide">
+            {['SEMUA', 'AKTIF', 'TAMAT TEMPOH', 'LETAK JAWATAN', 'MENINGGAL DUNIA'].map(status => (
+              <button
+                key={status}
+                onClick={() => setSelectedStatus(status === 'SEMUA' ? 'Semua' : status)}
+                className={cn(
+                  "px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all",
+                  (selectedStatus === status || (selectedStatus === 'Semua' && status === 'SEMUA'))
+                    ? "bg-gov-blue text-white shadow-md" 
+                    : "bg-slate-50 text-slate-500 hover:bg-slate-100"
+                )}
+              >
+                {status}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2 border-t border-slate-50">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center text-slate-400 shrink-0">
+              <MapPin size={18} />
+            </div>
+            <div className="flex-1">
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Tapis Mengikut Daerah</p>
+              <select 
+                className="w-full bg-slate-50 border-none rounded-xl py-2 px-3 text-sm font-bold text-slate-700 outline-none focus:ring-2 focus:ring-gov-blue/20"
+                value={selectedDaerah}
+                onChange={(e) => {
+                  setSelectedDaerah(e.target.value);
+                  setSelectedParlimen('Semua');
+                  setSelectedDun('Semua');
+                }}
+              >
+                {uniqueDaerahs.map(d => (
+                  <option key={d} value={d}>{d}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center text-slate-400 shrink-0">
+              <MapPin size={18} />
+            </div>
+            <div className="flex-1">
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Tapis Mengikut Parlimen</p>
+              <select 
+                className="w-full bg-slate-50 border-none rounded-xl py-2 px-3 text-sm font-bold text-slate-700 outline-none focus:ring-2 focus:ring-gov-blue/20"
+                value={selectedParlimen}
+                onChange={(e) => {
+                  setSelectedParlimen(e.target.value);
+                  setSelectedDun('Semua');
+                }}
+              >
+                {uniqueParlimens.map(p => (
+                  <option key={p} value={p}>{p}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center text-slate-400 shrink-0">
+              <Building2 size={18} />
+            </div>
+            <div className="flex-1">
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Tapis Mengikut DUN</p>
+              <select 
+                className="w-full bg-slate-50 border-none rounded-xl py-2 px-3 text-sm font-bold text-slate-700 outline-none focus:ring-2 focus:ring-gov-blue/20"
+                value={selectedDun}
+                onChange={(e) => setSelectedDun(e.target.value)}
+              >
+                {uniqueDuns.map(d => (
+                  <option key={d} value={d}>{d}</option>
+                ))}
+              </select>
+            </div>
+          </div>
         </div>
       </div>
 
