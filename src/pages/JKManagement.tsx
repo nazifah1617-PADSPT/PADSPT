@@ -134,10 +134,10 @@ export default function JKManagement() {
   };
 
   const filteredRecords = records.filter(r => {
-    const matchesSearch = r.namaPenuh?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         r.noKP?.includes(searchTerm) ||
-                         r.noTel?.includes(searchTerm) ||
-                         r.masjidName?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = (r.namaPenuh || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         (r.noKP || '').includes(searchTerm) ||
+                         (r.noTel || '').includes(searchTerm) ||
+                         (r.masjidName || '').toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = selectedStatus === 'Semua' || r.statusLantikan === selectedStatus;
     const matchesDaerah = selectedDaerah === 'Semua' || r.daerah === selectedDaerah;
     const matchesParlimen = selectedParlimen === 'Semua' || r.parlimen === selectedParlimen;

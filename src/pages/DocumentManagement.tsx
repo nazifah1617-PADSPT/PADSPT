@@ -56,8 +56,8 @@ export default function DocumentManagement() {
   };
 
   const filteredDocuments = documents.filter(d => {
-    const matchSearch = d.tajuk?.toLowerCase().includes(searchTerm.toLowerCase()) || 
-      d.namaPihak?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchSearch = (d.tajuk || '').toLowerCase().includes(searchTerm.toLowerCase()) || 
+      (d.namaPihak || '').toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchJenis = selectedJenis === 'Semua' || d.jenisRekod === selectedJenis;
     
