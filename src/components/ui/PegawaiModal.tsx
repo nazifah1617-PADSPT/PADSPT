@@ -118,7 +118,6 @@ export const PegawaiModal = ({ isOpen, onClose, initialData }: PegawaiModalProps
                 <option>IMAM</option>
                 <option>BILAL</option>
                 <option>SIAK</option>
-                <option>NOJA</option>
               </select>
             </div>
             <div className="space-y-2">
