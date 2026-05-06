@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Users, Upload, ShieldCheck, LogOut, Search, Menu, X, Building2, UserCheck, FileBarChart, Settings, Wrench } from 'lucide-react';
+import { LayoutDashboard, Users, Upload, ShieldCheck, LogOut, Search, Menu, X, Building2, UserCheck, FileBarChart, Settings, Wrench, FileText } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { auth } from '../../firebase';
 import { cn } from '../../lib/utils';
@@ -19,6 +19,7 @@ export const DashboardLayout = ({ children }: { children: React.ReactNode }) => 
     { name: 'Surau', path: '/admin/surau', icon: Building2, show: isAdmin },
     { name: 'Pegawai Masjid', path: '/admin/pegawai', icon: UserCheck, show: isAdmin },
     { name: 'Pembaikan', path: '/admin/pembaikan', icon: Wrench, show: isAdmin },
+    { name: 'Dokumen', path: '/admin/dokumen', icon: FileText, show: isAdmin },
     { name: 'Upload Data', path: '/admin/upload', icon: Upload, show: isAdmin },
     { name: 'Laporan AI', path: '/admin/reports', icon: FileBarChart, show: isAdmin },
     { name: 'Audit Log', path: '/admin/audit', icon: ShieldCheck, show: isAdmin },

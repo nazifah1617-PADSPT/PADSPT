@@ -98,6 +98,27 @@
         "updatedAt": { "type": "string", "format": "date-time" }
       },
       "required": ["tajuk", "tarikhTerima", "masjidSurauName", "jenis"]
+    },
+    "DocumentRecord": {
+      "title": "Rekod Dokumen",
+      "description": "Maklumat masuk/keluar dokumen.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "jenisRekod": { "type": "string", "enum": ["Terimaan", "Edaran"] },
+        "kategoriDokumen": { "type": "string" },
+        "tajuk": { "type": "string" },
+        "entitiBerkaitan": { "type": "string" },
+        "subEntiti": { "type": "string" },
+        "namaPihak": { "type": "string" },
+        "tarikh": { "type": "string", "format": "date" },
+        "jam": { "type": "string" },
+        "tindakan": { "type": "string" },
+        "status": { "type": "string", "enum": ["Selesai", "Dalam Proses", "KIV", "Ditolak"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["jenisRekod", "tajuk", "entitiBerkaitan", "tarikh", "jam", "status"]
     }
   },
   "firestore": {
@@ -140,6 +161,10 @@
     "/pembaikan_records": {
       "schema": "PembaikanRecord",
       "description": "Koleksi rekod pembaikan masjid dan surau."
+    },
+    "/document_records": {
+      "schema": "DocumentRecord",
+      "description": "Koleksi rekod dokumen yang masuk dan keluar."
     }
   }
 }

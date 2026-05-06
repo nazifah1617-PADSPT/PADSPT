@@ -13,6 +13,7 @@ import PegawaiManagement from './pages/PegawaiManagement';
 import ReportsAI from './pages/ReportsAI';
 import UserManagement from './pages/UserManagement';
 import PembaikanManagement from './pages/PembaikanManagement';
+import DocumentManagement from './pages/DocumentManagement';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsConditions from './pages/TermsConditions';
 import { DashboardLayout } from './components/layout/DashboardLayout';
@@ -151,6 +152,12 @@ export default function App() {
           <Route path="/admin/pembaikan" element={
             <ProtectedRoute requireAdmin>
               <PembaikanManagement />
+            </ProtectedRoute>
+          } />
+
+          <Route path="/admin/dokumen" element={
+            <ProtectedRoute requireAdmin>
+              <DocumentManagement />
             </ProtectedRoute>
           } />
 

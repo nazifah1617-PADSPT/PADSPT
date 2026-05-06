@@ -43,17 +43,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       const userEmail = user.email?.toLowerCase().trim();
       
       const fetchProfile = async () => {
-        // Create a timeout promise
-        const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error("Timeout fetching profile")), 10000)
-        );
-
         try {
           console.log("Fetching profile for UID:", user.uid, "Email:", userEmail);
-          const userDocPromise = getDoc(doc(db, 'users', user.uid));
-          
-          // Race the fetch against the timeout
-          const userDoc = await Promise.race([userDocPromise, timeoutPromise]) as any;
+          const userDoc = await getDoc(doc(db, 'users', user.uid));
           
           let userData = userDoc.exists() ? userDoc.data() : null;
           let role = userData?.role || 'USER';
@@ -90,7 +82,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           };
 
           // Update Firestore if role changed or profile didn't exist
-          if (!userDoc.exists() || userData.role !== role) {
+          if (!userDoc.exists() || userData?.role !== role) {
             console.log("Syncing role to Firestore users collection:", role);
             await setDoc(doc(db, 'users', user.uid), finalProfile, { merge: true });
           }
