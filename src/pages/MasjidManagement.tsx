@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { collection, query, onSnapshot, orderBy, limit, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { handleFirestoreError, OperationType } from '../lib/firestore-errors';
-import { Building2, Search, Plus, Edit3, Trash2, Loader2 } from 'lucide-react';
+import { Building2, Search, Plus, Edit3, Trash2, Loader2, MapPin, ChevronDown, ChevronUp } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { MasjidModal } from '../components/ui/MasjidModal';
 import { logActivity } from '../services/auditService';
@@ -51,12 +51,19 @@ export default function MasjidManagement() {
     }
   };
 
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  const toggleExpand = (id: string) => {
+    setExpandedId(expandedId === id ? null : id);
+  };
+
   const filteredMasjid = masjid.filter(m => 
     m.nama?.toLowerCase().includes(searchTerm.toLowerCase()) || 
     m.kod?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     m.noFail?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     m.daerah?.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
 
   return (
     <div className="space-y-8">
@@ -108,48 +115,88 @@ export default function MasjidManagement() {
               </tr>
             ) : filteredMasjid.length > 0 ? (
               filteredMasjid.map((m) => (
-                <tr key={m.id} className="hover:bg-slate-50/50 transition-colors group">
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-gov-blue/5 rounded-xl flex items-center justify-center text-gov-blue relative">
-                        <Building2 size={20} />
-                        {m.latitude && m.longitude && (
-                          <div className="absolute -top-1 -right-1 w-3 h-3 bg-islamic-green rounded-full border-2 border-white" title="Koordinat Tersedia" />
+                <React.Fragment key={m.id}>
+                  <tr className="hover:bg-slate-50/50 transition-colors group">
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-gov-blue/5 rounded-xl flex items-center justify-center text-gov-blue relative">
+                          <Building2 size={20} />
+                          {m.latitude && m.longitude && (
+                            <div className="absolute -top-1 -right-1 w-3 h-3 bg-islamic-green rounded-full border-2 border-white" title="Koordinat Tersedia" />
+                          )}
+                        </div>
+                        <div>
+                          <p className="font-bold text-slate-900">{m.nama}</p>
+                          <button 
+                            onClick={() => toggleExpand(m.id)}
+                            className="text-xs text-gov-blue flex items-center gap-1 mt-1 hover:underline font-medium"
+                          >
+                            <MapPin size={12} />
+                            Lihat Lokasi
+                            {expandedId === m.id ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+                          </button>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 font-mono text-sm text-slate-600 uppercase">{m.kod}</td>
+                    <td className="px-6 py-4 font-mono text-xs text-slate-500 uppercase">{m.noFail || '-'}</td>
+                    <td className="px-6 py-4">
+                      <span className="px-2 py-1 bg-slate-100 text-slate-600 text-[10px] font-bold rounded-md uppercase">
+                        {m.daerah}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <p className="text-sm font-medium text-slate-700">{m.parlimen}</p>
+                      <p className="text-[10px] text-slate-400 uppercase font-bold">{m.dun}</p>
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button 
+                          onClick={() => handleEdit(m)}
+                          className="p-2 text-slate-400 hover:text-gov-blue hover:bg-slate-100 rounded-lg transition-all"
+                        >
+                          <Edit3 size={18} />
+                        </button>
+                        {isSuperAdmin && (
+                          <button 
+                            onClick={() => handleDelete(m.id, m.nama)}
+                            className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                          >
+                            <Trash2 size={18} />
+                          </button>
                         )}
                       </div>
-                      <p className="font-bold text-slate-900">{m.nama}</p>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 font-mono text-sm text-slate-600 uppercase">{m.kod}</td>
-                  <td className="px-6 py-4 font-mono text-xs text-slate-500 uppercase">{m.noFail || '-'}</td>
-                  <td className="px-6 py-4">
-                    <span className="px-2 py-1 bg-slate-100 text-slate-600 text-[10px] font-bold rounded-md uppercase">
-                      {m.daerah}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <p className="text-sm font-medium text-slate-700">{m.parlimen}</p>
-                    <p className="text-[10px] text-slate-400 uppercase font-bold">{m.dun}</p>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button 
-                        onClick={() => handleEdit(m)}
-                        className="p-2 text-slate-400 hover:text-gov-blue hover:bg-slate-100 rounded-lg transition-all"
-                      >
-                        <Edit3 size={18} />
-                      </button>
-                      {isSuperAdmin && (
-                        <button 
-                          onClick={() => handleDelete(m.id, m.nama)}
-                          className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
-                        >
-                          <Trash2 size={18} />
-                        </button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
+                    </td>
+                  </tr>
+                  
+                  {expandedId === m.id && (
+                    <tr className="bg-slate-50/50 border-b border-t-0 border-slate-100">
+                      <td colSpan={6} className="px-16 py-4">
+                        <div className="flex flex-col md:flex-row gap-6">
+                          <div className="flex-1">
+                            <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Alamat Penuh</h4>
+                            <p className="text-sm font-medium text-slate-800 uppercase">{m.alamat || 'Tiada alamat.'}</p>
+                          </div>
+                          
+                          {m.latitude && m.longitude && (
+                            <div className="w-full md:w-64 h-32 rounded-lg overflow-hidden border border-slate-200">
+                              <iframe
+                                width="100%"
+                                height="100%"
+                                frameBorder="0"
+                                scrolling="no"
+                                marginHeight={0}
+                                marginWidth={0}
+                                src={`https://maps.google.com/maps?q=${m.latitude},${m.longitude}&hl=bm&z=15&output=embed`}
+                                className="grayscale hover:grayscale-0 transition-all duration-300"
+                              />
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </React.Fragment>
               ))
             ) : (
               <tr>

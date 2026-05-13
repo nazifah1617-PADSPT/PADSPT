@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { collection, query, onSnapshot, orderBy, limit, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { handleFirestoreError, OperationType } from '../lib/firestore-errors';
-import { Building2, Search, Plus, MapPin, Phone, Edit3, Trash2, Loader2, Filter } from 'lucide-react';
+import { Building2, Search, Plus, MapPin, Phone, Edit3, Trash2, Loader2, Filter, ChevronDown, ChevronUp } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
 import { useAuth } from '../hooks/useAuth';
@@ -51,6 +51,12 @@ export default function SurauManagement() {
         console.error("Delete error:", error);
       }
     }
+  };
+
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  const toggleExpand = (id: string) => {
+    setExpandedId(expandedId === id ? null : id);
   };
 
   const filteredSurau = surau.filter(s => 
@@ -110,48 +116,88 @@ export default function SurauManagement() {
               </tr>
             ) : filteredSurau.length > 0 ? (
               filteredSurau.map((s) => (
-                <tr key={s.id} className="hover:bg-slate-50/50 transition-colors group">
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-gov-blue/5 rounded-xl flex items-center justify-center text-gov-blue relative">
-                        <Building2 size={20} />
-                        {s.latitude && s.longitude && (
-                          <div className="absolute -top-1 -right-1 w-3 h-3 bg-islamic-green rounded-full border-2 border-white" title="Koordinat Tersedia" />
+                <React.Fragment key={s.id}>
+                  <tr className="hover:bg-slate-50/50 transition-colors group">
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-gov-blue/5 rounded-xl flex items-center justify-center text-gov-blue relative">
+                          <Building2 size={20} />
+                          {s.latitude && s.longitude && (
+                            <div className="absolute -top-1 -right-1 w-3 h-3 bg-islamic-green rounded-full border-2 border-white" title="Koordinat Tersedia" />
+                          )}
+                        </div>
+                        <div>
+                          <p className="font-bold text-slate-900">{s.nama}</p>
+                          <button 
+                            onClick={() => toggleExpand(s.id)}
+                            className="text-xs text-gov-blue flex items-center gap-1 mt-1 hover:underline font-medium"
+                          >
+                            <MapPin size={12} />
+                            Lihat Lokasi
+                            {expandedId === s.id ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+                          </button>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 font-mono text-sm text-slate-600 uppercase">{s.kod}</td>
+                    <td className="px-6 py-4 font-mono text-xs text-slate-500 uppercase">{s.noFailSurau || '-'}</td>
+                    <td className="px-6 py-4">
+                      <span className="px-2 py-1 bg-slate-100 text-slate-600 text-[10px] font-bold rounded-md uppercase">
+                        {s.daerah}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <p className="text-sm font-medium text-slate-700">{s.parlimen}</p>
+                      <p className="text-[10px] text-slate-400 uppercase font-bold">{s.dun}</p>
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button 
+                          onClick={() => handleEdit(s)}
+                          className="p-2 text-slate-400 hover:text-gov-blue hover:bg-slate-100 rounded-lg transition-all"
+                        >
+                          <Edit3 size={18} />
+                        </button>
+                        {isSuperAdmin && (
+                          <button 
+                            onClick={() => handleDelete(s.id, s.nama)}
+                            className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                          >
+                            <Trash2 size={18} />
+                          </button>
                         )}
                       </div>
-                      <p className="font-bold text-slate-900">{s.nama}</p>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 font-mono text-sm text-slate-600 uppercase">{s.kod}</td>
-                  <td className="px-6 py-4 font-mono text-xs text-slate-500 uppercase">{s.noFailSurau || '-'}</td>
-                  <td className="px-6 py-4">
-                    <span className="px-2 py-1 bg-slate-100 text-slate-600 text-[10px] font-bold rounded-md uppercase">
-                      {s.daerah}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <p className="text-sm font-medium text-slate-700">{s.parlimen}</p>
-                    <p className="text-[10px] text-slate-400 uppercase font-bold">{s.dun}</p>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button 
-                        onClick={() => handleEdit(s)}
-                        className="p-2 text-slate-400 hover:text-gov-blue hover:bg-slate-100 rounded-lg transition-all"
-                      >
-                        <Edit3 size={18} />
-                      </button>
-                      {isSuperAdmin && (
-                        <button 
-                          onClick={() => handleDelete(s.id, s.nama)}
-                          className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
-                        >
-                          <Trash2 size={18} />
-                        </button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
+                    </td>
+                  </tr>
+                  
+                  {expandedId === s.id && (
+                    <tr className="bg-slate-50/50 border-b border-t-0 border-slate-100">
+                      <td colSpan={6} className="px-16 py-4">
+                        <div className="flex flex-col md:flex-row gap-6">
+                          <div className="flex-1">
+                            <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Alamat Penuh</h4>
+                            <p className="text-sm font-medium text-slate-800 uppercase">{s.alamat || 'Tiada alamat.'}</p>
+                          </div>
+                          
+                          {s.latitude && s.longitude && (
+                            <div className="w-full md:w-64 h-32 rounded-lg overflow-hidden border border-slate-200">
+                              <iframe
+                                width="100%"
+                                height="100%"
+                                frameBorder="0"
+                                scrolling="no"
+                                marginHeight={0}
+                                marginWidth={0}
+                                src={`https://maps.google.com/maps?q=${s.latitude},${s.longitude}&hl=bm&z=15&output=embed`}
+                                className="grayscale hover:grayscale-0 transition-all duration-300"
+                              />
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </React.Fragment>
               ))
             ) : (
               <tr>
