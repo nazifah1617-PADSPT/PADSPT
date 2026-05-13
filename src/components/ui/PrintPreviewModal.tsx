@@ -19,12 +19,15 @@ const ROLE_PRIORITY: { [key: string]: number } = {
   'timb. pengerusi': 2,
   'tim pengerusi': 2,
   'timb pengerusi': 2,
+  'timbalan pengerusi': 2,
+  'naib pengerusi': 2,
   'setiausaha': 3,
   'bendahari': 4,
   'ajk': 5,
   'ajk wanita': 6,
   'pemeriksa kira-kira': 7,
-  'pemeriksa kira kira': 7
+  'pemeriksa kira kira': 7,
+  'pemeriksa kira': 7
 };
 
 const getPriority = (jawatan: string) => {
@@ -56,6 +59,11 @@ export const PrintPreviewModal = ({ isOpen, onClose, data, onConfirm, title, gro
     // Sort individuals within groups by priority
     Object.keys(groups).forEach(key => {
       groups[key].sort((a, b) => {
+        if (groupType !== 'masjid') {
+          const masjidA = a.masjidName || '';
+          const masjidB = b.masjidName || '';
+          if (masjidA !== masjidB) return masjidA.localeCompare(masjidB);
+        }
         const pA = getPriority(a.jawatan);
         const pB = getPriority(b.jawatan);
         if (pA !== pB) return pA - pB;
@@ -131,28 +139,54 @@ export const PrintPreviewModal = ({ isOpen, onClose, data, onConfirm, title, gro
                         <th className="px-4 py-3 text-[10px] font-bold uppercase w-12 text-center">Bil</th>
                         <th className="px-4 py-3 text-[10px] font-bold uppercase">Nama Penuh</th>
                         <th className="px-4 py-3 text-[10px] font-bold uppercase">Jawatan</th>
+                        {(typeLabel === 'KARIAH' || typeLabel === 'SURAU') && (
+                          <th className="px-4 py-3 text-[10px] font-bold uppercase">Nama {typeLabel === 'SURAU' ? 'Surau' : 'Masjid'}</th>
+                        )}
                         <th className="px-4 py-3 text-[10px] font-bold uppercase">No. Telefon</th>
                         <th className="px-4 py-3 text-[10px] font-bold uppercase text-center">Status</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
-                      {members.map((m, idx) => (
-                        <tr key={m.id} className="hover:bg-slate-50 transition-colors">
-                          <td className="px-4 py-3 text-xs font-bold text-slate-500 text-center">{idx + 1}</td>
-                          <td className="px-4 py-3 text-xs font-black text-slate-900 uppercase">{m.namaPenuh}</td>
-                          <td className="px-4 py-3 text-xs font-bold text-slate-600 uppercase">{m.jawatan}</td>
-                          <td className="px-4 py-3 text-xs font-mono text-slate-500">{m.noTel || '-'}</td>
-                          <td className="px-4 py-3 text-center">
-                            <span className={`text-[9px] font-black px-2 py-0.5 rounded-full uppercase ${
-                              m.statusLantikan === 'AKTIF' || m.statusLantikan === 'Aktif' 
-                                ? 'bg-emerald-100 text-emerald-700' 
-                                : 'bg-slate-100 text-slate-500'
-                            }`}>
-                              {m.statusLantikan}
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
+                      {(() => {
+                        let currentMasjid = '';
+                        return members.map((m, idx) => {
+                          const mName = m.masjidName || '-';
+                          const isNewMasjid = groupType !== 'masjid' && mName !== currentMasjid;
+                          if (isNewMasjid) {
+                            currentMasjid = mName;
+                          }
+
+                          return (
+                            <React.Fragment key={m.id}>
+                              {isNewMasjid && (
+                                <tr className="bg-slate-100/80">
+                                  <td colSpan={6} className="px-4 py-2 text-xs font-bold text-slate-800 uppercase border-y border-slate-200">
+                                    {mName}
+                                  </td>
+                                </tr>
+                              )}
+                              <tr className="hover:bg-slate-50 transition-colors bg-white">
+                                <td className="px-4 py-3 text-xs font-bold text-slate-500 text-center">{idx + 1}</td>
+                                <td className="px-4 py-3 text-xs font-black text-slate-900 uppercase">{m.namaPenuh}</td>
+                                <td className="px-4 py-3 text-xs font-bold text-slate-600 uppercase">{m.jawatan}</td>
+                                {(typeLabel === 'KARIAH' || typeLabel === 'SURAU') && (
+                                  <td className="px-4 py-3 text-xs font-bold text-slate-600 uppercase">{m.masjidName || '-'}</td>
+                                )}
+                                <td className="px-4 py-3 text-xs font-mono text-slate-500">{m.noTel || '-'}</td>
+                                <td className="px-4 py-3 text-center">
+                                  <span className={`text-[9px] font-black px-2 py-0.5 rounded-full uppercase ${
+                                    m.statusLantikan === 'AKTIF' || m.statusLantikan === 'Aktif' 
+                                      ? 'bg-emerald-100 text-emerald-700' 
+                                      : 'bg-slate-100 text-slate-500'
+                                  }`}>
+                                    {m.statusLantikan}
+                                  </span>
+                                </td>
+                              </tr>
+                            </React.Fragment>
+                          );
+                        });
+                      })()}
                     </tbody>
                   </table>
                 </div>

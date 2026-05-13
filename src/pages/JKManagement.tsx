@@ -36,12 +36,15 @@ const ROLE_PRIORITY: { [key: string]: number } = {
   'timb. pengerusi': 2,
   'tim pengerusi': 2,
   'timb pengerusi': 2,
+  'timbalan pengerusi': 2,
+  'naib pengerusi': 2,
   'setiausaha': 3,
   'bendahari': 4,
   'ajk': 5,
   'ajk wanita': 6,
   'pemeriksa kira-kira': 7,
-  'pemeriksa kira kira': 7
+  'pemeriksa kira kira': 7,
+  'pemeriksa kira': 7
 };
 
 const getPriority = (jawatan: string) => {
@@ -243,8 +246,12 @@ export default function JKManagement() {
 
       sortedGroups.forEach(([groupName, members], index) => {
         if (index > 0) {
-          doc.addPage();
-          currentY = 20;
+          if (currentY > 230) {
+            doc.addPage();
+            currentY = 20;
+          } else {
+            currentY += 10;
+          }
         }
 
         doc.setFontSize(16);
@@ -254,16 +261,46 @@ export default function JKManagement() {
         doc.text(`MENGIKUT ${groupBy.toUpperCase()}: ${groupName.toUpperCase()}`, 105, currentY, { align: 'center' });
         currentY += 10;
 
-        autoTable(doc, {
-          startY: currentY,
-          head: [['BIL', 'MASJID', 'NAMA PENUH', 'JAWATAN', 'NO. TEL']],
-          body: members.sort((a,b) => (a.masjidName || '').localeCompare(b.masjidName || '')).map((r, i) => [
+        let tableBody: any[] = [];
+        let currentMasjid = '';
+
+        members.sort((a,b) => {
+          const masjidA = a.masjidName || '';
+          const masjidB = b.masjidName || '';
+          if (masjidA !== masjidB) return masjidA.localeCompare(masjidB);
+          
+          const pA = getPriority(a.jawatan);
+          const pB = getPriority(b.jawatan);
+          if (pA !== pB) return pA - pB;
+          
+          return (a.namaPenuh || '').localeCompare(b.namaPenuh || '');
+        }).forEach((r, i) => {
+          if (previewGroupType !== 'masjid') {
+            const mName = r.masjidName || '-';
+            if (mName !== currentMasjid) {
+              currentMasjid = mName;
+              tableBody.push([{
+                content: mName.toUpperCase(),
+                colSpan: 6,
+                styles: { fillColor: [240, 245, 250], textColor: [0, 51, 102], fontStyle: 'bold', halign: 'left' }
+              }]);
+            }
+          }
+
+          tableBody.push([
             i + 1,
-            (r.masjidName || '-').toUpperCase(),
             r.namaPenuh.toUpperCase(),
             r.jawatan.toUpperCase(),
-            r.noTel || '-'
-          ]),
+            (r.masjidName || '-').toUpperCase(),
+            r.noTel || '-',
+            r.statusLantikan.toUpperCase()
+          ]);
+        });
+
+        autoTable(doc, {
+          startY: currentY,
+          head: [['BIL', 'NAMA PENUH', 'JAWATAN', 'NAMA MASJID', 'NO. TELEFON', 'STATUS']],
+          body: tableBody,
           headStyles: { fillColor: [0, 51, 102] },
           alternateRowStyles: { fillColor: [245, 245, 245] },
           margin: { top: 20 },
@@ -287,8 +324,12 @@ export default function JKManagement() {
 
     Object.entries(printGroups).forEach(([masjid, members], index) => {
       if (index > 0) {
-        doc.addPage();
-        currentY = 20;
+        if (currentY > 230) {
+          doc.addPage();
+          currentY = 20;
+        } else {
+          currentY += 10; // Add some spacing between masjids on the same page
+        }
       }
 
       // Sort members by priority
@@ -330,12 +371,13 @@ export default function JKManagement() {
 
       autoTable(doc, {
         startY: currentY,
-        head: [['BIL', 'NAMA PENUH', 'NO. TELEFON', 'JAWATAN', 'STATUS']],
+        head: [['BIL', 'NAMA PENUH', 'JAWATAN', 'NAMA MASJID', 'NO. TELEFON', 'STATUS']],
         body: sortedMembers.map((r, i) => [
           i + 1,
           r.namaPenuh.toUpperCase(),
-          r.noTel || '-',
           r.jawatan.toUpperCase(),
+          (r.masjidName || '-').toUpperCase(),
+          r.noTel || '-',
           r.statusLantikan.toUpperCase()
         ]),
         headStyles: { fillColor: [0, 51, 102] },
