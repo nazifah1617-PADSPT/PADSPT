@@ -27,13 +27,26 @@ export const SurauModal = ({ isOpen, onClose, initialData }: SurauModalProps) =>
   const [geocoding, setGeocoding] = useState(false);
 
   useEffect(() => {
-    if (initialData) setFormData({
-      ...initialData,
-      latitude: initialData.latitude || '',
-      longitude: initialData.longitude || '',
-      noFailSurau: initialData.noFailSurau || '',
-    });
-    else setFormData({ nama: '', kod: '', noFailSurau: '', daerah: '', parlimen: '', dun: '', alamat: '', latitude: '', longitude: '' });
+    if (initialData) {
+      setFormData({
+        nama: '',
+        kod: '',
+        noFailSurau: '',
+        daerah: '',
+        parlimen: '',
+        dun: '',
+        alamat: '',
+        latitude: '',
+        longitude: '',
+        ...initialData,
+        latitude: initialData.latitude || '',
+        longitude: initialData.longitude || '',
+        noFailSurau: initialData.noFailSurau || '',
+        alamat: initialData.alamat || '',
+      });
+    } else {
+      setFormData({ nama: '', kod: '', noFailSurau: '', daerah: '', parlimen: '', dun: '', alamat: '', latitude: '', longitude: '' });
+    }
   }, [initialData, isOpen]);
 
   if (!isOpen) return null;

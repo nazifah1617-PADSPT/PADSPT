@@ -27,13 +27,26 @@ export const MasjidModal = ({ isOpen, onClose, initialData }: MasjidModalProps) 
   const [geocoding, setGeocoding] = useState(false);
 
   useEffect(() => {
-    if (initialData) setFormData({
-      ...initialData,
-      latitude: initialData.latitude || '',
-      longitude: initialData.longitude || '',
-      noFail: initialData.noFail || '',
-    });
-    else setFormData({ nama: '', kod: '', noFail: '', daerah: '', parlimen: '', dun: '', alamat: '', latitude: '', longitude: '' });
+    if (initialData) {
+      setFormData({
+        nama: '',
+        kod: '',
+        noFail: '',
+        daerah: '',
+        parlimen: '',
+        dun: '',
+        alamat: '',
+        latitude: '',
+        longitude: '',
+        ...initialData,
+        latitude: initialData.latitude || '',
+        longitude: initialData.longitude || '',
+        noFail: initialData.noFail || '',
+        alamat: initialData.alamat || '',
+      });
+    } else {
+      setFormData({ nama: '', kod: '', noFail: '', daerah: '', parlimen: '', dun: '', alamat: '', latitude: '', longitude: '' });
+    }
   }, [initialData, isOpen]);
 
   if (!isOpen) return null;

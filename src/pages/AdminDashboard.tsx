@@ -36,7 +36,7 @@ export default function AdminDashboard() {
     totalMasjid: 0,
     totalSurau: 0,
     expiringSoon: 0,
-    vacancies: 0
+    totalPegawai: 0
   });
 
   const [chartData, setChartData] = useState<any[]>([]);
@@ -90,7 +90,7 @@ export default function AdminDashboard() {
 
     // Listen to Pegawai Records
     const unsubPegawai = onSnapshot(collection(db, 'pegawai_records'), (snap) => {
-      setStats(prev => ({ ...prev, vacancies: snap.size }));
+      setStats(prev => ({ ...prev, totalPegawai: snap.size }));
     }, (err) => handleFirestoreError(err, OperationType.LIST, 'pegawai_records'));
 
     // Listen to Audit Logs
@@ -119,8 +119,8 @@ export default function AdminDashboard() {
     const now = new Date();
     const thirtyDaysFromNow = new Date(now.getTime() + (30 * 24 * 60 * 60 * 1000));
     const expiring = allJkDocs.filter((d: any) => {
-      if (!d.tarikhTamat) return false;
-      const expiry = d.tarikhTamat.toDate ? d.tarikhTamat.toDate() : new Date(d.tarikhTamat);
+      if (!d.tarikhTamatSesi) return false;
+      const expiry = new Date(d.tarikhTamatSesi);
       return expiry > now && expiry <= thirtyDaysFromNow;
     }).length;
 
@@ -171,8 +171,8 @@ export default function AdminDashboard() {
           { label: 'Jumlah Rekod JK', value: allJkDocs.length, icon: Users, color: 'text-gov-blue', bg: 'bg-gov-blue/5' },
           { label: 'Jumlah Masjid', value: stats.totalMasjid, icon: Building2, color: 'text-islamic-green', bg: 'bg-islamic-green/5' },
           { label: 'Jumlah Surau', value: stats.totalSurau, icon: Building2, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-          { label: 'Tamat Tempoh (30 Hari)', value: stats.expiringSoon, icon: Clock, color: 'text-amber-600', bg: 'bg-amber-50' },
-          { label: 'Kekosongan Jawatan', value: stats.vacancies, icon: AlertTriangle, color: 'text-red-600', bg: 'bg-red-50' },
+          { label: 'Tamat Sesi (30 Hari)', value: stats.expiringSoon, icon: Clock, color: 'text-amber-600', bg: 'bg-amber-50' },
+          { label: 'Jumlah Pegawai Masjid', value: stats.totalPegawai, icon: Users, color: 'text-amber-600', bg: 'bg-amber-50' },
         ].map((stat, i) => (
           <motion.div
             key={i}

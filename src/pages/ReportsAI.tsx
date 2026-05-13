@@ -5,6 +5,8 @@ import autoTable from 'jspdf-autotable';
 import { GoogleGenAI } from "@google/genai";
 import { motion } from 'motion/react';
 import { cn } from '../lib/utils';
+import { collection, getDocs, query, where } from 'firebase/firestore';
+import { db } from '../firebase';
 
 const getAi = () => {
   // 1. Cuba dapatkan kunci daripada pelbagai sumber (Vite standard & Fallbacks)
@@ -30,28 +32,63 @@ export default function ReportsAI() {
   const [generating, setGenerating] = useState(false);
   const [reportType, setReportType] = useState('jk_aktif');
   const [aiAnalysis, setAiAnalysis] = useState('');
+  const [currentReportData, setCurrentReportData] = useState<any>(null);
 
   const generateReport = async () => {
     setGenerating(true);
     try {
       const ai = getAi();
-      // ... rest of the function ...
-      const mockData = {
-        totalJK: 12450,
-        activeJK: 12000,
-        vacancies: 450,
-        districts: [
-          { name: 'Timur Laut', count: 2500 },
-          { name: 'Barat Daya', count: 1800 },
-          { name: 'Seberang Perai Utara', count: 3200 },
-          { name: 'Seberang Perai Tengah', count: 2800 },
-          { name: 'Seberang Perai Selatan', count: 2150 },
-        ]
+      
+      // Fetch real data
+      const jkSnapshot = await getDocs(collection(db, 'jk_records'));
+      const jkSurauSnapshot = await getDocs(collection(db, 'jk_surau_records'));
+      const pegawaiSnapshot = await getDocs(collection(db, 'pegawai_records'));
+      const masjidSnapshot = await getDocs(collection(db, 'masjid_records'));
+      const surauSnapshot = await getDocs(collection(db, 'surau_records'));
+
+      const allJkDocs = [
+        ...jkSnapshot.docs.map(d => ({ ...d.data(), id: d.id, type: 'jk_masjid' })),
+        ...jkSurauSnapshot.docs.map(d => ({ ...d.data(), id: d.id, type: 'jk_surau' })),
+      ];
+
+      const activeJkCount = allJkDocs.filter((d: any) => d.statusLantikan === 'AKTIF' || d.statusLantikan === 'Aktif').length;
+      
+      const now = new Date();
+      const thirtyDaysFromNow = new Date(now.getTime() + (30 * 24 * 60 * 60 * 1000));
+      const expiringSoonCount = allJkDocs.filter((d: any) => {
+        if (!d.tarikhTamatSesi) return false;
+        const expiry = new Date(d.tarikhTamatSesi);
+        return expiry > now && expiry <= thirtyDaysFromNow;
+      }).length;
+
+      const districtsData: {[key: string]: number} = {};
+      allJkDocs.forEach((d: any) => {
+        if (d.daerah) {
+          districtsData[d.daerah] = (districtsData[d.daerah] || 0) + 1;
+        }
+      });
+      
+      const districtsArray = Object.keys(districtsData).map(d => ({ name: d, count: districtsData[d] })).sort((a, b) => b.count - a.count);
+
+      const reportData = {
+        jumlah_jk: allJkDocs.length,
+        jumlah_jk_aktif: activeJkCount,
+        jumlah_pegawai_masjid: pegawaiSnapshot.size,
+        jumlah_masjid: masjidSnapshot.size,
+        jumlah_surau: surauSnapshot.size,
+        jk_tamat_sesi_hampir: expiringSoonCount,
+        pecahan_daerah_jk: districtsArray,
       };
 
-      const prompt = `Sebagai sistem AI rasmi Jabatan Hal Ehwal Agama Islam Pulau Pinang, berikan analisis ringkas dan profesional (dalam Bahasa Melayu formal) untuk laporan berikut: ${reportType}. 
-      Data ringkasan: ${JSON.stringify(mockData)}. 
-      Berikan 3 cadangan penambahbaikan untuk pengurusan kariah.`;
+      setCurrentReportData(reportData);
+
+      const prompt = `Sebagai sistem AI rasmi Jabatan Hal Ehwal Agama Islam Pulau Pinang, berikan analisis ringkas dan profesional (dalam Bahasa Melayu formal) untuk laporan berikut: ${reportType}.
+      
+Anda MESTI HANYA menggunakan maklumat data di bawah untuk menjana laporan ini. DILARANG SAMA SEKALI menggunakan sebarang maklumat luaran, membuat andaian, atau mencipta data palsu. Jika data tidak mencukupi, nyatakan dengan jelas.
+
+Data ringkasan sistem e-Kariah: ${JSON.stringify(reportData, null, 2)}. 
+
+Berdasarkan data ini SAHAJA, berikan huraian, dan 3 cadangan penambahbaikan untuk pengurusan kariah yang relevan dengan data.`;
 
       const response = await ai.models.generateContent({
         model: "gemini-3-flash-preview",
@@ -92,20 +129,20 @@ export default function ReportsAI() {
     const splitText = doc.splitTextToSize(aiAnalysis, 180);
     doc.text(splitText, 10, 55);
 
-    // Table
-    autoTable(doc, {
-      startY: 120,
-      head: [['Daerah', 'Jumlah JK']],
-      body: [
-        ['Timur Laut', '2500'],
-        ['Barat Daya', '1800'],
-        ['Seberang Perai Utara', '3200'],
-        ['Seberang Perai Tengah', '2800'],
-        ['Seberang Perai Selatan', '2150'],
-      ],
-      theme: 'grid',
-      headStyles: { fillColor: '#003366' }
-    });
+    // Table (Only if data exists and type is daerah or overall stats)
+    let finalY = 120 + (splitText.length * 6);
+    if (finalY < 120) finalY = 120;
+    
+    if (currentReportData && currentReportData.pecahan_daerah_jk && reportType === 'daerah') {
+      const tableBody = currentReportData.pecahan_daerah_jk.map((d: any) => [d.name, d.count.toString()]);
+      autoTable(doc, {
+        startY: finalY,
+        head: [['Daerah', 'Jumlah JK']],
+        body: tableBody,
+        theme: 'grid',
+        headStyles: { fillColor: '#003366' }
+      });
+    }
 
     // Footer
     const date = new Date().toLocaleString('ms-MY');

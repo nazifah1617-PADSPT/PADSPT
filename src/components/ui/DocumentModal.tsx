@@ -43,19 +43,34 @@ export const DocumentModal = ({ isOpen, onClose, initialData }: DocumentModalPro
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (initialData) setFormData(initialData);
-    else setFormData({
-      jenisRekod: 'Terimaan',
-      kategoriDokumen: 'Surat',
-      tajuk: '',
-      entitiBerkaitan: 'JK Kariah Masjid',
-      subEntiti: '',
-      namaPihak: '',
-      tarikh: getDefaultDate(),
-      jam: getDefaultTime(),
-      tindakan: '',
-      status: 'Dalam Proses'
-    });
+    if (initialData) {
+      setFormData({
+        jenisRekod: 'Terimaan',
+        kategoriDokumen: 'Surat',
+        tajuk: '',
+        entitiBerkaitan: 'JK Kariah Masjid',
+        subEntiti: '',
+        namaPihak: '',
+        tarikh: getDefaultDate(),
+        jam: getDefaultTime(),
+        tindakan: '',
+        status: 'Dalam Proses',
+        ...initialData
+      });
+    } else {
+      setFormData({
+        jenisRekod: 'Terimaan',
+        kategoriDokumen: 'Surat',
+        tajuk: '',
+        entitiBerkaitan: 'JK Kariah Masjid',
+        subEntiti: '',
+        namaPihak: '',
+        tarikh: getDefaultDate(),
+        jam: getDefaultTime(),
+        tindakan: '',
+        status: 'Dalam Proses'
+      });
+    }
   }, [initialData, isOpen]);
 
   if (!isOpen) return null;

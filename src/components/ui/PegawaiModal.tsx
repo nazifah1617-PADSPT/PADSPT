@@ -26,8 +26,22 @@ export const PegawaiModal = ({ isOpen, onClose, initialData }: PegawaiModalProps
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (initialData) setFormData({ statusLantikan: 'AKTIF', ...initialData });
-    else setFormData({ nama: '', jawatan: 'IMAM', noKP: '', noTel: '', masjidName: '', daerah: '', parlimen: '', dun: '', statusLantikan: 'AKTIF' });
+    if (initialData) {
+      setFormData({
+        nama: '',
+        jawatan: 'IMAM',
+        noKP: '',
+        noTel: '',
+        masjidName: '',
+        daerah: '',
+        parlimen: '',
+        dun: '',
+        statusLantikan: 'AKTIF',
+        ...initialData
+      });
+    } else {
+      setFormData({ nama: '', jawatan: 'IMAM', noKP: '', noTel: '', masjidName: '', daerah: '', parlimen: '', dun: '', statusLantikan: 'AKTIF' });
+    }
   }, [initialData, isOpen]);
 
   if (!isOpen) return null;

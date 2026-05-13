@@ -26,23 +26,44 @@ export const JKModal = ({ isOpen, onClose, initialData, collectionName = 'jk_rec
     daerah: '',
     parlimen: '',
     dun: '',
+    sesi: '',
+    tarikhTamatSesi: '',
   });
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (initialData) setFormData(initialData);
-    else setFormData({
-      namaPenuh: '',
-      noKP: '',
-      noTel: '',
-      alamat: '',
-      masjidName: '',
-      jawatan: 'AJK',
-      statusLantikan: 'Aktif',
-      daerah: '',
-      parlimen: '',
-      dun: '',
-    });
+    if (initialData) {
+      setFormData({
+        namaPenuh: '',
+        noKP: '',
+        noTel: '',
+        alamat: '',
+        masjidName: '',
+        jawatan: 'AJK',
+        statusLantikan: 'Aktif',
+        daerah: '',
+        parlimen: '',
+        dun: '',
+        sesi: '',
+        tarikhTamatSesi: '',
+        ...initialData
+      });
+    } else {
+      setFormData({
+        namaPenuh: '',
+        noKP: '',
+        noTel: '',
+        alamat: '',
+        masjidName: '',
+        jawatan: 'AJK',
+        statusLantikan: 'Aktif',
+        daerah: '',
+        parlimen: '',
+        dun: '',
+        sesi: '',
+        tarikhTamatSesi: '',
+      });
+    }
   }, [initialData, isOpen]);
 
   if (!isOpen) return null;
@@ -181,6 +202,27 @@ export const JKModal = ({ isOpen, onClose, initialData, collectionName = 'jk_rec
                 ))}
               </select>
             )}
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <label className="text-[10px] uppercase font-bold text-slate-400">Sesi (Cth: 2024/2026)</label>
+              <input 
+                className="w-full px-4 py-3 bg-slate-50 border-none rounded-xl focus:ring-2 focus:ring-gov-blue/20 outline-none"
+                value={formData.sesi}
+                onChange={(e) => setFormData({...formData, sesi: e.target.value})}
+                placeholder="2024/2026"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-[10px] uppercase font-bold text-slate-400">Tarikh Tamat Sesi</label>
+              <input 
+                type="date"
+                className="w-full px-4 py-3 bg-slate-50 border-none rounded-xl focus:ring-2 focus:ring-gov-blue/20 outline-none"
+                value={formData.tarikhTamatSesi}
+                onChange={(e) => setFormData({...formData, tarikhTamatSesi: e.target.value})}
+              />
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
