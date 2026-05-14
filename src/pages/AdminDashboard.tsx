@@ -206,11 +206,11 @@ export default function AdminDashboard() {
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
         {[
-          { label: 'Jumlah Rekod JK', value: allJkDocs.length, icon: Users, color: 'text-gov-blue', bg: 'bg-gov-blue/5', path: '/jk' },
-          { label: 'Jumlah Masjid', value: stats.totalMasjid, icon: Building2, color: 'text-islamic-green', bg: 'bg-islamic-green/5', path: '/masjid' },
-          { label: 'Jumlah Surau', value: stats.totalSurau, icon: Building2, color: 'text-emerald-600', bg: 'bg-emerald-50', path: '/surau' },
-          { label: 'Tamat Sesi (30 Hari)', value: stats.expiringSoon, icon: Clock, color: 'text-amber-600', bg: 'bg-amber-50', path: '/jk' },
-          { label: 'Jumlah Pegawai Masjid', value: stats.totalPegawai, icon: Users, color: 'text-amber-600', bg: 'bg-amber-50', path: '/pegawai' },
+          { label: 'Jumlah Rekod JK', value: allJkDocs.length, icon: Users, color: 'text-gov-blue', bg: 'bg-gov-blue/5', path: '/admin/jk' },
+          { label: 'Jumlah Masjid', value: stats.totalMasjid, icon: Building2, color: 'text-islamic-green', bg: 'bg-islamic-green/5', path: '/admin/masjid' },
+          { label: 'Jumlah Surau', value: stats.totalSurau, icon: Building2, color: 'text-emerald-600', bg: 'bg-emerald-50', path: '/admin/surau' },
+          { label: 'Tamat Sesi (30 Hari)', value: stats.expiringSoon, icon: Clock, color: 'text-amber-600', bg: 'bg-amber-50', path: '/admin/jk' },
+          { label: 'Jumlah Pegawai Masjid', value: stats.totalPegawai, icon: Users, color: 'text-amber-600', bg: 'bg-amber-50', path: '/admin/pegawai' },
         ].map((stat, i) => (
           <motion.div
             key={i}
@@ -238,10 +238,10 @@ export default function AdminDashboard() {
         <h2 className="text-xl font-bold text-slate-900 mb-4">Ringkasan Dokumen</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {[
-            { label: 'Selesai', value: stats.totalDocsCompleted, icon: CheckCircle, color: 'text-emerald-600', bg: 'bg-emerald-50', path: '/dokumen', state: { status: 'Selesai' } },
-            { label: 'Dalam Proses', value: stats.totalDocsInProcess, icon: Hourglass, color: 'text-blue-600', bg: 'bg-blue-50', path: '/dokumen', state: { status: 'Dalam Proses' } },
-            { label: 'KIV', value: stats.totalDocsKIV, icon: Archive, color: 'text-amber-600', bg: 'bg-amber-50', path: '/dokumen', state: { status: 'KIV' } },
-            { label: 'Ditolak', value: stats.totalDocsRejected, icon: XCircle, color: 'text-red-500', bg: 'bg-red-50', path: '/dokumen', state: { status: 'Ditolak' } },
+            { label: 'Selesai', value: stats.totalDocsCompleted, icon: CheckCircle, color: 'text-emerald-600', bg: 'bg-emerald-50', path: '/admin/dokumen', state: { status: 'Selesai' } },
+            { label: 'Dalam Proses', value: stats.totalDocsInProcess, icon: Hourglass, color: 'text-blue-600', bg: 'bg-blue-50', path: '/admin/dokumen', state: { status: 'Dalam Proses' } },
+            { label: 'KIV', value: stats.totalDocsKIV, icon: Archive, color: 'text-amber-600', bg: 'bg-amber-50', path: '/admin/dokumen', state: { status: 'KIV' } },
+            { label: 'Ditolak', value: stats.totalDocsRejected, icon: XCircle, color: 'text-red-500', bg: 'bg-red-50', path: '/admin/dokumen', state: { status: 'Ditolak' } },
           ].map((stat, i) => (
             <motion.div
               key={`doc-${i}`}
