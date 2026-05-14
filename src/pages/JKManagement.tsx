@@ -327,8 +327,6 @@ export default function JKManagement() {
         if (currentY > 230) {
           doc.addPage();
           currentY = 20;
-        } else {
-          currentY += 10; // Add some spacing between masjids on the same page
         }
       }
 
@@ -388,7 +386,7 @@ export default function JKManagement() {
         }
       });
       
-      currentY = (doc as any).lastAutoTable.finalY + 20;
+      currentY = (doc as any).lastAutoTable.finalY + 8;
     });
 
     doc.save(`${filenamePrefix}_${new Date().getTime()}.pdf`);
