@@ -15,6 +15,7 @@ export default function DocumentManagement() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedJenis, setSelectedJenis] = useState<string>('Semua');
+  const [selectedStatus, setSelectedStatus] = useState<string>('Semua Status');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedDocument, setSelectedDocument] = useState<any>(null);
 
@@ -61,7 +62,9 @@ export default function DocumentManagement() {
     
     const matchJenis = selectedJenis === 'Semua' || d.jenisRekod === selectedJenis;
     
-    return matchSearch && matchJenis;
+    const matchStatus = selectedStatus === 'Semua Status' || d.status === selectedStatus;
+    
+    return matchSearch && matchJenis && matchStatus;
   });
 
   return (
@@ -90,21 +93,34 @@ export default function DocumentManagement() {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        <div className="flex gap-2 min-w-max">
-          {['Semua', 'Terimaan', 'Edaran'].map(jenis => (
-            <button
-              key={jenis}
-              onClick={() => setSelectedJenis(jenis)}
-              className={cn(
-                "px-6 py-3 rounded-xl font-bold transition-all text-sm",
-                selectedJenis === jenis 
-                  ? "bg-gov-blue text-white shadow-md shadow-gov-blue/20" 
-                  : "bg-slate-50 text-slate-500 hover:bg-slate-100 border border-slate-100"
-              )}
-            >
-              {jenis.toUpperCase()}
-            </button>
-          ))}
+        <div className="flex flex-wrap gap-2 min-w-max">
+          <select
+            value={selectedStatus}
+            onChange={(e) => setSelectedStatus(e.target.value)}
+            className="px-4 py-3 rounded-xl font-bold bg-slate-50 text-slate-700 border border-slate-100 focus:ring-2 focus:ring-gov-blue/20 transition-all text-sm outline-none"
+          >
+            <option value="Semua Status">SEMUA STATUS</option>
+            <option value="Selesai">SELESAI</option>
+            <option value="Dalam Proses">DALAM PROSES</option>
+            <option value="KIV">KIV</option>
+            <option value="Ditolak">DITOLAK</option>
+          </select>
+          <div className="flex gap-2">
+            {['Semua', 'Terimaan', 'Edaran'].map(jenis => (
+              <button
+                key={jenis}
+                onClick={() => setSelectedJenis(jenis)}
+                className={cn(
+                  "px-6 py-3 rounded-xl font-bold transition-all text-sm",
+                  selectedJenis === jenis 
+                    ? "bg-gov-blue text-white shadow-md shadow-gov-blue/20" 
+                    : "bg-slate-50 text-slate-500 hover:bg-slate-100 border border-slate-100"
+                )}
+              >
+                {jenis.toUpperCase()}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -121,7 +137,7 @@ export default function DocumentManagement() {
                 <th className="px-6 py-4 text-right text-[10px] uppercase tracking-widest font-bold text-slate-400">Menu</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-50">
+                    <tbody className="divide-y divide-slate-50">
               {loading ? (
                 <tr>
                   <td colSpan={6} className="px-6 py-12 text-center">
@@ -130,81 +146,102 @@ export default function DocumentManagement() {
                   </td>
                 </tr>
               ) : filteredDocuments.length > 0 ? (
-                filteredDocuments.map((d) => (
-                  <tr key={d.id} className="hover:bg-slate-50/50 transition-colors group">
-                    <td className="px-6 py-4">
-                      <div className="text-sm font-bold text-slate-900">{d.tarikh}</div>
-                      <div className="text-xs text-slate-500">{d.jam}</div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
-                        {d.jenisRekod === 'Terimaan' ? (
-                          <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
-                            <ArrowDownLeft size={16} />
-                          </div>
-                        ) : (
-                          <div className="w-8 h-8 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center shrink-0">
-                            <ArrowUpRight size={16} />
-                          </div>
+                (() => {
+                  const sortedDocs = [...filteredDocuments].sort((a, b) => (a.status || '').localeCompare(b.status || ''));
+                  let currentStatus = '';
+
+                  return sortedDocs.map((d) => {
+                    const isNewStatus = d.status !== currentStatus;
+                    if (isNewStatus) {
+                      currentStatus = d.status || 'Tiada Status';
+                    }
+
+                    return (
+                      <React.Fragment key={d.id}>
+                        {isNewStatus && (
+                          <tr className="bg-slate-100/50">
+                            <td colSpan={6} className="px-6 py-3 text-xs font-black text-slate-700 uppercase border-y border-slate-200">
+                              STATUS: {currentStatus}
+                            </td>
+                          </tr>
                         )}
-                        <div>
-                          <span className={cn(
-                            "text-[10px] font-bold px-2 py-0.5 rounded-md uppercase",
-                            d.jenisRekod === 'Terimaan' ? "bg-emerald-50 text-emerald-600" : "bg-amber-50 text-amber-600"
-                          )}>
-                            {d.jenisRekod}
-                          </span>
-                          <div className="text-xs text-slate-500 mt-0.5">{d.kategoriDokumen}</div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <p className="font-bold text-slate-900 max-w-[250px] line-clamp-2" title={d.tajuk}>{d.tajuk}</p>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="text-sm font-bold text-slate-700">{d.entitiBerkaitan}</div>
-                      {(d.namaPihak || d.subEntiti) && (
-                        <div className="text-xs text-slate-500 mt-0.5 max-w-[200px] line-clamp-2">
-                          {d.subEntiti && `${d.subEntiti} - `}{d.namaPihak}
-                        </div>
-                      )}
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className={cn(
-                        "px-2 py-1 text-[10px] font-bold rounded-md uppercase",
-                        d.status === 'Selesai' ? "bg-emerald-100 text-emerald-700" :
-                        d.status === 'Dalam Proses' ? "bg-blue-100 text-blue-700" :
-                        d.status === 'Ditolak' ? "bg-red-100 text-red-700" :
-                        "bg-slate-100 text-slate-700"
-                      )}>
-                        {d.status}
-                      </span>
-                      {d.tindakan && (
-                         <p className="text-xs text-slate-500 mt-2 max-w-[200px] line-clamp-2" title={d.tindakan}>{d.tindakan}</p>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button 
-                          onClick={() => handleEdit(d)}
-                          className="p-2 text-slate-400 hover:text-gov-blue hover:bg-slate-100 rounded-lg transition-all"
-                          title="Kemaskini"
-                        >
-                          <Edit3 size={18} />
-                        </button>
-                        {isSuperAdmin && (
-                          <button 
-                            onClick={() => handleDelete(d.id, d.tajuk)}
-                            className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
-                            title="Padam"
-                          >
-                            <Trash2 size={18} />
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))
+                        <tr className="hover:bg-slate-50 transition-colors group">
+                          <td className="px-6 py-4">
+                            <div className="text-sm font-bold text-slate-900">{d.tarikh}</div>
+                            <div className="text-xs text-slate-500">{d.jam}</div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="flex items-center gap-2">
+                              {d.jenisRekod === 'Terimaan' ? (
+                                <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
+                                  <ArrowDownLeft size={16} />
+                                </div>
+                              ) : (
+                                <div className="w-8 h-8 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center shrink-0">
+                                  <ArrowUpRight size={16} />
+                                </div>
+                              )}
+                              <div>
+                                <span className={cn(
+                                  "text-[10px] font-bold px-2 py-0.5 rounded-md uppercase",
+                                  d.jenisRekod === 'Terimaan' ? "bg-emerald-50 text-emerald-600" : "bg-amber-50 text-amber-600"
+                                )}>
+                                  {d.jenisRekod}
+                                </span>
+                                <div className="text-xs text-slate-500 mt-0.5">{d.kategoriDokumen}</div>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <p className="font-bold text-slate-900 max-w-[250px] line-clamp-2" title={d.tajuk}>{d.tajuk}</p>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="text-sm font-bold text-slate-700">{d.entitiBerkaitan}</div>
+                            {(d.namaPihak || d.subEntiti) && (
+                              <div className="text-xs text-slate-500 mt-0.5 max-w-[200px] line-clamp-2">
+                                {d.subEntiti && `${d.subEntiti} - `}{d.namaPihak}
+                              </div>
+                            )}
+                          </td>
+                          <td className="px-6 py-4">
+                            <span className={cn(
+                              "px-2 py-1 text-[10px] font-bold rounded-md uppercase",
+                              d.status === 'Selesai' ? "bg-emerald-100 text-emerald-700" :
+                              d.status === 'Dalam Proses' ? "bg-blue-100 text-blue-700" :
+                              d.status === 'Ditolak' ? "bg-red-100 text-red-700" :
+                              "bg-slate-100 text-slate-700"
+                            )}>
+                              {d.status || 'Tiada Status'}
+                            </span>
+                            {d.tindakan && (
+                               <p className="text-xs text-slate-500 mt-2 max-w-[200px] line-clamp-2" title={d.tindakan}>{d.tindakan}</p>
+                            )}
+                          </td>
+                          <td className="px-6 py-4 text-right">
+                            <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <button 
+                                onClick={() => handleEdit(d)}
+                                className="p-2 text-slate-400 hover:text-gov-blue hover:bg-slate-100 rounded-lg transition-all"
+                                title="Kemaskini"
+                              >
+                                <Edit3 size={18} />
+                              </button>
+                              {isSuperAdmin && (
+                                <button 
+                                  onClick={() => handleDelete(d.id, d.tajuk)}
+                                  className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                                  title="Padam"
+                                >
+                                  <Trash2 size={18} />
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      </React.Fragment>
+                    );
+                  });
+                })()
               ) : (
                 <tr>
                   <td colSpan={6} className="px-6 py-12 text-center">

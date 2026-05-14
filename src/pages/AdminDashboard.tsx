@@ -11,7 +11,13 @@ import {
   Map as MapIcon,
   ChevronRight,
   ShieldCheck,
-  Loader2
+  Loader2,
+  Globe,
+  FileText,
+  CheckCircle,
+  XCircle,
+  Archive,
+  Hourglass
 } from 'lucide-react';
 import { 
   BarChart, 
@@ -36,7 +42,12 @@ export default function AdminDashboard() {
     totalMasjid: 0,
     totalSurau: 0,
     expiringSoon: 0,
-    totalPegawai: 0
+    totalPegawai: 0,
+    totalDocsInProcess: 0,
+    totalDocsCompleted: 0,
+    totalDocsKIV: 0,
+    totalDocsRejected: 0,
+    totalDocs: 0
   });
 
   const [chartData, setChartData] = useState<any[]>([]);
@@ -93,6 +104,31 @@ export default function AdminDashboard() {
       setStats(prev => ({ ...prev, totalPegawai: snap.size }));
     }, (err) => handleFirestoreError(err, OperationType.LIST, 'pegawai_records'));
 
+    // Listen to Document Records
+    const unsubDocs = onSnapshot(collection(db, 'document_records'), (snap) => {
+      const docs = snap.docs.map(doc => doc.data());
+      let dProses = 0;
+      let dSelesai = 0;
+      let dKiv = 0;
+      let dDitolak = 0;
+
+      docs.forEach(d => {
+        if (d.status === 'Dalam Proses' || !d.status) dProses++;
+        else if (d.status === 'Selesai') dSelesai++;
+        else if (d.status === 'KIV') dKiv++;
+        else if (d.status === 'Ditolak') dDitolak++;
+      });
+
+      setStats(prev => ({
+        ...prev,
+        totalDocsInProcess: dProses,
+        totalDocsCompleted: dSelesai,
+        totalDocsKIV: dKiv,
+        totalDocsRejected: dDitolak,
+        totalDocs: docs.length
+      }));
+    }, (err) => handleFirestoreError(err, OperationType.LIST, 'document_records'));
+
     // Listen to Audit Logs
     const qLogs = query(collection(db, 'audit_logs'), orderBy('timestamp', 'desc'), limit(10));
     const unsubLogs = onSnapshot(qLogs, (snap) => {
@@ -105,6 +141,7 @@ export default function AdminDashboard() {
       unsubMasjid();
       unsubSurau();
       unsubPegawai();
+      unsubDocs();
       unsubLogs();
     };
   }, [authLoading]);
@@ -190,6 +227,34 @@ export default function AdminDashboard() {
             </div>
           </motion.div>
         ))}
+      </div>
+
+      <div>
+        <h2 className="text-xl font-bold text-slate-900 mb-4">Ringkasan Dokumen</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {[
+            { label: 'Selesai', value: stats.totalDocsCompleted, icon: CheckCircle, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+            { label: 'Dalam Proses', value: stats.totalDocsInProcess, icon: Hourglass, color: 'text-blue-600', bg: 'bg-blue-50' },
+            { label: 'KIV', value: stats.totalDocsKIV, icon: Archive, color: 'text-amber-600', bg: 'bg-amber-50' },
+            { label: 'Ditolak', value: stats.totalDocsRejected, icon: XCircle, color: 'text-red-500', bg: 'bg-red-50' },
+          ].map((stat, i) => (
+            <motion.div
+              key={`doc-${i}`}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.1 }}
+              className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 flex items-center gap-4"
+            >
+              <div className={cn("w-14 h-14 rounded-2xl flex items-center justify-center", stat.bg)}>
+                <stat.icon className={stat.color} size={28} />
+              </div>
+              <div>
+                <p className="text-[10px] uppercase tracking-widest font-bold text-slate-400">{stat.label}</p>
+                <p className="text-2xl font-bold text-slate-900">{stat.value.toLocaleString()}</p>
+              </div>
+            </motion.div>
+          ))}
+        </div>
       </div>
 
       {/* Super Admin Quick Actions */}
