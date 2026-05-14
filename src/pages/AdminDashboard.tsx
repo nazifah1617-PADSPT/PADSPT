@@ -32,10 +32,11 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
 import { useAuth } from '../hooks/useAuth';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import GisMap from '../components/GisMap';
 
 export default function AdminDashboard() {
+  const navigate = useNavigate();
   const { isSuperAdmin, loading: authLoading } = useAuth();
   const [stats, setStats] = useState({
     totalJK: 0,
@@ -205,18 +206,22 @@ export default function AdminDashboard() {
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
         {[
-          { label: 'Jumlah Rekod JK', value: allJkDocs.length, icon: Users, color: 'text-gov-blue', bg: 'bg-gov-blue/5' },
-          { label: 'Jumlah Masjid', value: stats.totalMasjid, icon: Building2, color: 'text-islamic-green', bg: 'bg-islamic-green/5' },
-          { label: 'Jumlah Surau', value: stats.totalSurau, icon: Building2, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-          { label: 'Tamat Sesi (30 Hari)', value: stats.expiringSoon, icon: Clock, color: 'text-amber-600', bg: 'bg-amber-50' },
-          { label: 'Jumlah Pegawai Masjid', value: stats.totalPegawai, icon: Users, color: 'text-amber-600', bg: 'bg-amber-50' },
+          { label: 'Jumlah Rekod JK', value: allJkDocs.length, icon: Users, color: 'text-gov-blue', bg: 'bg-gov-blue/5', path: '/jk' },
+          { label: 'Jumlah Masjid', value: stats.totalMasjid, icon: Building2, color: 'text-islamic-green', bg: 'bg-islamic-green/5', path: '/masjid' },
+          { label: 'Jumlah Surau', value: stats.totalSurau, icon: Building2, color: 'text-emerald-600', bg: 'bg-emerald-50', path: '/surau' },
+          { label: 'Tamat Sesi (30 Hari)', value: stats.expiringSoon, icon: Clock, color: 'text-amber-600', bg: 'bg-amber-50', path: '/jk' },
+          { label: 'Jumlah Pegawai Masjid', value: stats.totalPegawai, icon: Users, color: 'text-amber-600', bg: 'bg-amber-50', path: '/pegawai' },
         ].map((stat, i) => (
           <motion.div
             key={i}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.1 }}
-            className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 flex items-center gap-4"
+            onClick={() => stat.path && navigate(stat.path)}
+            className={cn(
+              "bg-white p-6 rounded-3xl shadow-sm border border-slate-100 flex items-center gap-4",
+              stat.path ? "cursor-pointer hover:border-gov-blue/20 hover:shadow-md transition-all" : ""
+            )}
           >
             <div className={cn("w-14 h-14 rounded-2xl flex items-center justify-center", stat.bg)}>
               <stat.icon className={stat.color} size={28} />
@@ -233,17 +238,21 @@ export default function AdminDashboard() {
         <h2 className="text-xl font-bold text-slate-900 mb-4">Ringkasan Dokumen</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {[
-            { label: 'Selesai', value: stats.totalDocsCompleted, icon: CheckCircle, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-            { label: 'Dalam Proses', value: stats.totalDocsInProcess, icon: Hourglass, color: 'text-blue-600', bg: 'bg-blue-50' },
-            { label: 'KIV', value: stats.totalDocsKIV, icon: Archive, color: 'text-amber-600', bg: 'bg-amber-50' },
-            { label: 'Ditolak', value: stats.totalDocsRejected, icon: XCircle, color: 'text-red-500', bg: 'bg-red-50' },
+            { label: 'Selesai', value: stats.totalDocsCompleted, icon: CheckCircle, color: 'text-emerald-600', bg: 'bg-emerald-50', path: '/dokumen', state: { status: 'Selesai' } },
+            { label: 'Dalam Proses', value: stats.totalDocsInProcess, icon: Hourglass, color: 'text-blue-600', bg: 'bg-blue-50', path: '/dokumen', state: { status: 'Dalam Proses' } },
+            { label: 'KIV', value: stats.totalDocsKIV, icon: Archive, color: 'text-amber-600', bg: 'bg-amber-50', path: '/dokumen', state: { status: 'KIV' } },
+            { label: 'Ditolak', value: stats.totalDocsRejected, icon: XCircle, color: 'text-red-500', bg: 'bg-red-50', path: '/dokumen', state: { status: 'Ditolak' } },
           ].map((stat, i) => (
             <motion.div
               key={`doc-${i}`}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.1 }}
-              className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 flex items-center gap-4"
+              onClick={() => stat.path && navigate(stat.path, { state: stat.state })}
+              className={cn(
+                "bg-white p-6 rounded-3xl shadow-sm border border-slate-100 flex items-center gap-4",
+                stat.path ? "cursor-pointer hover:border-gov-blue/20 hover:shadow-md transition-all" : ""
+              )}
             >
               <div className={cn("w-14 h-14 rounded-2xl flex items-center justify-center", stat.bg)}>
                 <stat.icon className={stat.color} size={28} />

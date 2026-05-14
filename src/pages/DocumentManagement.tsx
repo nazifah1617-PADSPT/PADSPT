@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { collection, query, onSnapshot, orderBy, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { handleFirestoreError, OperationType } from '../lib/firestore-errors';
@@ -10,12 +11,15 @@ import { DocumentModal } from '../components/ui/DocumentModal';
 import { logActivity } from '../services/auditService';
 
 export default function DocumentManagement() {
+  const location = useLocation();
   const { isSuperAdmin } = useAuth();
   const [documents, setDocuments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedJenis, setSelectedJenis] = useState<string>('Semua');
-  const [selectedStatus, setSelectedStatus] = useState<string>('Semua Status');
+  const [selectedStatus, setSelectedStatus] = useState<string>(
+    location.state?.status || 'Semua Status'
+  );
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedDocument, setSelectedDocument] = useState<any>(null);
 
